@@ -2,6 +2,7 @@
 #include <cec.h>
 MonitorHandler::MonitorHandler()
 {
+
 }
 MonitorHandler::~MonitorHandler()
 {

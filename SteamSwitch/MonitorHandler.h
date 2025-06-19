@@ -1,6 +1,8 @@
 #pragma once
 class MonitorHandler
 {
+private:
+
 public:
 	MonitorHandler();
 	~MonitorHandler();
