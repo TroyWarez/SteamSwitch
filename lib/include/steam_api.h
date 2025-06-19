@@ -17,6 +17,7 @@
 #pragma once
 #endif
 
+#define _CRT_SECURE_NO_WARNINGS
 // Basic stuff
 #include "steam_api_common.h"
 
