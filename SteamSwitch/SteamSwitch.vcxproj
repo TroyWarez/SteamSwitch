@@ -130,12 +130,14 @@
     <ClCompile Include="KeyboardHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonitorHandler.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
     <ClCompile Include="SteamHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioHandler.h" />
     <ClInclude Include="KeyboardHandler.h" />
     <ClInclude Include="MonitorHandler.h" />
+    <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="SteamHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
