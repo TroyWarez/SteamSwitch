@@ -1,5 +1,6 @@
 #include "MonitorHandler.h"
 #include <cec.h>
+// It may be be possible to have two cec usb device on the same cable
 MonitorHandler::MonitorHandler()
 {
 
