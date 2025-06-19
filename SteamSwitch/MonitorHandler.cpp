@@ -6,11 +6,11 @@ MonitorHandler::MonitorHandler()
 MonitorHandler::~MonitorHandler()
 {
 }
-int MonitorHandler::setDefaultMonitor(int mode)
+int MonitorHandler::setDefaultMonitors(MonitorMode mode)
 {
 	return 0;
 }
-int MonitorHandler::getDefaultMonitor(int mode)
+int MonitorHandler::getDefaultMonitors(MonitorMode mode)
 {
 	return 0;
 }
