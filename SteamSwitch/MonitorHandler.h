@@ -4,15 +4,14 @@ class MonitorHandler
 private:
 	enum MonitorMode {
 		BP_MODE,
-		DESK_MODE,
-		DEFAULT_MODE
+		DESK_MODE
 	};
 	MonitorMode currentMode;
 public:
-	MonitorHandler();
+	MonitorHandler(MonitorMode mode);
 	~MonitorHandler();
-	int setDefaultMonitors(MonitorMode mode);
-	MonitorMode getDefaultMonitors();
+	void setMonitorMode(MonitorMode mode);
+	MonitorMode getMonitorMode();
 	void ToggleMode();
 
 };

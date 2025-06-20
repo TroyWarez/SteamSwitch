@@ -1,23 +1,33 @@
 #include "MonitorHandler.h"
 #include <cec.h>
 // It may be be possible to have two cec usb devices on the same cable
-MonitorHandler::MonitorHandler()
+MonitorHandler::MonitorHandler(MonitorMode mode)
 {
-	currentMode = DEFAULT_MODE;
+	currentMode = mode;
 }
 MonitorHandler::~MonitorHandler()
 {
 }
-int MonitorHandler::setDefaultMonitors(MonitorMode mode)
+void MonitorHandler::setMonitorMode(MonitorMode mode)
 {
 	currentMode = mode;
-	return 0;
 }
-MonitorHandler::MonitorMode MonitorHandler::getDefaultMonitors()
+MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
 void MonitorHandler::ToggleMode()
 {
+	switch (currentMode)
+	{
+		case MonitorHandler::BP_MODE:
+		{
+			break;
+		}
+		case MonitorHandler::DESK_MODE:
+		{
+			break;
+		}
+	}
 	return;
 }
