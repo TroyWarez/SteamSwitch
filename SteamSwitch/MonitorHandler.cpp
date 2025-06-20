@@ -3,18 +3,19 @@
 // It may be be possible to have two cec usb devices on the same cable
 MonitorHandler::MonitorHandler()
 {
-
+	currentMode = DEFAULT_MODE;
 }
 MonitorHandler::~MonitorHandler()
 {
 }
 int MonitorHandler::setDefaultMonitors(MonitorMode mode)
 {
+	currentMode = mode;
 	return 0;
 }
-int MonitorHandler::getDefaultMonitors(MonitorMode mode)
+MonitorHandler::MonitorMode MonitorHandler::getDefaultMonitors()
 {
-	return 0;
+	return currentMode;
 }
 void MonitorHandler::ToggleMode()
 {
