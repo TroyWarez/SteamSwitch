@@ -13,6 +13,7 @@ int main()
 		printf("Fatal Error - Steam must be running to play this game (SteamAPI_Init() failed).\n");
 		return 1;
 	}
+	unsigned int batteryVal = SteamUtils()->GetCurrentBatteryPower();
 
 	return 0;
 }
