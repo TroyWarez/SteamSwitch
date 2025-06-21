@@ -16,18 +16,15 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	if (cecAdpater)
 	{
 		cecAdpater->InitVideoStandalone();
-		CEC::cec_adapter_descriptor device[10];
-		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 10, NULL, true);
+		CEC::cec_adapter_descriptor device[1];
+		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
 
 		cecInit = false;
 
 		if (iDevicesFound > 0)
 		{
 			deviceStrPort = device[0].strComName;
-			if (cecAdpater->Open(deviceStrPort.c_str()))
-			{
-				cecInit = true;
-			}
+			cecInit = true;
 		}
 	}
 
@@ -37,9 +34,8 @@ MonitorHandler::~MonitorHandler()
 {
 	if (cecAdpater)
 	{
-		cecAdpater->Close();
 		UnloadLibCec(cecAdpater);
-		cecAdpater = nullptr;
+		cecAdpater = 0;
 	}
 }
 void MonitorHandler::setMonitorMode(MonitorMode mode)
@@ -52,20 +48,22 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 }
 void MonitorHandler::TogglePowerCEC()
 {
-	if (cecInit)
+	if (cecInit && cecAdpater->Open(deviceStrPort.c_str()))
 	{
 		CEC::cec_power_status pwrStatus = cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV);
 		switch (pwrStatus)
 		{
 		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
-			bool ret2 = cecAdpater->StandbyDevices();
+
+			cecAdpater->StandbyDevices();
 			break;
 		}
 		case CEC::cec_power_status::CEC_POWER_STATUS_STANDBY: {
-			bool ret2 = cecAdpater->PowerOnDevices();
+				cecAdpater->PowerOnDevices();
 			break;
 		}
 		}
+		cecAdpater->Close();
 	}
 }
 void MonitorHandler::ToggleMode()
