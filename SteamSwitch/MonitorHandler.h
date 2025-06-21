@@ -18,4 +18,5 @@ private:
 	CEC::ICECAdapter* cecAdpater;
 	std::string deviceStrPort;
 	bool cecInit;
+	void TogglePowerCEC();
 };

@@ -26,7 +26,6 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 			deviceStrPort = device[0].strComName;
 			if (cecAdpater->Open(deviceStrPort.c_str()))
 			{
-				cecAdpater->PowerOnDevices();
 				cecInit = true;
 			}
 		}
@@ -38,7 +37,9 @@ MonitorHandler::~MonitorHandler()
 {
 	if (cecAdpater)
 	{
+		cecAdpater->Close();
 		UnloadLibCec(cecAdpater);
+		cecAdpater = nullptr;
 	}
 }
 void MonitorHandler::setMonitorMode(MonitorMode mode)
@@ -49,6 +50,24 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
+void MonitorHandler::TogglePowerCEC()
+{
+	if (cecInit)
+	{
+		CEC::cec_power_status pwrStatus = cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV);
+		switch (pwrStatus)
+		{
+		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
+			bool ret2 = cecAdpater->StandbyDevices();
+			break;
+		}
+		case CEC::cec_power_status::CEC_POWER_STATUS_STANDBY: {
+			bool ret2 = cecAdpater->PowerOnDevices();
+			break;
+		}
+		}
+	}
+}
 void MonitorHandler::ToggleMode()
 {
 	switch (currentMode)
@@ -56,11 +75,13 @@ void MonitorHandler::ToggleMode()
 		case MonitorHandler::BP_MODE:
 		{
 			currentMode = MonitorHandler::DESK_MODE;
+			TogglePowerCEC();
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
 		{
 			currentMode = MonitorHandler::BP_MODE;
+			TogglePowerCEC();
 			break;
 		}
 	}
