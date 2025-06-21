@@ -14,6 +14,7 @@ public:
 	void ToggleMode();
 private:
 	MonitorMode currentMode;
-	CEC::libcec_configuration  cec_config;
+	CEC::libcec_configuration cec_config;
 	CEC::ICECAdapter* cecAdpater;
+
 };

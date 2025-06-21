@@ -12,7 +12,17 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 
 	cecAdpater = LibCecInitialise(&cec_config);
 
+	cecAdpater->InitVideoStandalone();
+
+	CEC::cec_adapter_descriptor device[1];
+	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
+
+
+
+
+
 	currentMode = mode;
+
 }
 MonitorHandler::~MonitorHandler()
 {
