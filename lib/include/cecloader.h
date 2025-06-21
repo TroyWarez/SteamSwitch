@@ -34,6 +34,7 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(_M_ARM64)
 #include <windows.h>
 #include <conio.h>
+#include <iostream>
 
 HINSTANCE g_libCEC = NULL;
 
