@@ -1,17 +1,18 @@
 #pragma once
+#include <cec.h>
 class MonitorHandler
 {
-private:
+public:
 	enum MonitorMode {
 		BP_MODE,
 		DESK_MODE
 	};
-	MonitorMode currentMode;
-public:
 	MonitorHandler(MonitorMode mode);
 	~MonitorHandler();
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
 	void ToggleMode();
-
+private:
+	MonitorMode currentMode;
+	CEC::libcec_configuration  cec_config;
 };
