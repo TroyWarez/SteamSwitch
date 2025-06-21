@@ -16,5 +16,6 @@ private:
 	MonitorMode currentMode;
 	CEC::libcec_configuration cec_config;
 	CEC::ICECAdapter* cecAdpater;
-
+	std::string deviceStrPort;
+	bool cecInit;
 };

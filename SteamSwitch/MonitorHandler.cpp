@@ -12,16 +12,26 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 
 	cecAdpater = LibCecInitialise(&cec_config);
 
-	cecAdpater->InitVideoStandalone();
 
-	CEC::cec_adapter_descriptor device[1];
-	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
+	if (cecAdpater)
+	{
+		cecAdpater->InitVideoStandalone();
+		CEC::cec_adapter_descriptor device[10];
+		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 10, NULL, true);
 
+		cecInit = false;
 
+		if (iDevicesFound > 0)
+		{
+			deviceStrPort = device[0].strComName;
+			if (cecAdpater->Open(deviceStrPort.c_str()))
+			{
+				cecAdpater->PowerOnDevices();
+				cecInit = true;
+			}
+		}
+	}
 
-
-
-	currentMode = mode;
 
 }
 MonitorHandler::~MonitorHandler()
