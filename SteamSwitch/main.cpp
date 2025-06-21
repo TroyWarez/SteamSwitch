@@ -16,5 +16,6 @@ int main()
 	//	return 1;
 	//}
 	//unsigned int batteryVal = SteamUtils()->GetCurrentBatteryPower();
+	delete monHandler;
 	return 0;
 }
