@@ -13,14 +13,14 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 
 	cecAdpater = LibCecInitialise(&cec_config);
 
-
+	cecInit = false;
+	currentMode = mode;
 	if (cecAdpater)
 	{
 		cecAdpater->InitVideoStandalone();
 		CEC::cec_adapter_descriptor device[1];
 		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
 
-		cecInit = false;
 
 		if (iDevicesFound > 0)
 		{
@@ -57,17 +57,15 @@ void MonitorHandler::TogglePowerCEC()
 		switch (pwrStatus)
 		{
 		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
-			cecAdpater->SetActiveSource();
+			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			}
 			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
 			break;
 		}
 		case CEC::cec_power_status::CEC_POWER_STATUS_STANDBY: {
-			while (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::cec_power_status::CEC_POWER_STATUS_ON)
-			{
-				cecAdpater->PowerOnDevices();
-				Sleep(10);
-			}
-			cecAdpater->SetActiveSource();
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			break;
 		}
 		}
