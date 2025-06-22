@@ -7,6 +7,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
+	cec_config.iHDMIPort = 3; //Auto dectect HDMI port doesn't work with some devices
 
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
@@ -24,6 +25,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 		if (iDevicesFound > 0)
 		{
 			deviceStrPort = device[0].strComName;
+			cecAdpater->Open(deviceStrPort.c_str());
 			cecInit = true;
 		}
 	}
@@ -34,6 +36,7 @@ MonitorHandler::~MonitorHandler()
 {
 	if (cecAdpater)
 	{
+		cecAdpater->Close();
 		UnloadLibCec(cecAdpater);
 		cecAdpater = 0;
 	}
@@ -48,22 +51,26 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 }
 void MonitorHandler::TogglePowerCEC()
 {
-	if (cecInit && cecAdpater->Open(deviceStrPort.c_str()))
+	if (cecInit)
 	{
 		CEC::cec_power_status pwrStatus = cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV);
 		switch (pwrStatus)
 		{
 		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
-
-			cecAdpater->StandbyDevices();
+			auto cec_cmd = cecAdpater->SetActiveSource();
+			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
 			break;
 		}
 		case CEC::cec_power_status::CEC_POWER_STATUS_STANDBY: {
+			while (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::cec_power_status::CEC_POWER_STATUS_ON)
+			{
 				cecAdpater->PowerOnDevices();
+				Sleep(10);
+			}
+			cecAdpater->SetActiveSource();
 			break;
 		}
 		}
-		cecAdpater->Close();
 	}
 }
 void MonitorHandler::ToggleMode()
