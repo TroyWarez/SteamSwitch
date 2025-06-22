@@ -67,7 +67,10 @@ void MonitorHandler::TogglePowerCEC()
 				cecAdpater->PowerOnDevices();
 				Sleep(10);
 			}
-			cecAdpater->SetActiveSource();
+			if( !cecAdpater->IsLibCECActiveSource() )
+			{
+				cecAdpater->SetActiveSource();
+			}
 			break;
 		}
 		}
