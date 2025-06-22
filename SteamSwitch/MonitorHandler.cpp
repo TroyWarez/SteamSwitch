@@ -57,7 +57,7 @@ void MonitorHandler::TogglePowerCEC()
 		switch (pwrStatus)
 		{
 		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
-			auto cec_cmd = cecAdpater->SetActiveSource();
+			cecAdpater->SetActiveSource();
 			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
 			break;
 		}
