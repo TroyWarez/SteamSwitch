@@ -10,7 +10,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
-	cec_config.iHDMIPort = 3; //Auto dectect HDMI port doesn't work with some devices
+	cec_config.iHDMIPort = 3; //Auto dectect HDMI port doesn't work with some libCEC devices
 
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
@@ -81,15 +81,15 @@ void MonitorHandler::ToggleMode()
 		case MonitorHandler::BP_MODE:
 		{
 			currentMode = MonitorHandler::DESK_MODE;
-			ToggleActiveMonitors(MonitorHandler::BP_MODE);
+			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
 			TogglePowerCEC();
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
 		{
 			currentMode = MonitorHandler::BP_MODE;
-			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
 			TogglePowerCEC();
+			ToggleActiveMonitors(MonitorHandler::BP_MODE);
 			break;
 		}
 	}
@@ -111,15 +111,10 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 	UINT32 NumModeInfoArrayElements = 0;
 	hr = GetDisplayConfigBufferSizes((QDC_ALL_PATHS), &NumPathArrayElements, &NumModeInfoArrayElements);
 	std::vector<DISPLAYCONFIG_PATH_INFO> PathInfoArray2(NumPathArrayElements);
-	std::vector<DISPLAYCONFIG_PATH_INFO> PathInfoMatched;
+	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
+	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
 	hr = QueryDisplayConfig((QDC_ALL_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
-
-	struct displaySourcePair
-	{
-		std::wstring displayName;
-		UINT32 displayId;
-	};
 
 	int HDMIMonitorCount = 0;
 	int DPMonitorCount = 0;
@@ -170,6 +165,11 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 				}
 				if (PathInfoArray2[i].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
 				{
+					if (pathInfoHDMI.targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER)
+					{
+						pathInfoHDMI = PathInfoArray2[i];
+						pathInfoHDMI.flags = DISPLAYCONFIG_PATH_ACTIVE;
+					}
 					PathInfoArray2[i].flags = 0;
 				}
 			}
@@ -177,9 +177,9 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			{
 				DISPLAYCONFIG_PATH_INFO pathInfo[2] = {};
 				pathInfo[0] = PathInfoArray2[1];
-				pathInfo[1] = PathInfoArray2[2];
+				pathInfo[1] = pathInfoHDMI;
 
-				PathInfoArray2[0] = PathInfoArray2[2];
+				PathInfoArray2[0] = pathInfoHDMI;
 				PathInfoArray2[2] = pathInfo[0];
 				PathInfoArray2[1] = pathInfo[1];
 
@@ -190,6 +190,10 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 				if (hr == S_OK)
 				{
 					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_APPLY | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
+					if (hr == S_OK)
+					{
+						BOOL t = SetCursorPos(0, 0);
+					}
 				}
 			}
 			else if (mode == DESK_MODE)
@@ -211,4 +215,6 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 
 		}
 	}
+
+
 }

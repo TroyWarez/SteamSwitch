@@ -3,8 +3,8 @@
 #include "steam_api.h"
 int main()
 {
-	//MonitorHandler* monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
-	//monHandler->ToggleMode();
+	MonitorHandler* monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+	monHandler->ToggleMode();
 	//auto a = monHandler->getMonitorMode();
 //	if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid)) // Replace with your App ID
 //	{
@@ -18,7 +18,7 @@ int main()
 	//}
 	//unsigned int batteryVal = SteamUtils()->GetCurrentBatteryPower();
 	// 
-	//delete monHandler;
+	delete monHandler;
 	AudioHandler* audioHandler = new AudioHandler();
 	return 0;
 }
