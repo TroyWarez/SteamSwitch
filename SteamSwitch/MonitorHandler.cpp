@@ -81,15 +81,15 @@ void MonitorHandler::ToggleMode()
 		case MonitorHandler::BP_MODE:
 		{
 			currentMode = MonitorHandler::DESK_MODE;
-			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
-			//TogglePowerCEC();
+			ToggleActiveMonitors(MonitorHandler::BP_MODE);
+			TogglePowerCEC();
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
 		{
 			currentMode = MonitorHandler::BP_MODE;
 			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
-			//TogglePowerCEC();
+			TogglePowerCEC();
 			break;
 		}
 	}

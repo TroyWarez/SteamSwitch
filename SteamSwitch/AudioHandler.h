@@ -1,6 +1,8 @@
 #pragma once
 class AudioHandler
 {
+private: 
+	void InitDefaultAudioDevice();
 public:
 	AudioHandler();
 	~AudioHandler();
