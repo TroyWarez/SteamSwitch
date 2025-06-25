@@ -98,6 +98,14 @@ void MonitorHandler::ToggleMode()
 
 void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 {
+	if (mode == DESK_MODE)
+	{
+		SetDisplayConfig(0, NULL, 0, NULL, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
+	}
+	else if (mode == DESK_MODE)
+	{
+		std::cout << "Switching to Desktop Mode" << std::endl;
+	}
 	HRESULT hr = S_OK;
 	UINT32 NumPathArrayElements = 0;
 	UINT32 NumModeInfoArrayElements = 0;
@@ -132,7 +140,7 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 
 		if (hr == S_OK)
 		{
-			for (UINT32 i = 0; i < 3; i++)
+			for (UINT32 i = 0; i < NumPathArrayElements; i++)
 			{
 				SourceName.header.adapterId = PathInfoArray2[i].sourceInfo.adapterId;
 				SourceName.header.id = PathInfoArray2[i].sourceInfo.id;
@@ -162,8 +170,7 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 				}
 				if (PathInfoArray2[i].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
 				{
-					PathInfoArray2[i].flags = DISPLAYCONFIG_PATH_ACTIVE;
-
+					PathInfoArray2[i].flags = 0;
 				}
 			}
 			if (mode == BP_MODE)
@@ -187,17 +194,18 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			}
 			else if (mode == DESK_MODE)
 			{
+				PathInfoArray2[0].flags = DISPLAYCONFIG_PATH_ACTIVE;
+				PathInfoArray2[1].flags = DISPLAYCONFIG_PATH_ACTIVE;
 
 				constexpr UINT flags = SDC_APPLY |
 					SDC_SAVE_TO_DATABASE |
 					SDC_ALLOW_CHANGES |
 					SDC_USE_SUPPLIED_DISPLAY_CONFIG |
 					SDC_TOPOLOGY_EXTEND;
-				hr = SetDisplayConfig(0, NULL, 0, NULL, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
-				hr = SetDisplayConfig(3, &PathInfoArray2[0], 0, NULL, (SDC_VALIDATE | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
+				hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_VALIDATE | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
 				if (hr == S_OK)
 				{
-					hr = SetDisplayConfig(3, &PathInfoArray2[0], 0, NULL, flags);
+					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_APPLY | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
 				}
 			}
 
