@@ -92,6 +92,7 @@
     <ClInclude Include="KeyboardHandler.h" />
     <ClInclude Include="MonitorHandler.h" />
     <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="SteamHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

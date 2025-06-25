@@ -19,4 +19,5 @@ private:
 	std::string deviceStrPort;
 	bool cecInit;
 	void TogglePowerCEC();
+	void ToggleActiveMonitors(MonitorMode mode);
 };
