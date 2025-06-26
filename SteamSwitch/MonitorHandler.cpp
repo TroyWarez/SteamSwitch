@@ -10,7 +10,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
-	cec_config.iHDMIPort = 3; //Auto dectect HDMI port doesn't work with some libCEC devices
+	cec_config.iHDMIPort = 3; //Auto detection of the active HDMI port doesn't work with some libCEC devices
 
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
