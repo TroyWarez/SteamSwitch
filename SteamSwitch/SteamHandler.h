@@ -13,7 +13,6 @@ public:
 	MonitorHandler* monHandler;
 	AudioHandler* audioHandler;
 	DWORD steamPid;
-	std::wstring lastSteamTitle;
-	std::wstring newSteamTitle;
+	bool isSteamInBigPictureMode;
 };
 

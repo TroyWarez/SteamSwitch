@@ -50,24 +50,32 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
-void MonitorHandler::TogglePowerCEC()
+void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 {
 	if (cecInit)
 	{
 		cecAdpater->Open(deviceStrPort.c_str());
 		CEC::cec_power_status pwrStatus = cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV);
-		switch (pwrStatus)
+		switch (currentMode)
 		{
-		case CEC::cec_power_status::CEC_POWER_STATUS_ON: {
+		case MonitorHandler::DESK_MODE: {
+			if (pwrStatus != CEC::cec_power_status::CEC_POWER_STATUS_STANDBY)
+			{
+
 			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 			{
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			}
 			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+			}
+
 			break;
 		}
-		case CEC::cec_power_status::CEC_POWER_STATUS_STANDBY: {
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+		case MonitorHandler::BP_MODE: {
+			if (pwrStatus != CEC::cec_power_status::CEC_POWER_STATUS_ON)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			}
 			break;
 		}
 		}
@@ -82,13 +90,13 @@ void MonitorHandler::ToggleMode()
 		{
 			currentMode = MonitorHandler::DESK_MODE;
 			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
-			TogglePowerCEC();
+			TogglePowerCEC(MonitorHandler::DESK_MODE);
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
 		{
 			currentMode = MonitorHandler::BP_MODE;
-			TogglePowerCEC();
+			TogglePowerCEC(MonitorHandler::BP_MODE);
 			ToggleActiveMonitors(MonitorHandler::BP_MODE);
 			break;
 		}

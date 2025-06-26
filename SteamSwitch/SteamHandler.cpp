@@ -1,12 +1,12 @@
 #include "SteamHandler.h"
 #define STEAM_DESK L"Steam"
 #define STEAM_DESK_CLASS L"SDL_app"
+#include "Settings.h"
 
 // bool IsSteamInBigPictureMode();
 SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
-	lastSteamTitle = L"";
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	audioHandler = new AudioHandler();
 	while (true)
@@ -35,24 +35,28 @@ SteamHandler::SteamHandler()
 					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
 					{
 						monHandler->ToggleMode();
-						audioHandler->InitDefaultAudioDevice();
-						while (true)
+						audioHandler->InitDefaultAudioDevice(defaultBpAudioDevice);
+						isSteamInBigPictureMode = true;
+						while (isSteamInBigPictureMode)
 						{
+							if (isSteamRunning())
+							{
+								HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
+								if (hWnd)
+								{
+									if (IsWindowVisible(hWnd)) {
+										monHandler->ToggleMode();
+										audioHandler->InitDefaultAudioDevice(defaultDeskAudioDevice);
+										isSteamInBigPictureMode = false;
+										break;
+									}
+								}
+							}
 							SetCursorPos(0, 0);
 							SetCursor(NULL);
 							Sleep(2000);
 						}
-
-						break;
 					}
-					else
-					{
-						newSteamTitle = L"";
-					}
-				}
-				else
-				{
-					newSteamTitle = L"Vis";
 				}
 				Sleep(16); // Check 60 times every second
 			}

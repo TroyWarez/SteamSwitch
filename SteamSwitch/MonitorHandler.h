@@ -18,6 +18,6 @@ private:
 	CEC::ICECAdapter* cecAdpater;
 	std::string deviceStrPort;
 	bool cecInit;
-	void TogglePowerCEC();
+	void TogglePowerCEC(MonitorMode mode);
 	void ToggleActiveMonitors(MonitorMode mode);
 };

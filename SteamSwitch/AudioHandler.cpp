@@ -1,11 +1,4 @@
 #include "AudioHandler.h"
-#include <windows.h>
-#include <mmsystem.h>
-#include <mmdeviceapi.h>
-#include <Functiondiscoverykeys_devpkey.h>
-#include "PolicyConfig.h"
-#include "Settings.h"
-#include <iostream>
 using namespace std;
 
 AudioHandler::AudioHandler()
@@ -26,7 +19,7 @@ HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
     }
     return hr;
 }
-void AudioHandler::InitDefaultAudioDevice()
+void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
 {
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
@@ -53,7 +46,7 @@ void AudioHandler::InitDefaultAudioDevice()
                     if (SUCCEEDED(hr))
                     {
                         std::wstring strTmp = friendlyName.pwszVal;
-                        if (strTmp == defaultBpAudioDevice)
+                        if (strTmp == Device_FriendlyName)
                         {
                             bExit = true;
                         }
@@ -101,7 +94,7 @@ void AudioHandler::InitDefaultAudioDevice()
                                         // if no options, print the device
                                         // otherwise, find the selected device and set it to be default
                                         std::wstring strTmp = friendlyName.pwszVal;
-                                        if (strTmp == defaultBpAudioDevice)
+                                        if (strTmp == Device_FriendlyName)
                                         {
                                             SetDefaultAudioPlaybackDevice(wstrID);
                                             bFind = true;

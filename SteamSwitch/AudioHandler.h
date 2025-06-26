@@ -1,4 +1,10 @@
 #pragma once
+#include <windows.h>
+#include <mmsystem.h>
+#include <mmdeviceapi.h>
+#include <Functiondiscoverykeys_devpkey.h>
+#include "PolicyConfig.h"
+#include <iostream>
 class AudioHandler
 {
 public:
@@ -7,6 +13,6 @@ public:
 	int setDefaultAudioDevice(int device);
 	int getDefaultAudioDevice(int device);
 	void ToggleMode();
-	void InitDefaultAudioDevice();
+	void InitDefaultAudioDevice(LPCWSTR Device_FriendlyName);
 };
 
