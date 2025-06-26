@@ -1,11 +1,72 @@
 #include "SteamHandler.h"
+#define STEAM_DESK L"Steam"
+#define STEAM_DESK_CLASS L"SDL_app"
+
 // bool IsSteamInBigPictureMode();
 SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
+	lastSteamTitle = L"";
+	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+	audioHandler = new AudioHandler();
+	while (true)
+	{
+		if (isSteamRunning())
+		{
+			HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
+			if (hWnd)
+			{
+				if (IsWindowVisible(hWnd) == false) {
+
+					HWND foreHwnd = GetForegroundWindow();
+
+					WCHAR windowTitle[256] = { 0 };
+					GetWindowTextW(foreHwnd, windowTitle, 256);
+					std::wstring title(windowTitle);
+					std::wstring subtitle = L"";
+					if (title.size() > 5)
+					{
+						subtitle = title.substr(0, 5);
+					}
+					WCHAR windowClassName[256] = { 0 };
+					GetClassNameW(foreHwnd, windowClassName, 256);
+					std::wstring classname(windowClassName);
+
+					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
+					{
+						monHandler->ToggleMode();
+						audioHandler->InitDefaultAudioDevice();
+						while (true)
+						{
+							SetCursorPos(0, 0);
+							SetCursor(NULL);
+							Sleep(2000);
+						}
+
+						break;
+					}
+					else
+					{
+						newSteamTitle = L"";
+					}
+				}
+				else
+				{
+					newSteamTitle = L"Vis";
+				}
+				Sleep(16); // Check 60 times every second
+			}
+			else
+			{
+				Sleep(3000);
+			}
+		}
+	}
 }
 SteamHandler::~SteamHandler()
 {
+	delete audioHandler;
+	delete monHandler;
 }
 int SteamHandler::getSteamPid()
 {
@@ -23,4 +84,28 @@ int SteamHandler::getSteamPid()
 		CloseHandle(hKey);
 	}
 	return 0;
+}
+bool SteamHandler::isSteamRunning()
+{
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, steamPid);
+	if (hProcess)
+	{
+		DWORD exitCode = 0;
+		if (GetExitCodeProcess(hProcess, &exitCode))
+		{
+			CloseHandle(hProcess);
+			if (exitCode != STILL_ACTIVE)
+			{
+				std::cout << "Steam process has exited." << std::endl;
+				steamPid = getSteamPid();
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		CloseHandle(hProcess);
+	}
+	return false;
 }

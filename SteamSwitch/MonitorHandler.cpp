@@ -190,10 +190,6 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 				if (hr == S_OK)
 				{
 					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_APPLY | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
-					if (hr == S_OK)
-					{
-						BOOL t = SetCursorPos(0, 0);
-					}
 				}
 			}
 			else if (mode == DESK_MODE)

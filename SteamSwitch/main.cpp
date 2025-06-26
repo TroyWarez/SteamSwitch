@@ -1,12 +1,8 @@
-#include "MonitorHandler.h"
-#include "AudioHandler.h"
 #include "steam_api.h"
 #include "SteamHandler.h"
 int main()
 {
 	SteamHandler* steamHandler = new SteamHandler();
-	//MonitorHandler* monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
-	//monHandler->ToggleMode();
 	//auto a = monHandler->getMonitorMode();
 //	if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid)) // Replace with your App ID
 //	{

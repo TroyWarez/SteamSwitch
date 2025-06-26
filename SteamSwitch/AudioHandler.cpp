@@ -9,12 +9,9 @@
 using namespace std;
 
 AudioHandler::AudioHandler()
-{
-    InitDefaultAudioDevice();
-}
+{}
 AudioHandler::~AudioHandler()
-{
-}
+{}
 HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
 {
     IPolicyConfigVista* pPolicyConfig;
