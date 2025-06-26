@@ -59,23 +59,16 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 		switch (currentMode)
 		{
 		case MonitorHandler::DESK_MODE: {
-			if (pwrStatus != CEC::cec_power_status::CEC_POWER_STATUS_STANDBY)
-			{
-
 			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 			{
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			}
 			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-			}
 
 			break;
 		}
 		case MonitorHandler::BP_MODE: {
-			if (pwrStatus != CEC::cec_power_status::CEC_POWER_STATUS_ON)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			}
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			break;
 		}
 		}

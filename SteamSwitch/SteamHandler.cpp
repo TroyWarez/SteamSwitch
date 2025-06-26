@@ -41,24 +41,19 @@ SteamHandler::SteamHandler()
 						{
 							if (isSteamRunning())
 							{
-								HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
-								if (hWnd)
-								{
-									if (IsWindowVisible(hWnd)) {
+								HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
+									if (hWndBP == NULL) {
 										monHandler->ToggleMode();
 										audioHandler->InitDefaultAudioDevice(defaultDeskAudioDevice);
 										isSteamInBigPictureMode = false;
 										break;
 									}
-								}
 							}
-							SetCursorPos(0, 0);
-							SetCursor(NULL);
 							Sleep(2000);
 						}
 					}
 				}
-				Sleep(16); // Check 60 times every second
+				Sleep(2000); // Check 60 times every second
 			}
 			else
 			{
