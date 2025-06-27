@@ -3,30 +3,25 @@
 #define STEAM_DESK_CLASS L"SDL_app"
 #include "Settings.h"
 // bool IsSteamInBigPictureMode();
+void onState(void* context, const CorsairSessionStateChanged* eventData)
+{
+	return;
+}
 SteamHandler::SteamHandler()
 {
+	//CorsairError er = CorsairConnect(onState, NULL);
+	//CorsairError er2 = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
+
+	WCHAR windowsDir[MAX_PATH] = { 0 };
+	std::wstring windowsPath(windowsDir);
+	if (GetWindowsDirectoryW(windowsDir, MAX_PATH))
+	{
+		windowsPath = windowsDir;
+		windowsPath = windowsPath + L"\\Cursors\\";
+	}
 	steamPid = getSteamPid();
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	audioHandler = new AudioHandler();
-	HCURSOR CursorH1 = LoadCursor(NULL, IDC_ARROW);
-	HCURSOR CursorH2 = LoadCursor(NULL, IDC_IBEAM);
-	HCURSOR CursorH3 = LoadCursor(NULL, IDC_WAIT);
-	HCURSOR CursorH4 = LoadCursor(NULL, IDC_CROSS);
-	HCURSOR CursorH5 = LoadCursor(NULL, IDC_UPARROW);
-	HCURSOR CursorH6 = LoadCursor(NULL, IDC_SIZE);
-	HCURSOR CursorH7 = LoadCursor(NULL, IDC_ICON);
-	HCURSOR CursorH8 = LoadCursor(NULL, IDC_SIZENWSE);
-	HCURSOR CursorH9 = LoadCursor(NULL, IDC_SIZEWE);
-	HCURSOR CursorH10 = LoadCursor(NULL, IDC_SIZEWE);
-	HCURSOR CursorH11 = LoadCursor(NULL, IDC_SIZENS);
-	HCURSOR CursorH12 = LoadCursor(NULL, IDC_SIZEALL);
-	HCURSOR CursorH13 = LoadCursor(NULL, IDC_NO);
-	HCURSOR CursorH14 = LoadCursor(NULL, IDC_HAND);
-	HCURSOR CursorH15 = LoadCursor(NULL, IDC_APPSTARTING);
-	HCURSOR CursorH16 = LoadCursor(NULL, IDC_HELP);
-	HCURSOR CursorH17 = LoadCursor(NULL, IDC_PIN);
-	HCURSOR CursorH18 = LoadCursor(NULL, IDC_PERSON);
-
 	while (true)
 	{
 		if (isSteamRunning())
@@ -66,6 +61,8 @@ SteamHandler::SteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+						DestroyCursor(h);
+						CorsairError er = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
 						monHandler->ToggleMode();
 						Sleep(20);
 						audioHandler->InitDefaultAudioDevice(defaultBpAudioDevice);
@@ -76,19 +73,46 @@ SteamHandler::SteamHandler()
 							{
 								HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-										BOOL ret = SetSystemCursor(CursorH1, OCR_NORMAL);
-										ret = SetSystemCursor(CursorH2, OCR_IBEAM);
-										ret = SetSystemCursor(CursorH3, OCR_WAIT);
-										ret = SetSystemCursor(CursorH4, OCR_CROSS);
-										ret = SetSystemCursor(CursorH5, OCR_UP);
-										ret = SetSystemCursor(CursorH7, OCR_SIZENWSE);
-										ret = SetSystemCursor(CursorH8, OCR_SIZENESW);
-										ret = SetSystemCursor(CursorH9, OCR_SIZEWE);
-										ret = SetSystemCursor(CursorH11, OCR_SIZENS);
-										ret = SetSystemCursor(CursorH12, OCR_SIZEALL);
-										ret = SetSystemCursor(CursorH13, OCR_NO);
-										ret = SetSystemCursor(CursorH14, OCR_HAND);
-										ret = SetSystemCursor(CursorH15, OCR_APPSTARTING);
+
+										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
+										BOOL ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NORMAL);
+
+										cursorFileName = windowsPath + L"beam_i.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_IBEAM);
+
+										cursorFileName = windowsPath + L"aero_working.ani";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_WAIT);
+
+										cursorFileName = windowsPath + L"cross_i.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_CROSS);
+
+										cursorFileName = windowsPath + L"aero_up_l.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_UP);
+
+										cursorFileName = windowsPath + L"aero_nwse.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENWSE);
+
+										cursorFileName = windowsPath + L"aero_nesw.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENESW);
+
+										cursorFileName = windowsPath + L"aero_ew.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEWE);
+
+										cursorFileName = windowsPath + L"aero_ns.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENS);
+
+										cursorFileName = windowsPath + L"aero_move.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEALL);
+
+										cursorFileName = windowsPath + L"no_i.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NO);
+
+										cursorFileName = windowsPath + L"aero_link.cur";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_HAND);
+
+										cursorFileName = windowsPath + L"aero_working.ani";
+										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_APPSTARTING);
+
 										monHandler->ToggleMode();
 										audioHandler->InitDefaultAudioDevice(defaultDeskAudioDevice);
 										isSteamInBigPictureMode = false;
