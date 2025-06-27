@@ -89,8 +89,8 @@ void MonitorHandler::ToggleMode()
 		case MonitorHandler::DESK_MODE:
 		{
 			currentMode = MonitorHandler::BP_MODE;
-			TogglePowerCEC(MonitorHandler::BP_MODE);
 			ToggleActiveMonitors(MonitorHandler::BP_MODE);
+			TogglePowerCEC(MonitorHandler::BP_MODE);
 			break;
 		}
 	}
@@ -102,10 +102,6 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 	if (mode == DESK_MODE)
 	{
 		SetDisplayConfig(0, NULL, 0, NULL, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
-	}
-	else if (mode == DESK_MODE)
-	{
-		std::cout << "Switching to Desktop Mode" << std::endl;
 	}
 	HRESULT hr = S_OK;
 	UINT32 NumPathArrayElements = 0;
@@ -195,6 +191,14 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			}
 			else if (mode == DESK_MODE)
 			{
+				DISPLAYCONFIG_PATH_INFO pathInfo[2] = {};
+				pathInfo[0] = PathInfoArray2[0];
+				pathInfo[1] = PathInfoArray2[1];
+
+				PathInfoArray2[0] = pathInfo[1];
+				PathInfoArray2[1] = pathInfoHDMI;
+				PathInfoArray2[2] = PathInfoArray2[0];
+
 				PathInfoArray2[0].flags = DISPLAYCONFIG_PATH_ACTIVE;
 				PathInfoArray2[1].flags = DISPLAYCONFIG_PATH_ACTIVE;
 

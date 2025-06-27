@@ -35,6 +35,7 @@ SteamHandler::SteamHandler()
 					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
 					{
 						monHandler->ToggleMode();
+						Sleep(20);
 						audioHandler->InitDefaultAudioDevice(defaultBpAudioDevice);
 						isSteamInBigPictureMode = true;
 						while (isSteamInBigPictureMode)
@@ -49,11 +50,19 @@ SteamHandler::SteamHandler()
 										break;
 									}
 							}
-							Sleep(2000);
+							POINT cursorPos;
+							if (GetCursorPos(&cursorPos))
+							{
+								if (cursorPos.x == (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y == (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
+								{
+									SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+								}
+							}
+							Sleep(1);
 						}
 					}
 				}
-				Sleep(2000); // Check 60 times every second
+				Sleep(1);
 			}
 			else
 			{
