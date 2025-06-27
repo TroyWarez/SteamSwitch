@@ -1,4 +1,5 @@
 #pragma once
+#define OEMRESOURCE
 #include <windows.h>
 #include <iostream>
 #include "MonitorHandler.h"
