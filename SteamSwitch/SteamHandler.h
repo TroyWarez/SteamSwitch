@@ -2,7 +2,6 @@
 #define OEMRESOURCE
 #include <windows.h>
 #include <iostream>
-#include "iCUESDK.h"
 #include "MonitorHandler.h"
 #include "AudioHandler.h"
 class SteamHandler

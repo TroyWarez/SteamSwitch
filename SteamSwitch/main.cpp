@@ -1,26 +1,34 @@
-#include "steam_api.h"
+#include "Windows.h"
 #include "SteamHandler.h"
-int main()
+#define MAX_LOADSTRING 100
+
+// Global Variables:
+HINSTANCE hInst;                                // current instance
+
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
-	SteamHandler* steamHandler = new SteamHandler();
-	//auto a = monHandler->getMonitorMode();
-//	if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid)) // Replace with your App ID
-//	{
-//		return 1;
-//	}
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	//if (!SteamAPI_Init())
-//	{
-//		printf("Fatal Error - Steam must be running to play this game (SteamAPI_Init() failed).\n");
-	//	return 1;
-	//}
-	//unsigned int batteryVal = SteamUtils()->GetCurrentBatteryPower();
-	// 
-	//delete monHandler;
-	// 	delete audioHandler;
-	//AudioHandler* audioHandler = new AudioHandler();
-	//audioHandler->setDefaultAudioDevice(0);
+	// TODO: Place code here.
+	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
 
-	delete steamHandler;
+	switch (GetLastError())
+	{
+	case ERROR_ALREADY_EXISTS:
+		// app already running
+		break;
+
+	case ERROR_SUCCESS:
+		// first instance
+		SteamHandler* steamHandler = new SteamHandler();
+		break;
+	}
+	// Main message loop:
+
+
 	return 0;
 }
