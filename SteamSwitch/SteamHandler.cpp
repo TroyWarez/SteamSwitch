@@ -23,6 +23,7 @@ SteamHandler::SteamHandler()
 	steamPid = getSteamPid();
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	audioHandler = new AudioHandler();
+	DWORD PID = 0;
 	while (true)
 	{
 		if (isSteamRunning())
@@ -49,6 +50,7 @@ SteamHandler::SteamHandler()
 					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
 					{
 						HWND eH = FindWindowW(L"Progman", NULL);
+						GetWindowThreadProcessId(eH, &PID);
 						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -77,6 +79,10 @@ SteamHandler::SteamHandler()
 								HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
 									if (hWndBP == NULL) {
 
+										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+										TerminateProcess(hProcess, 0);
+										CloseHandle(hProcess);
+										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										BOOL ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NORMAL);
@@ -121,7 +127,6 @@ SteamHandler::SteamHandler()
 										monHandler->ToggleMode();
 										audioHandler->InitDefaultAudioDevice(defaultDeskAudioDevice);
 										isSteamInBigPictureMode = false;
-										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_HIDE);
 										break;
 									}
 							}
