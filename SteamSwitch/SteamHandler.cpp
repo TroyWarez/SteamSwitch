@@ -33,10 +33,8 @@ SteamHandler::SteamHandler()
 		if (isSteamRunning())
 		{
 			HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
-			if (hWnd)
+			if (hWnd == NULL)
 			{
-				if (IsWindowVisible(hWnd) == false) {
-
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
@@ -235,15 +233,9 @@ SteamHandler::SteamHandler()
 								ticks = { 0 };
 								ticks2 = { 2 };
 							}
-							Sleep(1);
 						}
 					}
-				}
 				Sleep(1);
-			}
-			else
-			{
-				Sleep(3000);
 			}
 		}
 	}
