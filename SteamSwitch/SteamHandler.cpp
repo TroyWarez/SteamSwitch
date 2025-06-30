@@ -1,6 +1,7 @@
 #include "SteamHandler.h"
 #define STEAM_DESK L"Steam"
 #define STEAM_DESK_CLASS L"SDL_app"
+#define MOUSE_WAKETIME 50000000
 #include "Settings.h"
 // bool IsSteamInBigPictureMode();
 //void onState(void* context, const CorsairSessionStateChanged* eventData)
@@ -24,6 +25,9 @@ SteamHandler::SteamHandler()
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	audioHandler = new AudioHandler();
 	DWORD PID = 0;
+	LARGE_INTEGER ticks = { 0 };
+	LARGE_INTEGER ticks2 = { 2 };
+	POINT firstCursorPos = { 0 };
 	while (true)
 	{
 		if (isSteamRunning())
@@ -135,8 +139,101 @@ SteamHandler::SteamHandler()
 							{
 								if (cursorPos.x == (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y == (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
 								{
+									HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+									BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+									ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+									ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+									ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+									ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+									DestroyCursor(h);
+									//Dangerous, but it works.
 									SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
 								}
+								else if (cursorPos.x == firstCursorPos.x && cursorPos.y == firstCursorPos.y && ticks.QuadPart == 0 &&
+									cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
+								{
+									QueryPerformanceCounter(&ticks);
+									ticks.QuadPart += MOUSE_WAKETIME;
+
+									std::wstring cursorFileName = windowsPath + L"aero_arrow_l.cur";
+									BOOL ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NORMAL);
+
+									cursorFileName = windowsPath + L"beam_il.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_IBEAM);
+
+									cursorFileName = windowsPath + L"aero_working_l.ani";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_WAIT);
+
+									cursorFileName = windowsPath + L"cross_i.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_CROSS);
+
+									cursorFileName = windowsPath + L"aero_up_l.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_UP);
+
+									cursorFileName = windowsPath + L"aero_nwse.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENWSE);
+
+									cursorFileName = windowsPath + L"aero_nesw.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENESW);
+
+									cursorFileName = windowsPath + L"aero_ew.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEWE);
+
+									cursorFileName = windowsPath + L"aero_ns.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENS);
+
+									cursorFileName = windowsPath + L"aero_move.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEALL);
+
+									cursorFileName = windowsPath + L"no_i.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NO);
+
+									cursorFileName = windowsPath + L"aero_link.cur";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_HAND);
+
+									cursorFileName = windowsPath + L"aero_working_l.ani";
+									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_APPSTARTING);
+								}
+								else if (cursorPos.x != firstCursorPos.x && cursorPos.y != firstCursorPos.y)
+								{
+									ticks = { 0 };
+								}
+							}
+							GetCursorPos(&firstCursorPos);
+							QueryPerformanceCounter(&ticks2);
+							if (ticks.QuadPart != 0 && ticks2.QuadPart >= ticks.QuadPart)
+							{
+								if (cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1))
+								{
+									HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+									BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+									ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+									ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+									ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+									ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+									DestroyCursor(h);
+
+									//Dangerous, but it works.
+									SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+								}
+								ticks = { 0 };
+								ticks2 = { 2 };
 							}
 							Sleep(1);
 						}
