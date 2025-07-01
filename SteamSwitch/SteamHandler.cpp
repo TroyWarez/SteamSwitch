@@ -27,6 +27,13 @@ SteamHandler::SteamHandler()
 	DWORD PID = 0;
 	LARGE_INTEGER ticks = { 0 };
 	LARGE_INTEGER ticks2 = { 2 };
+
+	LARGE_INTEGER xticks = { 0 };
+	LARGE_INTEGER xticks2 = { 2 };
+
+	bool ShouldHideCursor = true;
+	bool ButtonPressed = false;
+	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	while (true)
 	{
@@ -132,6 +139,37 @@ SteamHandler::SteamHandler()
 										break;
 									}
 							}
+							DWORD dwResult = XInputGetState(0, &xstate);
+							if (dwResult == ERROR_SUCCESS)
+							{
+
+								if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+									xticks.QuadPart == 0 && !ButtonPressed )
+								{
+									QueryPerformanceCounter(&xticks);
+									xticks.QuadPart += MOUSE_WAKETIME / 2;
+								}
+								else if (
+									xticks.QuadPart <= xticks2.QuadPart &&
+									xticks2.QuadPart != 2 &&
+									xticks.QuadPart != 0)
+								{
+									(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
+									xticks = { 0 };
+									xticks2 = { 2 };
+									ButtonPressed = true;
+								}
+
+								else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
+								{
+									xticks = { 0 };
+									xticks2 = { 2 };
+									ButtonPressed = false;
+								}
+								QueryPerformanceCounter(&xticks2);
+							}
 							POINT cursorPos;
 							if (GetCursorPos(&cursorPos))
 							{
@@ -153,7 +191,10 @@ SteamHandler::SteamHandler()
 									ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 									DestroyCursor(h);
 									//Dangerous, but it works.
-									SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									if (ShouldHideCursor)
+									{
+										SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									}
 								}
 								else if (cursorPos.x == firstCursorPos.x && cursorPos.y == firstCursorPos.y && ticks.QuadPart == 0 &&
 									cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
@@ -228,7 +269,9 @@ SteamHandler::SteamHandler()
 									DestroyCursor(h);
 
 									//Dangerous, but it works.
-									SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									if (ShouldHideCursor) {
+										SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									}
 								}
 								ticks = { 0 };
 								ticks2 = { 2 };

@@ -1,6 +1,7 @@
 #pragma once
 #define OEMRESOURCE
 #include <windows.h>
+#include <Xinput.h>
 #include <iostream>
 #include "MonitorHandler.h"
 #include "AudioHandler.h"
