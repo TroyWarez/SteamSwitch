@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /SteamSwitch/Settings.h
+/Steam Switch/InvisibleMouse.h
+/Steam Switch/Settings.h
