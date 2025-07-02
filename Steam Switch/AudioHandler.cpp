@@ -67,11 +67,11 @@ void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
             hr = pEnum->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pDevices);
             if (SUCCEEDED(hr))
             {
-                UINT count;
+                UINT count = 0;
                 pDevices->GetCount(&count);
                 if (SUCCEEDED(hr))
                 {
-                    for (int i = 0; i < count; i++)
+                    for (UINT i = 0; i < count; i++)
                     {
                         bool bFind = false;
                         IMMDevice* pDevice;

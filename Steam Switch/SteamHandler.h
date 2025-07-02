@@ -1,8 +1,5 @@
 #pragma once
-#define OEMRESOURCE
-#include <windows.h>
-#include <Xinput.h>
-#include <iostream>
+#include "framework.h"
 #include "MonitorHandler.h"
 #include "AudioHandler.h"
 class SteamHandler

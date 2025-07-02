@@ -1,10 +1,5 @@
 #pragma once
-#include <windows.h>
-#include <mmsystem.h>
-#include <mmdeviceapi.h>
-#include <Functiondiscoverykeys_devpkey.h>
-#include "PolicyConfig.h"
-#include <iostream>
+#include "framework.h"
 class AudioHandler
 {
 public:
