@@ -3,6 +3,7 @@
 #define STEAM_DESK_CLASS L"SDL_app"
 #define MOUSE_WAKETIME 50000000
 #include "Settings.h"
+#include "InvisibleMouse.h"
 // bool IsSteamInBigPictureMode();
 //void onState(void* context, const CorsairSessionStateChanged* eventData)
 //{
@@ -10,6 +11,9 @@
 //}
 SteamHandler::SteamHandler()
 {
+	//HICON h = Load
+	//DWORD er = GetLastError();
+	//BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
 	//CorsairError er = CorsairConnect(onState, NULL);
 	//CorsairError er2 = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
 	WCHAR windowsDir[MAX_PATH] = { 0 };
@@ -94,43 +98,43 @@ SteamHandler::SteamHandler()
 										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
-										BOOL ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NORMAL);
+										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
 										cursorFileName = windowsPath + L"beam_i.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_IBEAM);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
 
 										cursorFileName = windowsPath + L"aero_working.ani";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_WAIT);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_WAIT);
 
 										cursorFileName = windowsPath + L"cross_i.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_CROSS);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_CROSS);
 
 										cursorFileName = windowsPath + L"aero_up_l.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_UP);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_UP);
 
 										cursorFileName = windowsPath + L"aero_nwse.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENWSE);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENWSE);
 
 										cursorFileName = windowsPath + L"aero_nesw.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENESW);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENESW);
 
 										cursorFileName = windowsPath + L"aero_ew.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEWE);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEWE);
 
 										cursorFileName = windowsPath + L"aero_ns.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENS);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENS);
 
 										cursorFileName = windowsPath + L"aero_move.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEALL);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEALL);
 
 										cursorFileName = windowsPath + L"no_i.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NO);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NO);
 
 										cursorFileName = windowsPath + L"aero_link.cur";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_HAND);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_HAND);
 
 										cursorFileName = windowsPath + L"aero_working.ani";
-										ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_APPSTARTING);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
 
 
 										monHandler->ToggleMode();
@@ -175,7 +179,7 @@ SteamHandler::SteamHandler()
 							{
 								if (cursorPos.x == (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y == (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
 								{
-									HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+									HCURSOR h = CreateIconFromResourceEx((PBYTE)&InvisCursorData, sizeof(InvisCursorData), TRUE, 0x00030000, 0, 0, LR_DEFAULTSIZE | LR_DEFAULTSIZE | LR_DEFAULTCOLOR | LR_SHARED);
 									BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
 									ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
 									ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
@@ -203,43 +207,43 @@ SteamHandler::SteamHandler()
 									ticks.QuadPart += MOUSE_WAKETIME;
 
 									std::wstring cursorFileName = windowsPath + L"aero_arrow_l.cur";
-									BOOL ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NORMAL);
+									BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
 									cursorFileName = windowsPath + L"beam_il.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_IBEAM);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
 
 									cursorFileName = windowsPath + L"aero_working_l.ani";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_WAIT);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_WAIT);
 
 									cursorFileName = windowsPath + L"cross_i.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_CROSS);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_CROSS);
 
 									cursorFileName = windowsPath + L"aero_up_l.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_UP);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_UP);
 
 									cursorFileName = windowsPath + L"aero_nwse.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENWSE);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENWSE);
 
 									cursorFileName = windowsPath + L"aero_nesw.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENESW);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENESW);
 
 									cursorFileName = windowsPath + L"aero_ew.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEWE);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEWE);
 
 									cursorFileName = windowsPath + L"aero_ns.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZENS);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENS);
 
 									cursorFileName = windowsPath + L"aero_move.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_SIZEALL);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEALL);
 
 									cursorFileName = windowsPath + L"no_i.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_NO);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NO);
 
 									cursorFileName = windowsPath + L"aero_link.cur";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_HAND);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_HAND);
 
 									cursorFileName = windowsPath + L"aero_working_l.ani";
-									ret = SetSystemCursor(CopyCursor(LoadCursorFromFileW(cursorFileName.c_str())), OCR_APPSTARTING);
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
 								}
 								else if (cursorPos.x != firstCursorPos.x && cursorPos.y != firstCursorPos.y)
 								{
@@ -276,11 +280,12 @@ SteamHandler::SteamHandler()
 								ticks = { 0 };
 								ticks2 = { 2 };
 							}
+							Sleep(1);
 						}
 					}
-				Sleep(1);
 			}
 		}
+		Sleep(1);
 	}
 }
 SteamHandler::~SteamHandler()

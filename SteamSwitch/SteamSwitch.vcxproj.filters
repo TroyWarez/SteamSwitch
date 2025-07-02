@@ -44,5 +44,8 @@
     <ClInclude Include="PolicyConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InvisibleMouse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

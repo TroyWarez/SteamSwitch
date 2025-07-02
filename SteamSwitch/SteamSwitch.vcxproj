@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioHandler.h" />
+    <ClInclude Include="InvisibleMouse.h" />
     <ClInclude Include="MonitorHandler.h" />
     <ClInclude Include="PolicyConfig.h" />
     <ClInclude Include="Settings.h" />
