@@ -169,6 +169,30 @@ int SteamHandler::StartSteamHandler()
 										isSteamInBigPictureMode = false;
 										break;
 									}
+									else
+									{
+										HWND focuedAppH = GetFocus();
+										WCHAR focusedWindowTitle[256] = { 0 };
+										GetWindowTextW(focuedAppH, focusedWindowTitle, 256);
+										std::wstring FocusedTitle(focusedWindowTitle);
+										WCHAR focusedWindowClassName[256] = { 0 };
+										GetClassNameW(focuedAppH, focusedWindowClassName, 256);
+										std::wstring Focusedclassname(focusedWindowClassName);
+
+										HWND foregroundAppH = GetForegroundWindow();
+										WCHAR foregroundWindowTitle[256] = { 0 };
+										GetWindowTextW(foregroundAppH, foregroundWindowTitle, 256);
+										std::wstring ForegroundTitle(foregroundWindowTitle);
+										WCHAR foregroundWindowClassName[256] = { 0 };
+										GetClassNameW(foregroundAppH, foregroundWindowClassName, 256);
+										std::wstring Foregroundclassname(foregroundWindowClassName);
+
+										if (foregroundWindowTitle == title && Foregroundclassname == STEAM_DESK_CLASS &&
+											FocusedTitle != title && Focusedclassname != STEAM_DESK_CLASS)
+										{
+											SetFocus(hWndBP);
+										}
+									}
 								}
 								DWORD dwResult = XInputGetState(0, &xstate);
 								if (dwResult == ERROR_SUCCESS)
