@@ -144,7 +144,13 @@ int SteamHandler::StartSteamHandler()
 									HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
 									if (hWndBP == NULL) {
 										if (hProcessiCue) {
-											TerminateProcess(hProcessiCue, 0);
+											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+											if (hWndIC)
+											{
+												PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
+											}
+											SetWindowPos(hWndBP, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										TerminateProcess(hProcess, 0);
