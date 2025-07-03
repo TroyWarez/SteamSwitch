@@ -1,5 +1,7 @@
 #pragma once
 #include "framework.h"
+int getActiveMonitorCount();
+
 class MonitorHandler
 {
 public:
@@ -12,6 +14,7 @@ public:
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
 	void ToggleMode();
+	int getActiveMonitorCount();
 private:
 	MonitorMode currentMode;
 	CEC::libcec_configuration cec_config;

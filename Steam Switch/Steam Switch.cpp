@@ -4,18 +4,28 @@
 #include "framework.h"
 #include "Steam Switch.h"
 #include "SteamHandler.h"
+#include "AudioHandler.h"
+#include "MonitorHandler.h"
+#include "Settings.h"
 #define MAX_LOADSTRING 100
+#define APPWM_ICONNOTIFY (WM_APP + 1)
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
+// Use a guid to uniquely identify our icon
+class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
+BOOL                AddNotificationIcon(HWND hwnd);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+AudioHandler audioHandler;
+std::wstring defaultAudioDevice = defaultBpAudioDevice;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -27,6 +37,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
 	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
+    MSG msg = {};
 
 	switch (GetLastError())
 	{
@@ -37,35 +48,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	case ERROR_SUCCESS:
 		// first instance
 		SteamHandler* steamHandler = new SteamHandler();
-		break;
+
+		// Initialize global strings
+		LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+		LoadStringW(hInstance, IDC_STEAMSWITCH, szWindowClass, MAX_LOADSTRING);
+		MyRegisterClass(hInstance);
+
+		// Perform application initialization:
+		if (!InitInstance(hInstance, nCmdShow))
+		{
+			return FALSE;
+		}
+
+		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_STEAMSWITCH));
+
+		// Main message loop:
+        return steamHandler->StartSteamHandler();
 	}
-
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_STEAMSWITCH, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
-
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_STEAMSWITCH));
-
-    MSG msg;
-
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-
-    return (int) msg.wParam;
+	return FALSE;
 }
 
 
@@ -118,6 +118,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   //SteamHandler* steamHandler = new SteamHandler();
+
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
 
@@ -138,6 +140,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case APPWM_ICONNOTIFY:
+    {
+		switch (lParam)
+		{
+		case WM_LBUTTONUP:
+            PostQuitMessage(0);
+			break;
+		}
+        break;
+    }
+    case WM_CREATE:
+        {
+            AddNotificationIcon(hWnd);
+            break;
+		}
+    case WM_DEVICECHANGE:
+    {
+        if (wParam == DBT_DEVNODES_CHANGED)
+        {
+			audioHandler.InitDefaultAudioDevice(defaultBpAudioDevice);
+		}
+        break;
+    }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -169,4 +194,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
+}
+
+BOOL AddNotificationIcon(HWND hwnd)
+{
+	NOTIFYICONDATA nid;
+        nid.hWnd = hwnd;
+	    nid.cbSize = sizeof(NOTIFYICONDATAA_V3_SIZE);
+	    nid.uTimeout = 500;
+	    nid.uID = 1;
+	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
+	    nid.uCallbackMessage = WM_USER + 200;
+	    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_STEAMSWITCH));
+	    lstrcpyA(nid.szTip, "Steam Switch");
+	    lstrcpyA(nid.szInfoTitle, "Steam Switch");
+        nid.uCallbackMessage = APPWM_ICONNOTIFY;
+	return Shell_NotifyIconA(NIM_ADD, &nid);
 }
