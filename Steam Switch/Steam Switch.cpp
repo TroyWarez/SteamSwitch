@@ -123,6 +123,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
 
+   AddNotificationIcon(hWnd);
+
    return TRUE;
 }
 
@@ -140,6 +142,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_CREATE:
+    {
+        AddNotificationIcon(hWnd);
+        break;
+    }
     case APPWM_ICONNOTIFY:
     {
 		switch (lParam)
@@ -150,11 +157,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         break;
     }
-    case WM_CREATE:
-        {
-            AddNotificationIcon(hWnd);
-            break;
-		}
     case WM_DEVICECHANGE:
     {
         if (wParam == DBT_DEVNODES_CHANGED)

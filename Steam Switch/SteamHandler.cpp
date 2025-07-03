@@ -1,6 +1,8 @@
 #include "SteamHandler.h"
 #define STEAM_DESK L"Steam"
 #define STEAM_DESK_CLASS L"SDL_app"
+#define ICUE_CLASS L"Qt672QWindowIcon"
+#define ICUE_TITLE L"iCUE"
 #define MOUSE_WAKETIME 50000000
 #include "Settings.h"
 #include "InvisibleMouse.h"
@@ -12,19 +14,21 @@ SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+} 
+BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
+{
+	DWORD lpdwProcessId;
+	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
+	if (lpdwProcessId == lParam)
+	{
+		ShowWindow(hwnd, SW_HIDE);
+		return FALSE;
+	}
+	return TRUE;
 }
 int SteamHandler::StartSteamHandler()
 {
-	//HICON h = Load
-	//DWORD er = GetLastError();
-	//BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-	CorsairError er = CorsairConnect(onState, NULL);
-	//CorsairDeviceInfo devices[CORSAIR_DEVICE_COUNT_MAX];
-	//CorsairDeviceFilter filter = { 0 };
-	//filter.deviceTypeMask = CorsairDeviceType::CDT_Keyboard;
-	//int size = sizeof(devices);
-	//er = CorsairGetDevices(&filter, CORSAIR_DEVICE_COUNT_MAX, devices, &size);
-	//CorsairError er2 = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
+	bool ShouldRightClick = true;
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
 	std::wstring windowsExplorerPath(windowsDir);
@@ -46,6 +50,11 @@ int SteamHandler::StartSteamHandler()
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	MSG msg;
+	WCHAR programFiles[MAX_PATH] = { 0 };
+	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
+	std::wstring programFilesPath(programFiles);
+	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -65,6 +74,17 @@ int SteamHandler::StartSteamHandler()
 				HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
 				if (hWnd == NULL)
 				{
+					SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
+					sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
+					sei.lpFile = programFilesPath.c_str();        // File to execute
+					sei.nShow = SW_HIDE;       // How to show the window
+					HANDLE hProcessiCue = NULL;
+
+					if (ShellExecuteExW(&sei)) {
+						if (sei.hProcess != NULL) {
+							hProcessiCue = sei.hProcess;
+						}
+					}
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
@@ -123,7 +143,9 @@ int SteamHandler::StartSteamHandler()
 								{
 									HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-
+										if (hProcessiCue) {
+											TerminateProcess(hProcessiCue, 0);
+										}
 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										TerminateProcess(hProcess, 0);
 										CloseHandle(hProcess);
@@ -184,13 +206,23 @@ int SteamHandler::StartSteamHandler()
 										GetClassNameW(foreHwnd, windowClassName, 256);
 										std::wstring classname(windowClassName);
 
-										if(windowClassName == STEAM_DESK_CLASS && title2 == title.c_str())
+										if (classname == STEAM_DESK_CLASS && title2 == title.c_str())
 										{
-											SwitchToThisWindow(hWndBP, FALSE);
+											PostMessage(hWndBP, WM_LBUTTONDOWN, 0, 0);
+											PostMessage(hWndBP, WM_LBUTTONUP, 0, 0);
+										}
+										else
+										{
+											ShouldRightClick = true;
+										}
+
+										if (classname == ICUE_CLASS && title2 == ICUE_TITLE)
+										{
+											ShowWindow(foreHwnd, SW_HIDE);
 										}
 									}
 								}
-								DWORD dwResult = XInputGetState(0, &xstate);
+								DWORD dwResult = XInputGetState(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
 								{
 
