@@ -4,11 +4,10 @@
 #define MOUSE_WAKETIME 50000000
 #include "Settings.h"
 #include "InvisibleMouse.h"
-// bool IsSteamInBigPictureMode();
-//void onState(void* context, const CorsairSessionStateChanged* eventData)
-//{
+void onState(void* context, const CorsairSessionStateChanged* eventData)
+{
 	//return;
-//}
+}
 SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
@@ -19,7 +18,12 @@ int SteamHandler::StartSteamHandler()
 	//HICON h = Load
 	//DWORD er = GetLastError();
 	//BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-	//CorsairError er = CorsairConnect(onState, NULL);
+	CorsairError er = CorsairConnect(onState, NULL);
+	//CorsairDeviceInfo devices[CORSAIR_DEVICE_COUNT_MAX];
+	//CorsairDeviceFilter filter = { 0 };
+	//filter.deviceTypeMask = CorsairDeviceType::CDT_Keyboard;
+	//int size = sizeof(devices);
+	//er = CorsairGetDevices(&filter, CORSAIR_DEVICE_COUNT_MAX, devices, &size);
 	//CorsairError er2 = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
@@ -171,26 +175,18 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
-										HWND focuedAppH = GetFocus();
-										WCHAR focusedWindowTitle[256] = { 0 };
-										GetWindowTextW(focuedAppH, focusedWindowTitle, 256);
-										std::wstring FocusedTitle(focusedWindowTitle);
-										WCHAR focusedWindowClassName[256] = { 0 };
-										GetClassNameW(focuedAppH, focusedWindowClassName, 256);
-										std::wstring Focusedclassname(focusedWindowClassName);
+										HWND foreHwnd = GetForegroundWindow();
 
-										HWND foregroundAppH = GetForegroundWindow();
-										WCHAR foregroundWindowTitle[256] = { 0 };
-										GetWindowTextW(foregroundAppH, foregroundWindowTitle, 256);
-										std::wstring ForegroundTitle(foregroundWindowTitle);
-										WCHAR foregroundWindowClassName[256] = { 0 };
-										GetClassNameW(foregroundAppH, foregroundWindowClassName, 256);
-										std::wstring Foregroundclassname(foregroundWindowClassName);
+										WCHAR windowTitle[256] = { 0 };
+										GetWindowTextW(foreHwnd, windowTitle, 256);
+										std::wstring title2(windowTitle);
+										WCHAR windowClassName[256] = { 0 };
+										GetClassNameW(foreHwnd, windowClassName, 256);
+										std::wstring classname(windowClassName);
 
-										if (foregroundWindowTitle == title && Foregroundclassname == STEAM_DESK_CLASS &&
-											FocusedTitle != title && Focusedclassname != STEAM_DESK_CLASS)
+										if(windowClassName == STEAM_DESK_CLASS && title2 == title.c_str())
 										{
-											SetFocus(hWndBP);
+											SwitchToThisWindow(hWndBP, FALSE);
 										}
 									}
 								}

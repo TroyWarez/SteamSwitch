@@ -27,3 +27,5 @@
 #include <iostream>
 
 #include <cec.h>
+
+#include <iCUESDK.h>
