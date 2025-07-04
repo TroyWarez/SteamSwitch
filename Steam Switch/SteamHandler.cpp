@@ -83,7 +83,6 @@ int SteamHandler::StartSteamHandler()
 
 	bool ShouldHideCursor = true;
 	bool ButtonPressed = false;
-	bool SelectButtonPressed = false;
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	MSG msg;
@@ -255,7 +254,7 @@ int SteamHandler::StartSteamHandler()
 											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 											if (hWndIC)
 											{
-												ShowWindow(hWndIC, SW_HIDE);
+												PostMessage(hWndIC, WM_CLOSE, 0, 0);
 												GetWindowThreadProcessId(hWndIC, &icuePid);
 												ShowWindow(hWndBP, SW_SHOW);
 												SetActiveWindow(hWndBP);
@@ -302,25 +301,6 @@ int SteamHandler::StartSteamHandler()
 										xticks = { 0 };
 										xticks2 = { 2 };
 										ButtonPressed = false;
-									}
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-									{
-										if (!SelectButtonPressed)
-										{
-											if (!isSteamInGame())
-											{
-												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
-												ShowWindow(hWndBP2, SW_SHOW);
-												SetActiveWindow(hWndBP2);
-												SetForegroundWindow(hWndBP2);
-												SwitchToThisWindow(hWndBP2, TRUE);
-											}
-											SelectButtonPressed = true;
-										}
-									}
-									else
-									{
-										SelectButtonPressed = false;
 									}
 									QueryPerformanceCounter(&xticks2);
 								}

@@ -164,6 +164,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			std::wstring title = steamHandler->getSteamBigPictureModeTitle();
 			if (fOpen == FALSE)
 			{
+                Sleep(1000);
 				HWND foreHwnd = GetForegroundWindow();
 
 				WCHAR windowTitle[256] = { 0 };
@@ -174,7 +175,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				std::wstring classname(windowClassName);
                 if (title2 == title && classname == SDL_CLASS)
                 {
-                    ShowWindow(hWnd, SW_RESTORE);
+                    ShowWindow(foreHwnd, SW_RESTORE);
 					SetActiveWindow(foreHwnd);
 					SwitchToThisWindow(foreHwnd, FALSE);
                 }
