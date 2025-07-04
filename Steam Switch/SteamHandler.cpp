@@ -201,16 +201,6 @@ int SteamHandler::StartSteamHandler()
 										GetClassNameW(foreHwnd, windowClassName, 256);
 										std::wstring classname(windowClassName);
 
-										if (classname == STEAM_DESK_CLASS && title2 == title.c_str())
-										{
-											PostMessage(hWndBP, WM_LBUTTONDOWN, 0, 0);
-											PostMessage(hWndBP, WM_LBUTTONUP, 0, 0);
-										}
-										else
-										{
-											ShouldRightClick = true;
-										}
-
 										HWND icueHwnd = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 
 
@@ -222,7 +212,10 @@ int SteamHandler::StartSteamHandler()
 										{
 											ShowWindow(icueHwnd, SW_HIDE);
 											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-											SwitchToThisWindow(hWndBP, TRUE);
+											SwitchToThisWindow(hWndBP, FALSE);
+											SetForegroundWindow(hWndBP);
+											PostMessage(hWndBP, WM_LBUTTONDOWN, 0, 0);
+											PostMessage(hWndBP, WM_LBUTTONUP, 0, 0);
 										}
 									}
 								}

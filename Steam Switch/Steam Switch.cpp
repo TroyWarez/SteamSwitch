@@ -215,7 +215,7 @@ BOOL AddNotificationIcon(HWND hwnd)
 	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
 	    nid.uCallbackMessage = WM_USER + 200;
 	    nid.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_STEAMSWITCH));
-	    lstrcpyW(nid.szTip, L"Steam Switch");
+	    lstrcpyW(nid.szTip, L"Click here to close Steam Switch");
 	    lstrcpyW(nid.szInfoTitle, L"Steam Switch");
         nid.uCallbackMessage = APPWM_ICONNOTIFY;
 	return Shell_NotifyIconW(NIM_ADD, &nid);
