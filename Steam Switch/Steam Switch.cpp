@@ -164,41 +164,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			std::wstring title = steamHandler->getSteamBigPictureModeTitle();
 			if (fOpen == FALSE)
 			{
-                    HWND hWndiCue = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-                    if (hWndiCue)
-                    {
-                        ShowWindow(hWndiCue, SW_HIDE);
-						HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
-						if (hWnd)
-						{
-							SetForegroundWindow(hWnd);
-						}
-                    }
-					Sleep(1000);
-					HWND foreHwnd = GetForegroundWindow();
-
-					WCHAR windowTitle[256] = { 0 };
-					GetWindowTextW(foreHwnd, windowTitle, 256);
-					std::wstring title2(windowTitle);
-					WCHAR windowClassName[256] = { 0 };
-					GetClassNameW(foreHwnd, windowClassName, 256);
-					std::wstring classname(windowClassName);
-					if (title2 == title && classname == SDL_CLASS)
+				HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
+				if (hWndBP && steamHandler->isSteamRunning() && !steamHandler->isSteamInGame())
 					{
-						HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
-						SetActiveWindow(hWnd);
-						SwitchToThisWindow(hWnd, TRUE);
+						SetActiveWindow(hWndBP);
+						PostMessageW(hWndBP, WM_SETFOCUS, 0, 0);
+						SetForegroundWindow(hWndBP);
                         break;
 					}
 			}
-            else
-            {
-				HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
-                if (hWnd)
-                {
-                    SetForegroundWindow(hWnd);
-                }
-            }
         }
 
         break;

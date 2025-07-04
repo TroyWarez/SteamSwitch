@@ -6,7 +6,7 @@ SteamHandler::SteamHandler()
 	steamPid = getSteamPid();
 	gamePid = 0;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
-	HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+	HMODULE hKernel32 = LoadLibraryW(L"NTDLL.DLL");
 	if (hKernel32)
 	{
 		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
