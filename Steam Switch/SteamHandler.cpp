@@ -140,7 +140,6 @@ int SteamHandler::StartSteamHandler()
 												PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 											}
 											SetWindowPos(hWndBP, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										TerminateProcess(hProcess, 0);

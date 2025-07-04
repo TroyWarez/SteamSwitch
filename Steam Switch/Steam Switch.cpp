@@ -207,16 +207,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 BOOL AddNotificationIcon(HWND hwnd)
 {
-	NOTIFYICONDATA nid;
+	NOTIFYICONDATAW nid;
         nid.hWnd = hwnd;
-	    nid.cbSize = sizeof(NOTIFYICONDATAA_V3_SIZE);
+	    nid.cbSize = sizeof(NOTIFYICONDATAW_V3_SIZE);
 	    nid.uTimeout = 500;
 	    nid.uID = 1;
 	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
 	    nid.uCallbackMessage = WM_USER + 200;
-	    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_STEAMSWITCH));
-	    lstrcpyA(nid.szTip, "Steam Switch");
-	    lstrcpyA(nid.szInfoTitle, "Steam Switch");
+	    nid.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_STEAMSWITCH));
+	    lstrcpyW(nid.szTip, L"Steam Switch");
+	    lstrcpyW(nid.szInfoTitle, L"Steam Switch");
         nid.uCallbackMessage = APPWM_ICONNOTIFY;
-	return Shell_NotifyIconA(NIM_ADD, &nid);
+	return Shell_NotifyIconW(NIM_ADD, &nid);
 }
