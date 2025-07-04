@@ -174,9 +174,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				std::wstring classname(windowClassName);
                 if (title2 == title && classname == SDL_CLASS)
                 {
-					SetForegroundWindow(foreHwnd);
+                    ShowWindow(hWnd, SW_RESTORE);
 					SetActiveWindow(foreHwnd);
-					SwitchToThisWindow(foreHwnd, TRUE);
+					SwitchToThisWindow(foreHwnd, FALSE);
                 }
 			}
         }

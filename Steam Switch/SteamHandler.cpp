@@ -109,6 +109,17 @@ int SteamHandler::StartSteamHandler()
 				HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 				if (hWnd == NULL)
 				{
+					SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
+					sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
+					sei.lpFile = programFilesPath.c_str();        // File to execute
+					sei.nShow = SW_HIDE;       // How to show the window
+					HANDLE hProcessiCue = NULL;
+
+					if (ShellExecuteExW(&sei)) {
+						if (sei.hProcess != NULL) {
+							hProcessiCue = sei.hProcess;
+						}
+					}
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
@@ -126,14 +137,14 @@ int SteamHandler::StartSteamHandler()
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
 						steamBigPictureModeTitle = title;
-						//HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-						//if (bpHwnd){
-							//SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						//}
+						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
+						if (bpHwnd){
+							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						}
 
-						//HWND eH = FindWindowW(L"Progman", NULL);
-						//GetWindowThreadProcessId(eH, &PID);
-						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
+						HWND eH = FindWindowW(L"Progman", NULL);
+						GetWindowThreadProcessId(eH, &PID);
+						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -172,9 +183,13 @@ int SteamHandler::StartSteamHandler()
 								{
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-										//TerminateProcess(hProcess, 0);
-										//CloseHandle(hProcess);
+										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+										TerminateProcess(hProcess, 0);
+										CloseHandle(hProcess);
+										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
+
+										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+										PostMessage(eH2, /*WM_QUIT*/ 0x12, 0, 0);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
@@ -222,6 +237,14 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
+										if (hProcessiCue) {
+											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+											if (hWndIC)
+											{
+												ShowWindow(hWndIC, SW_HIDE);
+											}
+											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+										}
 										HWND foreHwnd = GetForegroundWindow();
 
 										WCHAR windowTitle[256] = { 0 };
