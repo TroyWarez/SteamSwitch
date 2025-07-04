@@ -73,6 +73,8 @@ int SteamHandler::StartSteamHandler()
 		windowsPath = windowsPath + L"\\Cursors\\";
 	}
 	DWORD PID = 0;
+	DWORD icuePid = 0;
+
 	LARGE_INTEGER ticks = { 0 };
 	LARGE_INTEGER ticks2 = { 2 };
 
@@ -125,6 +127,10 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
+						if (bpHwnd) {
+							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						}
 						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 						sei.lpFile = programFilesPath.c_str();        // File to execute
@@ -137,10 +143,6 @@ int SteamHandler::StartSteamHandler()
 							}
 						}
 						steamBigPictureModeTitle = title;
-						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-						if (bpHwnd){
-							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						}
 
 						HWND eH = FindWindowW(L"Progman", NULL);
 						GetWindowThreadProcessId(eH, &PID);
@@ -186,11 +188,17 @@ int SteamHandler::StartSteamHandler()
 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										TerminateProcess(hProcess, 0);
 										CloseHandle(hProcess);
+
+										HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+										TerminateProcess(hProcessIcUe, 0);
+										CloseHandle(hProcessIcUe);
+
 										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-										PostMessage(eH2, /*WM_QUIT*/ 0x12, 0, 0);
-
+										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
+										TerminateProcess(hProcessIcUeProc, 0);
+										CloseHandle(hProcessIcUeProc);
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
@@ -241,10 +249,10 @@ int SteamHandler::StartSteamHandler()
 											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 											if (hWndIC)
 											{
-												ShowWindow(hWndIC, SW_HIDE);
-												Sleep(500);
+												GetWindowThreadProcessId(hWndIC, &icuePid);
+												PostMessage(hWndIC, WM_CLOSE, 0, 0);
 											}
-											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
 										HWND foreHwnd = GetForegroundWindow();
 
