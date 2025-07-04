@@ -164,7 +164,6 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
 						monHandler->ToggleMode();
-						Sleep(20);
 						isSteamInBigPictureMode = true;
 
 						while (isSteamInBigPictureMode)
@@ -249,33 +248,25 @@ int SteamHandler::StartSteamHandler()
 											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 											if (hWndIC)
 											{
+												ShowWindow(hWndIC, SW_HIDE);
 												GetWindowThreadProcessId(hWndIC, &icuePid);
+												SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 												PostMessage(hWndIC, WM_CLOSE, 0, 0);
+												Sleep(1000);
+												ShowWindow(bpHwnd, SW_SHOW);
+												SetActiveWindow(bpHwnd);
+												SetForegroundWindow(bpHwnd);
+												SwitchToThisWindow(bpHwnd, TRUE);
 											}
-											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
 										HWND foreHwnd = GetForegroundWindow();
-
+										 
 										WCHAR windowTitle[256] = { 0 };
 										GetWindowTextW(foreHwnd, windowTitle, 256);
 										std::wstring title2(windowTitle);
 										WCHAR windowClassName[256] = { 0 };
 										GetClassNameW(foreHwnd, windowClassName, 256);
 										std::wstring classname(windowClassName);
-
-										HWND icueHwnd = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-
-										if (icueHwnd)
-										{
-											ShowWindow(icueHwnd, SW_HIDE);
-										}
-
-										//if (classname != SDL_CLASS && title2 != STEAM_DESK && !isSteamInGame())
-										//{
-											//SetActiveWindow(icueHwnd);
-											//SwitchToThisWindow(icueHwnd, TRUE);
-											//SetWindowPos(hWndBP, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-										//}
 									}
 								}
 								DWORD dwResult = XInputGetState(0, &xstate); 
