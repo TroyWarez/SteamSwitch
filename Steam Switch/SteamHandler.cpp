@@ -222,8 +222,8 @@ int SteamHandler::StartSteamHandler()
 										else if (icueHwnd)
 										{
 											ShowWindow(icueHwnd, SW_HIDE);
-											HWND BPhWnd = FindWindowW(STEAM_DESK_CLASS,title.c_str());
-											SetWindowPos(BPhWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											SwitchToThisWindow(hWndBP, TRUE);
 										}
 									}
 								}
