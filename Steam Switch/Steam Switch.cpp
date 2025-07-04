@@ -160,21 +160,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         if (steamHandler != nullptr)
         {
-			BOOL fOpen = (BOOL)lParam;
-			std::wstring title = steamHandler->getSteamBigPictureModeTitle();
-			if (fOpen == FALSE)
-			{
-				HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
-				if (hWndBP && steamHandler->isSteamRunning() && !steamHandler->isSteamInGame())
+				BOOL fOpen = (BOOL)lParam;
+				std::wstring title = steamHandler->getSteamBigPictureModeTitle();
+                if (fOpen == FALSE)
+                {
+					HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
+					if (hWndBP && steamHandler->isSteamRunning() && !steamHandler->isSteamInGame())
 					{
+                        Sleep(1000);
 						SetActiveWindow(hWndBP);
 						PostMessageW(hWndBP, WM_SETFOCUS, 0, 0);
 						SetForegroundWindow(hWndBP);
-                        break;
+						break;
 					}
-			}
+                }
         }
 
+		AddNotificationIcon(hWnd);
         break;
     }
     case APPWM_ICONNOTIFY:
