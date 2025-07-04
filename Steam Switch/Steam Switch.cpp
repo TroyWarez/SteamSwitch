@@ -10,7 +10,7 @@
 
 #define MAX_LOADSTRING 100
 #define APPWM_ICONNOTIFY (WM_APP + 1)
-#define SDL_CLASS L"SDL_app"
+
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -164,22 +164,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			std::wstring title = steamHandler->getSteamBigPictureModeTitle();
 			if (fOpen == FALSE)
 			{
-                Sleep(1000);
-				HWND foreHwnd = GetForegroundWindow();
+                    HWND hWndiCue = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+                    if (hWndiCue)
+                    {
+                        ShowWindow(hWndiCue, SW_HIDE);
+						HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
+						if (hWnd)
+						{
+							SetForegroundWindow(hWnd);
+						}
+                    }
+					Sleep(1000);
+					HWND foreHwnd = GetForegroundWindow();
 
-				WCHAR windowTitle[256] = { 0 };
-				GetWindowTextW(foreHwnd, windowTitle, 256);
-				std::wstring title2(windowTitle);
-				WCHAR windowClassName[256] = { 0 };
-				GetClassNameW(foreHwnd, windowClassName, 256);
-				std::wstring classname(windowClassName);
-                if (title2 == title && classname == SDL_CLASS)
-                {
-                    ShowWindow(foreHwnd, SW_RESTORE);
-					SetActiveWindow(foreHwnd);
-					SwitchToThisWindow(foreHwnd, FALSE);
-                }
+					WCHAR windowTitle[256] = { 0 };
+					GetWindowTextW(foreHwnd, windowTitle, 256);
+					std::wstring title2(windowTitle);
+					WCHAR windowClassName[256] = { 0 };
+					GetClassNameW(foreHwnd, windowClassName, 256);
+					std::wstring classname(windowClassName);
+					if (title2 == title && classname == SDL_CLASS)
+					{
+						HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
+						SetActiveWindow(hWnd);
+						SwitchToThisWindow(hWnd, TRUE);
+                        break;
+					}
 			}
+            else
+            {
+				HWND hWnd = FindWindowW(SDL_CLASS, title.c_str());
+                if (hWnd)
+                {
+                    SetForegroundWindow(hWnd);
+                }
+            }
         }
 
         break;
