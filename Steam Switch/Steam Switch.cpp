@@ -123,8 +123,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
 
-   AddNotificationIcon(hWnd);
-
    return TRUE;
 }
 
@@ -140,11 +138,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static UINT s_uTaskbarRestart = 0;
+
     switch (message)
     {
     case WM_CREATE:
     {
         AddNotificationIcon(hWnd);
+        s_uTaskbarRestart = RegisterWindowMessageW(L"TaskbarCreated");
         break;
     }
     case APPWM_ICONNOTIFY:
@@ -193,7 +194,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+    {
+        if (message == s_uTaskbarRestart)
+        {
+            AddNotificationIcon(hWnd);
+        }
+		return DefWindowProc(hWnd, message, wParam, lParam);
+    }
     }
     return 0;
 }

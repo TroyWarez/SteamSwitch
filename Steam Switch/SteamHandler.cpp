@@ -6,26 +6,11 @@
 #define MOUSE_WAKETIME 50000000
 #include "Settings.h"
 #include "InvisibleMouse.h"
-void onState(void* context, const CorsairSessionStateChanged* eventData)
-{
-	//return;
-}
 SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 } 
-BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
-{
-	DWORD lpdwProcessId;
-	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
-	if (lpdwProcessId == lParam)
-	{
-		ShowWindow(hwnd, SW_HIDE);
-		return FALSE;
-	}
-	return TRUE;
-}
 int SteamHandler::StartSteamHandler()
 {
 	bool ShouldRightClick = true;
@@ -101,6 +86,11 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
 					{
+						HWND bpHwnd = FindWindowW(STEAM_DESK_CLASS, title.c_str());
+						if (bpHwnd){
+							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						}
+
 						HWND eH = FindWindowW(L"Progman", NULL);
 						GetWindowThreadProcessId(eH, &PID);
 						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
@@ -222,9 +212,18 @@ int SteamHandler::StartSteamHandler()
 											ShouldRightClick = true;
 										}
 
+										HWND icueHwnd = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+
+
 										if (classname == ICUE_CLASS && title2 == ICUE_TITLE)
 										{
-											ShowWindow(foreHwnd, SW_HIDE);
+											ShowWindow(icueHwnd, SW_HIDE);
+										}
+										else if (icueHwnd)
+										{
+											ShowWindow(icueHwnd, SW_HIDE);
+											HWND BPhWnd = FindWindowW(STEAM_DESK_CLASS,title.c_str());
+											SetWindowPos(BPhWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
 									}
 								}
@@ -357,7 +356,6 @@ int SteamHandler::StartSteamHandler()
 										ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 										DestroyCursor(h);
 
-										//Dangerous, but it works.
 										if (ShouldHideCursor) {
 											SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
 										}
