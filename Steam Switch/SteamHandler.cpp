@@ -90,7 +90,7 @@ int SteamHandler::StartSteamHandler()
 	WCHAR programFiles[MAX_PATH] = { 0 };
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
-	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE.exe";
 
 	while (true)
 	{
@@ -128,9 +128,6 @@ int SteamHandler::StartSteamHandler()
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
 						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-						if (bpHwnd) {
-							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						}
 						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 						sei.lpFile = programFilesPath.c_str();        // File to execute
@@ -188,9 +185,19 @@ int SteamHandler::StartSteamHandler()
 										TerminateProcess(hProcess, 0);
 										CloseHandle(hProcess);
 
-										HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-										TerminateProcess(hProcessIcUe, 0);
-										CloseHandle(hProcessIcUe);
+										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+										if (hWndIC)
+										{
+											PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
+										}
+										else
+										{
+											HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
+											TerminateProcess(hProcessIcUe, 0);
+											CloseHandle(hProcessIcUe);
+										}
+
+
 
 										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
 
@@ -250,15 +257,13 @@ int SteamHandler::StartSteamHandler()
 											{
 												ShowWindow(hWndIC, SW_HIDE);
 												GetWindowThreadProcessId(hWndIC, &icuePid);
-												SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-												PostMessage(hWndIC, WM_CLOSE, 0, 0);
-												Sleep(1000);
-												ShowWindow(bpHwnd, SW_SHOW);
-												SetActiveWindow(bpHwnd);
-												SetForegroundWindow(bpHwnd);
-												SwitchToThisWindow(bpHwnd, TRUE);
+												ShowWindow(hWndBP, SW_SHOW);
+												SetActiveWindow(hWndBP);
+												SetForegroundWindow(hWndBP);
+												SwitchToThisWindow(hWndBP, TRUE);
 											}
 										}
+
 										HWND foreHwnd = GetForegroundWindow();
 										 
 										WCHAR windowTitle[256] = { 0 };
