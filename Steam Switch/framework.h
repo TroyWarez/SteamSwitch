@@ -13,6 +13,7 @@
 #include <commctrl.h>
 #include <Dbt.h>
 #include <Xinput.h>
+#include <psapi.h>
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>
@@ -25,5 +26,6 @@
 #include <Functiondiscoverykeys_devpkey.h>
 #include "PolicyConfig.h"
 #include <iostream>
+#include <vector>
 
 #include <cec.h>

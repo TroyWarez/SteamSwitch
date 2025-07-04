@@ -1,6 +1,6 @@
 #include "SteamHandler.h"
 #define STEAM_DESK L"Steam"
-#define STEAM_DESK_CLASS L"SDL_app"
+#define SDL_CLASS L"SDL_app"
 #define ICUE_CLASS L"Qt672QWindowIcon"
 #define ICUE_TITLE L"iCUE"
 #define MOUSE_WAKETIME 50000000
@@ -9,10 +9,59 @@
 SteamHandler::SteamHandler()
 {
 	steamPid = getSteamPid();
+	gamePid = 0;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+	HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+	if (hKernel32)
+	{
+		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
+	}
 } 
+bool SteamHandler::isSteamInGame()
+{
+	steamPid = getSteamPid();
+	std::vector <std::wstring> processNames;
+	ULONG_PTR pbi[6];
+	ULONG ulSize = 0;
+	HMODULE hMods[1024] = { 0 };
+	DWORD cbNeeded = 0;
+	std::vector<DWORD> processIds(1024);
+	if (EnumProcesses(processIds.data(), ((DWORD)processIds.size() * sizeof(DWORD)), &cbNeeded))
+	{
+			for (size_t i = 0; i < processIds.size(); i++)
+			{
+				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i]);
+				if (hProcess)
+				{
+					WCHAR szProcessName[MAX_PATH] = { 0 };
+					if (GetModuleBaseNameW(hProcess, hMods[i], szProcessName, sizeof(szProcessName) / sizeof(WCHAR)))
+					{
+						processNames.push_back(szProcessName);
+
+						if (NtQueryInformationProcess) {
+							if (NtQueryInformationProcess(hProcess, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
+							{
+								std::wstring processName(szProcessName);
+
+								if (pbi[5] == steamPid && processName != L"steamwebhelper.exe")
+								{
+									gamePid = processIds[i];
+									return true;
+								}
+							}
+						}
+						CloseHandle(hProcess);
+					}
+				}
+			}
+	}
+	return false;
+}
 int SteamHandler::StartSteamHandler()
 {
+	//bool isSteamInGameBool = isSteamInGame();
+	bool TopMost = false;
+	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
@@ -32,6 +81,7 @@ int SteamHandler::StartSteamHandler()
 
 	bool ShouldHideCursor = true;
 	bool ButtonPressed = false;
+	bool SelectButtonPressed = false;
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	MSG msg;
@@ -56,20 +106,9 @@ int SteamHandler::StartSteamHandler()
 		{
 			if (isSteamRunning())
 			{
-				HWND hWnd = FindWindowW(STEAM_DESK_CLASS, STEAM_DESK);
+				HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 				if (hWnd == NULL)
 				{
-					SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
-					sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
-					sei.lpFile = programFilesPath.c_str();        // File to execute
-					sei.nShow = SW_HIDE;       // How to show the window
-					HANDLE hProcessiCue = NULL;
-
-					if (ShellExecuteExW(&sei)) {
-						if (sei.hProcess != NULL) {
-							hProcessiCue = sei.hProcess;
-						}
-					}
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
@@ -84,16 +123,17 @@ int SteamHandler::StartSteamHandler()
 					GetClassNameW(foreHwnd, windowClassName, 256);
 					std::wstring classname(windowClassName);
 
-					if (subtitle == STEAM_DESK && classname == STEAM_DESK_CLASS && title != subtitle)
+					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
-						HWND bpHwnd = FindWindowW(STEAM_DESK_CLASS, title.c_str());
-						if (bpHwnd){
-							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						}
+						steamBigPictureModeTitle = title;
+						//HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
+						//if (bpHwnd){
+							//SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						//}
 
-						HWND eH = FindWindowW(L"Progman", NULL);
-						GetWindowThreadProcessId(eH, &PID);
-						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
+						//HWND eH = FindWindowW(L"Progman", NULL);
+						//GetWindowThreadProcessId(eH, &PID);
+						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -110,7 +150,6 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-						//CorsairError er = CorsairRequestControl(NULL, CAL_ExclusiveLightingControlAndKeyEventsListening);
 						monHandler->ToggleMode();
 						Sleep(20);
 						isSteamInBigPictureMode = true;
@@ -131,20 +170,11 @@ int SteamHandler::StartSteamHandler()
 							{
 								if (isSteamRunning())
 								{
-									HWND hWndBP = FindWindowW(STEAM_DESK_CLASS, title.c_str());
+									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-										if (hProcessiCue) {
-											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-											if (hWndIC)
-											{
-												PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
-											}
-											SetWindowPos(hWndBP, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-										}
-										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-										TerminateProcess(hProcess, 0);
-										CloseHandle(hProcess);
-										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
+										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+										//TerminateProcess(hProcess, 0);
+										//CloseHandle(hProcess);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
@@ -203,20 +233,17 @@ int SteamHandler::StartSteamHandler()
 
 										HWND icueHwnd = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 
+										if (icueHwnd)
+										{
+											ShowWindow(icueHwnd, SW_HIDE);
+										}
 
-										if (classname == ICUE_CLASS && title2 == ICUE_TITLE)
-										{
-											ShowWindow(icueHwnd, SW_HIDE);
-										}
-										else if (icueHwnd)
-										{
-											ShowWindow(icueHwnd, SW_HIDE);
-											SetWindowPos(hWndBP, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-											SwitchToThisWindow(hWndBP, FALSE);
-											SetForegroundWindow(hWndBP);
-											PostMessage(hWndBP, WM_LBUTTONDOWN, 0, 0);
-											PostMessage(hWndBP, WM_LBUTTONUP, 0, 0);
-										}
+										//if (classname != SDL_CLASS && title2 != STEAM_DESK && !isSteamInGame())
+										//{
+											//SetActiveWindow(icueHwnd);
+											//SwitchToThisWindow(icueHwnd, TRUE);
+											//SetWindowPos(hWndBP, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+										//}
 									}
 								}
 								DWORD dwResult = XInputGetState(0, &xstate); 
@@ -247,6 +274,25 @@ int SteamHandler::StartSteamHandler()
 										xticks = { 0 };
 										xticks2 = { 2 };
 										ButtonPressed = false;
+									}
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+									{
+										if (!SelectButtonPressed)
+										{
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
+												ShowWindow(hWndBP2, SW_SHOW);
+												SetActiveWindow(hWndBP2);
+												SetForegroundWindow(hWndBP2);
+												SwitchToThisWindow(hWndBP2, TRUE);
+											}
+											SelectButtonPressed = true;
+										}
+									}
+									else
+									{
+										SelectButtonPressed = false;
 									}
 									QueryPerformanceCounter(&xticks2);
 								}
@@ -389,6 +435,7 @@ int SteamHandler::getSteamPid()
 }
 bool SteamHandler::isSteamRunning()
 {
+	steamPid = getSteamPid();
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, steamPid);
 	if (hProcess)
 	{

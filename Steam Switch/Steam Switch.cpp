@@ -7,14 +7,15 @@
 #include "AudioHandler.h"
 #include "MonitorHandler.h"
 #include "Settings.h"
+
 #define MAX_LOADSTRING 100
 #define APPWM_ICONNOTIFY (WM_APP + 1)
-
+#define SDL_CLASS L"SDL_app"
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
+SteamHandler* steamHandler = nullptr;
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
 
@@ -46,8 +47,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		break;
 
 	case ERROR_SUCCESS:
-		// first instance
-		SteamHandler* steamHandler = new SteamHandler();
+
 
 		// Initialize global strings
 		LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -118,7 +118,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   //SteamHandler* steamHandler = new SteamHandler();
+   steamHandler = new SteamHandler();
 
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
@@ -146,6 +146,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         AddNotificationIcon(hWnd);
         s_uTaskbarRestart = RegisterWindowMessageW(L"TaskbarCreated");
+
+        APPBARDATA appbarData = {};
+        appbarData.hWnd = hWnd;
+		appbarData.cbSize = sizeof(APPBARDATA);
+		appbarData.uCallbackMessage = WM_USER + 201;
+		appbarData.uEdge = ABM_SETPOS;
+		appbarData.rc = { 0, 0, 0, 0 };
+        SHAppBarMessage(ABM_NEW, &appbarData);
+        break;
+    }
+    case (WM_USER + 201):
+    {
+        if (steamHandler != nullptr)
+        {
+			BOOL fOpen = (BOOL)lParam;
+			std::wstring title = steamHandler->getSteamBigPictureModeTitle();
+			if (fOpen == FALSE)
+			{
+				HWND foreHwnd = GetForegroundWindow();
+
+				WCHAR windowTitle[256] = { 0 };
+				GetWindowTextW(foreHwnd, windowTitle, 256);
+				std::wstring title2(windowTitle);
+				WCHAR windowClassName[256] = { 0 };
+				GetClassNameW(foreHwnd, windowClassName, 256);
+				std::wstring classname(windowClassName);
+                if (title2 == title && classname == SDL_CLASS)
+                {
+					SetForegroundWindow(foreHwnd);
+					SetActiveWindow(foreHwnd);
+					SwitchToThisWindow(foreHwnd, TRUE);
+                }
+			}
+        }
+
         break;
     }
     case APPWM_ICONNOTIFY:
@@ -166,22 +201,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         break;
     }
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
