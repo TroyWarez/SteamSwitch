@@ -107,19 +107,8 @@ int SteamHandler::StartSteamHandler()
 			if (isSteamRunning())
 			{
 				HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
-				if (hWnd == NULL)
+				if (hWnd == NULL)// Don't place anything here.
 				{
-					SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
-					sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
-					sei.lpFile = programFilesPath.c_str();        // File to execute
-					sei.nShow = SW_HIDE;       // How to show the window
-					HANDLE hProcessiCue = NULL;
-
-					if (ShellExecuteExW(&sei)) {
-						if (sei.hProcess != NULL) {
-							hProcessiCue = sei.hProcess;
-						}
-					}
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
@@ -136,6 +125,17 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
+						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
+						sei.lpFile = programFilesPath.c_str();        // File to execute
+						sei.nShow = SW_HIDE;       // How to show the window
+						HANDLE hProcessiCue = NULL;
+
+						if (ShellExecuteExW(&sei)) {
+							if (sei.hProcess != NULL) {
+								hProcessiCue = sei.hProcess;
+							}
+						}
 						steamBigPictureModeTitle = title;
 						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 						if (bpHwnd){
@@ -242,6 +242,7 @@ int SteamHandler::StartSteamHandler()
 											if (hWndIC)
 											{
 												ShowWindow(hWndIC, SW_HIDE);
+												Sleep(500);
 											}
 											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										}
