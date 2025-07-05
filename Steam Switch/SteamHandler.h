@@ -23,6 +23,7 @@ public:
 	bool isSteamInGame();
 	bool SetSteamFocus();
 	MonitorHandler* monHandler;
+	IUIAutomationElement* BPwindow;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;

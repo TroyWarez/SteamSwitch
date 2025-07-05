@@ -5,6 +5,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	mainHwnd = hWnd;
 	steamPid = getSteamPid();
 	gamePid = 0;
+	BPwindow = nullptr;
 	ShouldRefocus = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
@@ -19,6 +20,11 @@ SteamHandler::~SteamHandler()
 	if (monHandler)
 	{
 		delete monHandler;
+	}
+	if (BPwindow)
+	{
+		BPwindow->Release();
+		BPwindow = nullptr;
 	}
 	if (pAutomation)
 	{
@@ -141,6 +147,7 @@ int SteamHandler::StartSteamHandler()
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
 						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
+						HRESULT hr = pAutomation->ElementFromHandle(bpHwnd, &BPwindow);
 						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 						sei.lpFile = programFilesPath.c_str();        // File to execute
@@ -194,6 +201,11 @@ int SteamHandler::StartSteamHandler()
 								{
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
+										if (BPwindow)
+										{
+											BPwindow->Release();
+											BPwindow = nullptr;
+										}
 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										TerminateProcess(hProcess, 0);
 										CloseHandle(hProcess);
@@ -287,7 +299,6 @@ int SteamHandler::StartSteamHandler()
 										if (!isSteamInGame())
 										{
 											SetSteamFocus();
-											Sleep(1000);
 										}
 									}
 								}
@@ -342,7 +353,6 @@ int SteamHandler::StartSteamHandler()
 										ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 										ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 										DestroyCursor(h);
-										//Dangerous, but it works.
 										if (ShouldHideCursor)
 										{
 											SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
@@ -485,16 +495,11 @@ bool SteamHandler::SetSteamFocus()
 	if (isSteamRunning())
 	{
 		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
-		if (hWnd)
+		if (hWnd && BPwindow)
 		{
-			IUIAutomationElement* window = nullptr;
-			if (SUCCEEDED(pAutomation->ElementFromHandle(hWnd, &window)))
-			{
 				SwitchToThisWindow(hWnd, TRUE);
-				window->SetFocus();
-				window->Release();
+				BPwindow->SetFocus();
 				return true;
-			}
 		}
 	}
 	return false;
