@@ -63,17 +63,11 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 			{
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			}
-			while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY) || (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) == CEC::CEC_POWER_STATUS_UNKNOWN))
-			{
-				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-			}
+			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
 			break;
 		}
 		case MonitorHandler::BP_MODE: {
-			while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) || (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) == CEC::CEC_POWER_STATUS_UNKNOWN))
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			}
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			break;
 		}
 		}

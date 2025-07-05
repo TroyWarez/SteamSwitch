@@ -1,17 +1,37 @@
 #include "SteamHandler.h"
 #include "Settings.h"
 #include "InvisibleMouse.h"
-SteamHandler::SteamHandler()
+SteamHandler::SteamHandler(HWND hWnd)
 {
+	mainHwnd = hWnd;
 	steamPid = getSteamPid();
 	gamePid = 0;
+	ShouldRefocus = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
-	HMODULE hKernel32 = LoadLibraryW(L"NTDLL.DLL");
+	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
 	if (hKernel32)
 	{
 		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
 	}
-} 
+	HRESULT hr = CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
+}
+SteamHandler::~SteamHandler()
+{
+	if (monHandler)
+	{
+		delete monHandler;
+	}
+	if (pAutomation)
+	{
+		pAutomation->Release();
+		pAutomation = nullptr;
+	}
+	if (hKernel32)
+	{
+		FreeLibrary(hKernel32);
+		hKernel32 = nullptr;
+	}
+}
 bool SteamHandler::isSteamInGame()
 {
 	steamPid = getSteamPid();
@@ -251,21 +271,13 @@ int SteamHandler::StartSteamHandler()
 											{
 												PostMessage(hWndIC, WM_CLOSE, 0, 0);
 												GetWindowThreadProcessId(hWndIC, &icuePid);
-												ShowWindow(hWndBP, SW_SHOW);
-												SetActiveWindow(hWndBP);
-												SetForegroundWindow(hWndBP);
-												SwitchToThisWindow(hWndBP, TRUE);
 											}
 										}
 
-										HWND foreHwnd = GetForegroundWindow();
-										 
-										WCHAR windowTitle[256] = { 0 };
-										GetWindowTextW(foreHwnd, windowTitle, 256);
-										std::wstring title2(windowTitle);
-										WCHAR windowClassName[256] = { 0 };
-										GetClassNameW(foreHwnd, windowClassName, 256);
-										std::wstring classname(windowClassName);
+										if (!isSteamInGame())
+										{
+											SetSteamFocus();
+										}
 									}
 								}
 								DWORD dwResult = XInputGetState(0, &xstate); 
@@ -415,10 +427,6 @@ int SteamHandler::StartSteamHandler()
 	}
 	return (int)msg.wParam;
 }
-SteamHandler::~SteamHandler()
-{
-	delete monHandler;
-}
 int SteamHandler::getSteamPid()
 {
 	HKEY hKey = NULL;
@@ -460,4 +468,37 @@ bool SteamHandler::isSteamRunning()
 		CloseHandle(hProcess);
 	}
 	return false;
+}
+bool SteamHandler::SetSteamFocus()
+{
+	if (isSteamRunning() && ShouldRefocus)
+	{
+		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
+		if (hWnd)
+		{
+			IUIAutomationElement* window = nullptr;
+			if (SUCCEEDED(pAutomation->ElementFromHandle(hWnd, &window)))
+			{
+				ShowWindow(hWnd, SW_SHOW);
+				SetActiveWindow(hWnd);
+				//SetForegroundWindow(hWnd);
+				SwitchToThisWindow(hWnd, TRUE);
+				if (SUCCEEDED(window->SetFocus()))
+				{
+					if (ShouldRefocus)
+					{
+						ShouldRefocus = false;
+					}
+				}
+				window->Release();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+void SteamHandler::ShouldFocus(bool focus)
+{
+	ShouldRefocus = focus;
+	SetSteamFocus();
 }

@@ -40,6 +40,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
     MSG msg = {};
 
+    HRESULT hr = CoInitialize(nullptr);
+
+    if(FAILED(hr))
+    {
+        return FALSE;
+	}
 	switch (GetLastError())
 	{
 	case ERROR_ALREADY_EXISTS:
@@ -118,7 +124,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   steamHandler = new SteamHandler();
+   steamHandler = new SteamHandler(hWnd);
 
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
@@ -158,23 +164,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case (WM_USER + 201):
     {
-        if (steamHandler != nullptr)
-        {
-				BOOL fOpen = (BOOL)lParam;
-				std::wstring title = steamHandler->getSteamBigPictureModeTitle();
-                if (fOpen == FALSE)
-                {
-					HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
-					if (hWndBP && steamHandler->isSteamRunning() && !steamHandler->isSteamInGame())
-					{
-                        Sleep(1000);
-						SetActiveWindow(hWndBP);
-						PostMessageW(hWndBP, WM_SETFOCUS, 0, 0);
-						SetForegroundWindow(hWndBP);
-						break;
-					}
-                }
-        }
+		BOOL fOpen = (BOOL)lParam;
+		if (fOpen == FALSE)
+		{
+			steamHandler->ShouldFocus(true);
+		}
 
 		AddNotificationIcon(hWnd);
         break;

@@ -5,7 +5,6 @@
 #pragma once
 
 #include "targetver.h"
-#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
 #define OEMRESOURCE
 #include <windows.h>
@@ -14,6 +13,8 @@
 #include <Dbt.h>
 #include <Xinput.h>
 #include <psapi.h>
+#include <wctype.h>
+#include <uiautomationclient.h>
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>

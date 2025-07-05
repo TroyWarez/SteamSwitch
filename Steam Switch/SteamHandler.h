@@ -11,18 +11,24 @@
 class SteamHandler
 {
 public:
-	SteamHandler();
+	SteamHandler(HWND hWnd);
 	~SteamHandler();
+	HWND mainHwnd;
+	HMODULE hKernel32;
+	IUIAutomation* pAutomation;
 	int StartSteamHandler();
 	int getSteamPid();
 	LPCWSTR getSteamBigPictureModeTitle() { return steamBigPictureModeTitle.c_str(); }
 	bool isSteamRunning();
 	bool isSteamInGame();
+	bool SetSteamFocus();
 	MonitorHandler* monHandler;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;
 	std::wstring steamBigPictureModeTitle;
 	bool isSteamInBigPictureMode;
+	bool ShouldRefocus;
+	void ShouldFocus(bool focus);
 };
 
