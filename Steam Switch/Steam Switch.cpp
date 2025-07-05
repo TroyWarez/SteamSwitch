@@ -6,7 +6,6 @@
 #include "SteamHandler.h"
 #include "AudioHandler.h"
 #include "MonitorHandler.h"
-#include "Settings.h"
 
 #define MAX_LOADSTRING 100
 #define APPWM_ICONNOTIFY (WM_APP + 1)
@@ -26,7 +25,6 @@ BOOL                AddNotificationIcon(HWND hwnd);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 
 AudioHandler audioHandler;
-std::wstring defaultAudioDevice = defaultBpAudioDevice;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -188,7 +186,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         if (wParam == DBT_DEVNODES_CHANGED)
         {
-			audioHandler.InitDefaultAudioDevice(defaultBpAudioDevice);
+			audioHandler.InitDefaultAudioDevice();
 		}
         break;
     }

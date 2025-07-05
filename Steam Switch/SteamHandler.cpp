@@ -1,5 +1,4 @@
 #include "SteamHandler.h"
-#include "Settings.h"
 #include "InvisibleMouse.h"
 SteamHandler::SteamHandler(HWND hWnd)
 {

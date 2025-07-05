@@ -2,7 +2,26 @@
 using namespace std;
 
 AudioHandler::AudioHandler()
-{}
+{
+	HANDLE hFile = CreateFileW(L"AudioDevice.txt", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD er = GetLastError();
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        DWORD bytesRead;
+        CHAR buffer[MAX_PATH] = { 0 };
+        WCHAR wbuffer[MAX_PATH] = { 0 };
+        bytesRead = GetFileSize(hFile, NULL);
+        if (bytesRead > 0 && bytesRead < MAX_PATH)
+        {
+            if (ReadFile(hFile, buffer, bytesRead, &bytesRead, NULL))
+            {
+				MultiByteToWideChar(CP_UTF8, 0, buffer, bytesRead, wbuffer, MAX_PATH);
+				audioDeviceName = wbuffer;
+            }
+		}
+        CloseHandle(hFile);
+    }
+}
 AudioHandler::~AudioHandler()
 {}
 HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
@@ -19,7 +38,7 @@ HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
     }
     return hr;
 }
-void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
+void AudioHandler::InitDefaultAudioDevice()
 {
         IMMDeviceEnumerator* pEnum = NULL;
         // Create a multimedia device enumerator.
@@ -43,7 +62,7 @@ void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
                     if (SUCCEEDED(hr))
                     {
                         std::wstring strTmp = friendlyName.pwszVal;
-                        if (strTmp == Device_FriendlyName)
+                        if (strTmp == audioDeviceName)
                         {
                             bExit = true;
                         }
@@ -91,7 +110,7 @@ void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
                                         // if no options, print the device
                                         // otherwise, find the selected device and set it to be default
                                         std::wstring strTmp = friendlyName.pwszVal;
-                                        if (strTmp == Device_FriendlyName)
+                                        if (strTmp == audioDeviceName)
                                         {
                                             SetDefaultAudioPlaybackDevice(wstrID);
                                             bFind = true;
@@ -109,21 +128,20 @@ void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
                             break;
                         }
                     }
-                }    CoUninitialize();
+                }
                 pDevices->Release();
             }
             pEnum->Release();
         }
 }
-int AudioHandler::setDefaultAudioDevice(int device)
+void AudioHandler::setDefaultAudioDevice(LPCWSTR newDevice)
 {
-	return 0;
+    if (newDevice)
+    {
+        audioDeviceName = newDevice;
+    }
 }
-int AudioHandler::getDefaultAudioDevice(int device)
+LPCWSTR AudioHandler::getDefaultAudioDevice()
 {
-	return 0;
-}
-void AudioHandler::ToggleMode()
-{
-
+	return audioDeviceName.c_str();
 }

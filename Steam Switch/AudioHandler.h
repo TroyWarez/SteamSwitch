@@ -5,9 +5,9 @@ class AudioHandler
 public:
 	AudioHandler();
 	~AudioHandler();
-	int setDefaultAudioDevice(int device);
-	int getDefaultAudioDevice(int device);
-	void ToggleMode();
-	void InitDefaultAudioDevice(LPCWSTR Device_FriendlyName);
+	std::wstring audioDeviceName;
+	void setDefaultAudioDevice(LPCWSTR newDevice);
+	LPCWSTR getDefaultAudioDevice();
+	void InitDefaultAudioDevice();
 };
 
