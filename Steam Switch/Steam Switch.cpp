@@ -37,39 +37,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
+	HRESULT hr = CoInitialize(nullptr);
+
+	if (FAILED(hr))
+	{
+		return FALSE;
+	} 
+
 	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
     MSG msg = {};
 
-    HRESULT hr = CoInitialize(nullptr);
-
-    if(FAILED(hr))
-    {
-        return FALSE;
-	}
 	switch (GetLastError())
 	{
 	case ERROR_ALREADY_EXISTS:
 		// app already running
 		break;
 
-	case ERROR_SUCCESS:
+    case ERROR_SUCCESS:
+    {
+        // Initialize global strings
+        LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+        LoadStringW(hInstance, IDC_STEAMSWITCH, szWindowClass, MAX_LOADSTRING);
+        MyRegisterClass(hInstance);
 
+        // Perform application initialization:
+        if (!InitInstance(hInstance, nCmdShow))
+        {
+            return FALSE;
+        }
 
-		// Initialize global strings
-		LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-		LoadStringW(hInstance, IDC_STEAMSWITCH, szWindowClass, MAX_LOADSTRING);
-		MyRegisterClass(hInstance);
+        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_STEAMSWITCH));
 
-		// Perform application initialization:
-		if (!InitInstance(hInstance, nCmdShow))
-		{
-			return FALSE;
-		}
-
-		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_STEAMSWITCH));
-
-		// Main message loop:
+        // Main message loop:
         return steamHandler->StartSteamHandler();
+    }
 	}
 	return FALSE;
 }

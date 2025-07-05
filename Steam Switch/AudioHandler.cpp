@@ -21,12 +21,9 @@ HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
 }
 void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
 {
-    HRESULT hr = CoInitialize(NULL);
-    if (SUCCEEDED(hr))
-    {
         IMMDeviceEnumerator* pEnum = NULL;
         // Create a multimedia device enumerator.
-        hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
+        HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
             CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum);
         if (SUCCEEDED(hr))
         {
@@ -112,13 +109,11 @@ void AudioHandler::InitDefaultAudioDevice(LPCWSTR Device_FriendlyName)
                             break;
                         }
                     }
-                }
+                }    CoUninitialize();
                 pDevices->Release();
             }
             pEnum->Release();
         }
-    }
-    CoUninitialize();
 }
 int AudioHandler::setDefaultAudioDevice(int device)
 {

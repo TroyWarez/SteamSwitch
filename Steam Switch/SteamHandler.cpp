@@ -31,6 +31,7 @@ SteamHandler::~SteamHandler()
 		FreeLibrary(hKernel32);
 		hKernel32 = nullptr;
 	}
+	CoUninitialize();
 }
 bool SteamHandler::isSteamInGame()
 {
@@ -471,7 +472,7 @@ bool SteamHandler::isSteamRunning()
 }
 bool SteamHandler::SetSteamFocus()
 {
-	if (isSteamRunning() && ShouldRefocus)
+	if (isSteamRunning())
 	{
 		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
 		if (hWnd)
@@ -479,16 +480,16 @@ bool SteamHandler::SetSteamFocus()
 			IUIAutomationElement* window = nullptr;
 			if (SUCCEEDED(pAutomation->ElementFromHandle(hWnd, &window)))
 			{
-				ShowWindow(hWnd, SW_SHOW);
-				SetActiveWindow(hWnd);
-				//SetForegroundWindow(hWnd);
 				SwitchToThisWindow(hWnd, TRUE);
 				if (SUCCEEDED(window->SetFocus()))
 				{
-					if (ShouldRefocus)
-					{
-						ShouldRefocus = false;
-					}
+					//ShowWindow(hWnd, SW_SHOW);
+					//SwitchToThisWindow(hWnd, TRUE);
+					//ShowWindow(hWnd, SW_HIDE);
+					//SwitchToThisWindow(hWnd, FALSE);
+					//SetActiveWindow(hWnd);
+					//ShowWindow(hWnd, SW_HIDE);
+					//ShowWindow(hWnd, SW_SHOW);
 				}
 				window->Release();
 				return true;
