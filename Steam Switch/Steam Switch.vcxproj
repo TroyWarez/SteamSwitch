@@ -63,6 +63,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
+      <UACUIAccess>true</UACUIAccess>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
@@ -82,7 +83,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
-      <UACUIAccess>false</UACUIAccess>
+      <UACUIAccess>true</UACUIAccess>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
