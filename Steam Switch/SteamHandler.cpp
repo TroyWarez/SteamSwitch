@@ -224,7 +224,7 @@ int SteamHandler::StartSteamHandler()
 
 
 
-										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_SHOW);
+										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_HIDE);
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
