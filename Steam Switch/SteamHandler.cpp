@@ -228,7 +228,7 @@ int SteamHandler::StartSteamHandler()
 
 										PROCESS_INFORMATION pi = { 0 };
 										STARTUPINFOW si = { 0 };
-										BOOL ret = CreateProcessW(windowsExplorerPath.c_str(),
+										if (CreateProcessW(windowsExplorerPath.c_str(),
 											NULL,
 											NULL,
 											NULL,
@@ -238,9 +238,11 @@ int SteamHandler::StartSteamHandler()
 											NULL,
 											&si,
 											&pi
-										);
-										CloseHandle(pi.hThread);
-										CloseHandle(pi.hProcess);
+										))
+										{
+											CloseHandle(pi.hThread);
+											CloseHandle(pi.hProcess);
+										}
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
