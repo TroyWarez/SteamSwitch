@@ -75,7 +75,6 @@ bool SteamHandler::isSteamInGame()
 }
 int SteamHandler::StartSteamHandler()
 {
-	//bool isSteamInGameBool = isSteamInGame();
 	bool TopMost = false;
 	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
@@ -275,9 +274,21 @@ int SteamHandler::StartSteamHandler()
 											}
 										}
 
+										HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
+										if (consoleHwnd)
+										{
+											ShowWindow(consoleHwnd, SW_HIDE);
+										}
+										HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", NULL);
+										if (consoleHwndAlt)
+										{
+											ShowWindow(consoleHwndAlt, SW_HIDE);
+										}
+
 										if (!isSteamInGame())
 										{
 											SetSteamFocus();
+											Sleep(1000);
 										}
 									}
 								}
@@ -481,16 +492,7 @@ bool SteamHandler::SetSteamFocus()
 			if (SUCCEEDED(pAutomation->ElementFromHandle(hWnd, &window)))
 			{
 				SwitchToThisWindow(hWnd, TRUE);
-				if (SUCCEEDED(window->SetFocus()))
-				{
-					//ShowWindow(hWnd, SW_SHOW);
-					//SwitchToThisWindow(hWnd, TRUE);
-					//ShowWindow(hWnd, SW_HIDE);
-					//SwitchToThisWindow(hWnd, FALSE);
-					//SetActiveWindow(hWnd);
-					//ShowWindow(hWnd, SW_HIDE);
-					//ShowWindow(hWnd, SW_SHOW);
-				}
+				window->SetFocus();
 				window->Release();
 				return true;
 			}
