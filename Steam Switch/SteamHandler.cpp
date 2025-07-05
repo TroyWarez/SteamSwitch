@@ -92,6 +92,8 @@ int SteamHandler::StartSteamHandler()
 		windowsExplorerPath = windowsPath + L"\\explorer.exe";
 		windowsPath = windowsPath + L"\\Cursors\\";
 	}
+
+	er = GetLastError();
 	DWORD PID = 0;
 	DWORD icuePid = 0;
 
@@ -224,14 +226,28 @@ int SteamHandler::StartSteamHandler()
 
 
 
-										ShellExecuteW(NULL, L"open", windowsExplorerPath.c_str(), NULL, NULL, SW_HIDE);
+										PROCESS_INFORMATION pi = { 0 };
+										STARTUPINFOW si = { 0 };
+										BOOL ret = CreateProcessW(windowsExplorerPath.c_str(),
+											NULL,
+											NULL,
+											NULL,
+											FALSE,
+											0,
+											NULL,
+											NULL,
+											&si,
+											&pi
+										);
+										CloseHandle(pi.hThread);
+										CloseHandle(pi.hProcess);
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
 										TerminateProcess(hProcessIcUeProc, 0);
 										CloseHandle(hProcessIcUeProc);
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
-										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
+										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
 										cursorFileName = windowsPath + L"beam_i.cur";
 										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
