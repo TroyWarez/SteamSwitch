@@ -26,6 +26,7 @@ public:
 	bool SetSteamFocus();
 	MonitorHandler* monHandler;
 	IUIAutomationElement* BPwindow;
+	ITipInvocation* tip;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;

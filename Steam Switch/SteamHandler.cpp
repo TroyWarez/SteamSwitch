@@ -6,6 +6,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	steamPid = getSteamPid();
 	gamePid = 0;
 	BPwindow = nullptr;
+	tip = nullptr;
 	ShouldRefocus = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
@@ -14,6 +15,18 @@ SteamHandler::SteamHandler(HWND hWnd)
 		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
 	}
 	HRESULT hr = CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
+	if(FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+	{
+		WCHAR programFiles[MAX_PATH] = { 0 };
+		ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
+		std::wstring programFilesPath(programFiles);
+		std::wstring programCommonFilesPath(programFiles);
+		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
+		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
+		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+		Sleep(500);
+		hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
+	}
 }
 SteamHandler::~SteamHandler()
 {
@@ -41,10 +54,9 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
-	ITipInvocation* tip;
-	HRESULT hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
-	tip->Toggle(GetDesktopWindow());
-	Sleep(5000);
+
+	bool TabTipInvoked = false;
+	bool TabTipCordHeld = false;
 	bool TopMost = false;
 	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
@@ -70,6 +82,10 @@ int SteamHandler::StartSteamHandler()
 
 	bool ShouldHideCursor = true;
 	bool ButtonPressed = false;
+
+	bool AButtonPressed = false;
+	bool StartButtonPressed = false;
+
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	MSG msg;
@@ -77,7 +93,6 @@ int SteamHandler::StartSteamHandler()
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE.exe";
-
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -128,9 +143,9 @@ int SteamHandler::StartSteamHandler()
 						}
 						steamBigPictureModeTitle = title;
 
-						HWND eH = FindWindowW(L"Progman", NULL);
-						GetWindowThreadProcessId(eH, &PID);
-						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
+						//HWND eH = FindWindowW(L"Progman", NULL);
+						//GetWindowThreadProcessId(eH, &PID);
+						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -173,9 +188,9 @@ int SteamHandler::StartSteamHandler()
 											BPwindow->Release();
 											BPwindow = nullptr;
 										}
-										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-										TerminateProcess(hProcess, 0);
-										CloseHandle(hProcess);
+										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+										//TerminateProcess(hProcess, 0);
+										//CloseHandle(hProcess);
 
 										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										if (hWndIC)
@@ -191,23 +206,23 @@ int SteamHandler::StartSteamHandler()
 
 
 
-										PROCESS_INFORMATION pi = { 0 };
-										STARTUPINFOW si = { 0 };
-										if (CreateProcessW(windowsExplorerPath.c_str(),
-											NULL,
-											NULL,
-											NULL,
-											FALSE,
-											0,
-											NULL,
-											NULL,
-											&si,
-											&pi
-										))
-										{
-											CloseHandle(pi.hThread);
-											CloseHandle(pi.hProcess);
-										}
+										//PROCESS_INFORMATION pi = { 0 };
+										//STARTUPINFOW si = { 0 };
+										//if (CreateProcessW(windowsExplorerPath.c_str(),
+									//		NULL,
+									//		NULL,
+									//		NULL,
+									//		FALSE,
+									//		0,
+									//		NULL,
+									//		NULL,
+								//			&si,
+								//			&pi
+								//		))
+							//			{
+							//				CloseHandle(pi.hThread);
+							//				CloseHandle(pi.hProcess);
+							//			}
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
@@ -314,6 +329,24 @@ int SteamHandler::StartSteamHandler()
 										xticks2 = { 2 };
 										ButtonPressed = false;
 									}
+
+
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
+										!TabTipCordHeld)
+									{
+										if (tip)
+										{
+											tip->Toggle(GetDesktopWindow());
+										}
+										TabTipCordHeld = true;
+									}
+									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
+									{
+										TabTipCordHeld = false;
+									}
+
 									QueryPerformanceCounter(&xticks2);
 								}
 								POINT cursorPos;
