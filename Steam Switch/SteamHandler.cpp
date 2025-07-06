@@ -38,48 +38,13 @@ SteamHandler::~SteamHandler()
 	}
 	CoUninitialize();
 }
-bool SteamHandler::isSteamInGame()
-{
-	steamPid = getSteamPid();
-	std::vector <std::wstring> processNames;
-	ULONG_PTR pbi[6];
-	ULONG ulSize = 0;
-	HMODULE hMods[1024] = { 0 };
-	DWORD cbNeeded = 0;
-	std::vector<DWORD> processIds(1024);
-	if (EnumProcesses(processIds.data(), ((DWORD)processIds.size() * sizeof(DWORD)), &cbNeeded))
-	{
-			for (size_t i = 0; i < processIds.size(); i++)
-			{
-				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i]);
-				if (hProcess)
-				{
-					WCHAR szProcessName[MAX_PATH] = { 0 };
-					if (GetModuleBaseNameW(hProcess, hMods[i], szProcessName, sizeof(szProcessName) / sizeof(WCHAR)))
-					{
-						processNames.push_back(szProcessName);
 
-						if (NtQueryInformationProcess) {
-							if (NtQueryInformationProcess(hProcess, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
-							{
-								std::wstring processName(szProcessName);
-
-								if (pbi[5] == steamPid && processName != L"steamwebhelper.exe")
-								{
-									gamePid = processIds[i];
-									return true;
-								}
-							}
-						}
-						CloseHandle(hProcess);
-					}
-				}
-			}
-	}
-	return false;
-}
 int SteamHandler::StartSteamHandler()
 {
+	ITipInvocation* tip;
+	HRESULT hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
+	tip->Toggle(GetDesktopWindow());
+	Sleep(5000);
 	bool TopMost = false;
 	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
@@ -482,6 +447,46 @@ int SteamHandler::getSteamPid()
 		CloseHandle(hKey);
 	}
 	return 0;
+}
+bool SteamHandler::isSteamInGame()
+{
+	steamPid = getSteamPid();
+	std::vector <std::wstring> processNames;
+	ULONG_PTR pbi[6];
+	ULONG ulSize = 0;
+	HMODULE hMods[1024] = { 0 };
+	DWORD cbNeeded = 0;
+	std::vector<DWORD> processIds(1024);
+	if (EnumProcesses(processIds.data(), ((DWORD)processIds.size() * sizeof(DWORD)), &cbNeeded))
+	{
+		for (size_t i = 0; i < processIds.size(); i++)
+		{
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i]);
+			if (hProcess)
+			{
+				WCHAR szProcessName[MAX_PATH] = { 0 };
+				if (GetModuleBaseNameW(hProcess, hMods[i], szProcessName, sizeof(szProcessName) / sizeof(WCHAR)))
+				{
+					processNames.push_back(szProcessName);
+
+					if (NtQueryInformationProcess) {
+						if (NtQueryInformationProcess(hProcess, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
+						{
+							std::wstring processName(szProcessName);
+
+							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe")
+							{
+								gamePid = processIds[i];
+								return true;
+							}
+						}
+					}
+					CloseHandle(hProcess);
+				}
+			}
+		}
+	}
+	return false;
 }
 bool SteamHandler::isSteamRunning()
 {
