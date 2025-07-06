@@ -166,7 +166,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		BOOL fOpen = (BOOL)lParam;
 		if (fOpen == FALSE)
 		{
-			steamHandler->ShouldFocus(true);
+            if (!steamHandler->isSteamInGame())
+            {
+				steamHandler->ShouldFocus(true);
+            }
 		}
 
 		AddNotificationIcon(hWnd);

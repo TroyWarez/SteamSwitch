@@ -1,14 +1,13 @@
 #pragma once
 #include "framework.h"
 #include "MonitorHandler.h"
+#include "InputHandler.h"
 
 #define STEAM_DESK L"Steam"
 #define SDL_CLASS L"SDL_app"
 #define ICUE_CLASS L"Qt672QWindowIcon"
 #define ICUE_TITLE L"iCUE"
 #define MOUSE_WAKETIME 50000000
-#define TABTIP_TITLE L"Windows Input Experience"
-#define TABTIP_CLASS L"Windows.UI.Core.CoreWindow"
 
 class SteamHandler
 {
@@ -25,6 +24,7 @@ public:
 	bool isSteamInGame();
 	bool SetSteamFocus();
 	MonitorHandler* monHandler;
+	InputHandler* inputHandler;
 	IUIAutomationElement* BPwindow;
 	ITipInvocation* tip;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);

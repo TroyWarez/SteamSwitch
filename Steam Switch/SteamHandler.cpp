@@ -9,6 +9,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	tip = nullptr;
 	ShouldRefocus = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+	inputHandler = new InputHandler();
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
 	if (hKernel32)
 	{
@@ -24,7 +25,6 @@ SteamHandler::SteamHandler(HWND hWnd)
 		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-		Sleep(500);
 		hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
 	}
 }
@@ -33,6 +33,10 @@ SteamHandler::~SteamHandler()
 	if (monHandler)
 	{
 		delete monHandler;
+	}
+	if (inputHandler)
+	{
+		delete inputHandler;
 	}
 	if (BPwindow)
 	{
@@ -54,9 +58,21 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
-
+// 	XINPUT_STATE xstate2 = { 0 };
+// 	while (true)
+// 	{
+// 		DWORD dwResult = XInputGetState(0, &xstate2);
+// 		if (xstate2.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+// 			xstate2.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
+// 		{
+// 			int a = 1;
+// 		}
+// 		Sleep(1);
+// 	}
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
+	bool EnableWindowControls = false;
+	bool HeldEnableWindowControls = false;
 	bool TopMost = false;
 	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
@@ -164,6 +180,7 @@ int SteamHandler::StartSteamHandler()
 						DestroyCursor(h);
 						monHandler->ToggleMode();
 						isSteamInBigPictureMode = true;
+						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
 
 						while (isSteamInBigPictureMode)
 						{
@@ -191,7 +208,6 @@ int SteamHandler::StartSteamHandler()
 										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										//TerminateProcess(hProcess, 0);
 										//CloseHandle(hProcess);
-
 										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										if (hWndIC)
 										{
@@ -223,6 +239,7 @@ int SteamHandler::StartSteamHandler()
 							//				CloseHandle(pi.hThread);
 							//				CloseHandle(pi.hProcess);
 							//			}
+										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
 
 										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
@@ -293,7 +310,7 @@ int SteamHandler::StartSteamHandler()
 										{
 											ShowWindow(consoleHwndAlt, SW_HIDE);
 										}
-
+										
 										if (!isSteamInGame())
 										{
 											SetSteamFocus();
@@ -347,6 +364,30 @@ int SteamHandler::StartSteamHandler()
 										TabTipCordHeld = false;
 									}
 
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+									{
+										if (EnableWindowControls && !HeldEnableWindowControls)
+										{
+											EnableWindowControls = false;
+										}
+										else if (!HeldEnableWindowControls)
+										{
+											EnableWindowControls = true;
+										}
+										HeldEnableWindowControls = true;
+									}
+									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
+									{
+										HeldEnableWindowControls = false;
+									}
+
+									if (EnableWindowControls)
+									{
+										inputHandler->SendControllerInput(&xstate);
+
+									}
 									QueryPerformanceCounter(&xticks2);
 								}
 								POINT cursorPos;

@@ -96,6 +96,7 @@
   <ItemGroup>
     <ClInclude Include="AudioHandler.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="InputHandler.h" />
     <ClInclude Include="InvisibleMouse.h" />
     <ClInclude Include="MonitorHandler.h" />
     <ClInclude Include="PolicyConfig.h" />
@@ -106,6 +107,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AudioHandler.cpp" />
+    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="MonitorHandler.cpp" />
     <ClCompile Include="Steam Switch.cpp" />
     <ClCompile Include="SteamHandler.cpp" />
