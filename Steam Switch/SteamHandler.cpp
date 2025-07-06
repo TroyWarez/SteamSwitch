@@ -25,6 +25,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+		Sleep(500);
 		hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
 	}
 }
@@ -354,7 +355,22 @@ int SteamHandler::StartSteamHandler()
 									{
 										if (tip)
 										{
-											tip->Toggle(GetDesktopWindow());
+											if (FAILED(tip->Toggle(GetDesktopWindow())))
+											{
+												tip->Release();
+												WCHAR programFiles[MAX_PATH] = { 0 };
+												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
+												std::wstring programFilesPath(programFiles);
+												std::wstring programCommonFilesPath(programFiles);
+												programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
+												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
+												ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+												Sleep(250);
+												if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+												{
+													tip->Toggle(GetDesktopWindow());
+												}
+											}
 										}
 										TabTipCordHeld = true;
 									}
