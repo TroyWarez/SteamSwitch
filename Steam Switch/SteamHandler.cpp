@@ -317,8 +317,13 @@ int SteamHandler::StartSteamHandler()
 										
  										if (!isSteamInGame())
  										{
+											ShowWindow(hWndBP, SW_SHOW);
 											SetSteamFocus();
  										}
+										else
+										{
+											ShowWindow(hWndBP, SW_HIDE);
+										}
  										}
 									}
 								}
