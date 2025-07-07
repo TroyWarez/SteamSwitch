@@ -4,11 +4,15 @@ extern SteamHandler* steamHandler;
 #define MOUSE_OFFSET 0.1111
 InputHandler::InputHandler()
 {
+	hXInputDLL = LoadLibraryW(L"XInput1_3.dll");
 	ZeroMemory(&lastXstate, sizeof(lastXstate));
 }
 InputHandler::~InputHandler()
 {
-
+	if (hXInputDLL)
+	{
+		FreeLibrary(hXInputDLL);
+	}
 }
 void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 {
@@ -110,5 +114,25 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 	if (pXstate)
 	{
 		lastXstate = (*pXstate);
+	}
+}
+void InputHandler::turnOffXinputController()
+{
+	if (hXInputDLL)
+	{
+		for (short i = 0; i < 4; ++i)
+		{
+			XINPUT_STATE state;
+			memset(&state, 0, sizeof(XINPUT_STATE));
+
+			if (XInputGetState(i, &state) == ERROR_SUCCESS)
+			{
+				typedef DWORD(WINAPI* XInputPowerOffController_t)(DWORD i);
+				XInputPowerOffController_t realXInputPowerOffController = (XInputPowerOffController_t)GetProcAddress(hXInputDLL, (LPCSTR)103);
+				realXInputPowerOffController(i);
+			}
+
+			ZeroMemory(&state, sizeof(XINPUT_STATE));
+		}
 	}
 }

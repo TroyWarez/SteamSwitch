@@ -1,7 +1,9 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
+
 SteamHandler::SteamHandler(HWND hWnd)
 {
+	HINSTANCE hXInputDLL = LoadLibraryA("XInput1_3.dll");
 	mainHwnd = hWnd;
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -209,6 +211,7 @@ int SteamHandler::StartSteamHandler()
 											BPwindow->Release();
 											BPwindow = nullptr;
 										}
+										inputHandler->turnOffXinputController();
 										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 										//TerminateProcess(hProcess, 0);
 										//CloseHandle(hProcess);
@@ -317,8 +320,8 @@ int SteamHandler::StartSteamHandler()
 										
  										if (!isSteamInGame())
  										{
-											ShowWindow(hWndBP, SW_SHOW);
-											SetSteamFocus();
+											SwitchToThisWindow(hWndBP, TRUE);
+											//SetSteamFocus();
  										}
 										else
 										{
@@ -623,10 +626,10 @@ bool SteamHandler::SetSteamFocus()
 			AltDownInput.type = INPUT_MOUSE;
 			AltDownInput.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
 			UINT uSent = SendInput(1, &AltDownInput, sizeof(INPUT));
-			SetForegroundWindow(hWnd);
-			SwitchToThisWindow(hWnd, TRUE);
-			ShowWindow(hWnd, SW_SHOW);
-			SetActiveWindow(hWnd);
+			//SetForegroundWindow(hWnd);
+			//SwitchToThisWindow(hWnd, TRUE);
+			//ShowWindow(hWnd, SW_SHOW);
+			//SetActiveWindow(hWnd);
 			INPUT AltUpInput = {};
 			ZeroMemory(&AltUpInput, sizeof(AltUpInput));
 			AltUpInput.type = INPUT_MOUSE;
