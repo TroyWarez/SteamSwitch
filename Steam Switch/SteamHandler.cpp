@@ -25,8 +25,11 @@ SteamHandler::SteamHandler(HWND hWnd)
 		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-		Sleep(500);
 		hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
+		if (tip)
+		{
+			tip->Toggle(GetDesktopWindow());
+		}
 	}
 }
 SteamHandler::~SteamHandler()
@@ -312,10 +315,11 @@ int SteamHandler::StartSteamHandler()
 											ShowWindow(consoleHwndAlt, SW_HIDE);
 										}
 										
-										if (!isSteamInGame())
-										{
+ 										if (!isSteamInGame())
+ 										{
 											SetSteamFocus();
-										}
+ 										}
+ 										}
 									}
 								}
 								DWORD dwResult = XInputGetState(0, &xstate); 
@@ -357,7 +361,7 @@ int SteamHandler::StartSteamHandler()
 										{
 											if (FAILED(tip->Toggle(GetDesktopWindow())))
 											{
-												tip->Release();
+											tip->Release();
 												WCHAR programFiles[MAX_PATH] = { 0 };
 												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 												std::wstring programFilesPath(programFiles);
@@ -366,10 +370,9 @@ int SteamHandler::StartSteamHandler()
 												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 												ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
 												Sleep(250);
-												if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
-												{
-													tip->Toggle(GetDesktopWindow());
-												}
+											if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+											{
+												tip->Toggle(GetDesktopWindow());
 											}
 										}
 										TabTipCordHeld = true;
@@ -402,7 +405,6 @@ int SteamHandler::StartSteamHandler()
 									if (EnableWindowControls)
 									{
 										inputHandler->SendControllerInput(&xstate);
-
 									}
 									QueryPerformanceCounter(&xticks2);
 								}
@@ -510,7 +512,7 @@ int SteamHandler::StartSteamHandler()
 									ticks = { 0 };
 									ticks2 = { 2 };
 								}
-							}
+								}
 							Sleep(1);
 						}
 					}
@@ -610,9 +612,21 @@ bool SteamHandler::SetSteamFocus()
 		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
 		if (hWnd && BPwindow)
 		{
-				SwitchToThisWindow(hWnd, TRUE);
-				BPwindow->SetFocus();
-				return true;
+			INPUT AltDownInput = {};
+			ZeroMemory(&AltDownInput, sizeof(AltDownInput));
+
+			AltDownInput.type = INPUT_MOUSE;
+			AltDownInput.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+			UINT uSent = SendInput(1, &AltDownInput, sizeof(INPUT));
+			SetForegroundWindow(hWnd);
+			SwitchToThisWindow(hWnd, TRUE);
+			ShowWindow(hWnd, SW_SHOW);
+			SetActiveWindow(hWnd);
+			INPUT AltUpInput = {};
+			ZeroMemory(&AltUpInput, sizeof(AltUpInput));
+			AltUpInput.type = INPUT_MOUSE;
+			AltUpInput.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+			uSent = SendInput(1, &AltUpInput, sizeof(INPUT));
 		}
 	}
 	return false;
