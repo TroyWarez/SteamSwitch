@@ -163,15 +163,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case (WM_USER + 201):
     {
-		BOOL fOpen = (BOOL)lParam;
-		if (fOpen == FALSE)
+		if (!steamHandler->isSteamInGame())
 		{
-            if (!steamHandler->isSteamInGame())
+			HWND hWndBP2 = FindWindowW(SDL_CLASS, steamHandler->getSteamBigPictureModeTitle());
+            if (hWndBP2)
             {
-				//steamHandler->ShouldFocus(true);
+                SwitchToThisWindow(hWndBP2, TRUE);
+                if (!steamHandler->isSteamInGame()){
+
+                    steamHandler->SetSteamFocus();
             }
+			}
+
 		}
-		AddNotificationIcon(hWnd);
         break;
     }
     case APPWM_ICONNOTIFY:
@@ -186,8 +190,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case WM_DEVICECHANGE:
     {
-        if (wParam == DBT_DEVNODES_CHANGED)
-        {
+		if (wParam == DBT_DEVNODES_CHANGED)
+		{
 			audioHandler.InitDefaultAudioDevice();
 		}
         break;
@@ -200,20 +204,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     }
-    case WM_QUERYENDSESSION:
+    case WM_ENDSESSION:
     {
 		if (steamHandler)
 		{
 			steamHandler->inputHandler->turnOffXinputController();
-            if (steamHandler->isSteamInBigPictureMode)
-            {
-                steamHandler->monHandler->ToggleMode();
-            }
+			if (steamHandler->isSteamInBigPictureMode)
+			{
+				steamHandler->monHandler->ToggleMode();
+			}
 		}
-        break;
-    }
-    case WM_ENDSESSION:
-    {
         PostQuitMessage(0);
         break;
     }

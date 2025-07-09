@@ -1,11 +1,13 @@
 #include "InputHandler.h"
 #include "SteamHandler.h"
+#include "XInputDeviceIO.h"
 extern SteamHandler* steamHandler;
 #define MOUSE_OFFSET 0.1111
 InputHandler::InputHandler()
 {
 	ZeroMemory(&lastXstate, sizeof(lastXstate));
 	hXInputDLL = LoadLibraryW(L"XInput1_3.dll");
+	xbox_init();
 	//gameInput = nullptr;
 	//gamepad = nullptr;
 	//HRESULT hr = GameInput::v1::GameInputCreate(&gameInput);
@@ -143,4 +145,8 @@ void InputHandler::turnOffXinputController()
 			ZeroMemory(&state, sizeof(XINPUT_STATE));
 		}
 	}
+}
+DWORD InputHandler::GetXInputStateDeviceIO(DWORD index, PXINPUT_STATE pXstate)
+{
+	return xbox_get(0, (xbox_state*)pXstate);
 }

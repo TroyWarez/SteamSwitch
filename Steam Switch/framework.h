@@ -10,8 +10,10 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
-#include <Dbt.h>
+#include <dbt.h>
+#include <setupapi.h>
 #include <Xinput.h>
+#include "XInputDeviceIO.h"
 #include <GameInput.h>
 #include <psapi.h>
 #include <wctype.h>

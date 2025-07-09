@@ -22,7 +22,8 @@ public:
 	LPCWSTR getSteamBigPictureModeTitle() { return steamBigPictureModeTitle.c_str(); }
 	bool isSteamRunning();
 	bool isSteamInGame();
-	bool SetSteamFocus();
+	void SetSteamFocus();
+	void SetSteamGameFocus();
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
 	IUIAutomationElement* BPwindow;

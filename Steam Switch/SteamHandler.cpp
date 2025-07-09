@@ -1,6 +1,5 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
-
 SteamHandler::SteamHandler(HWND hWnd)
 {
 	HINSTANCE hXInputDLL = LoadLibraryA("XInput1_3.dll");
@@ -64,26 +63,12 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
-	// 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
-	// 										TerminateProcess(hProcessIcUeProc, 0);
-	// 										CloseHandle(hProcessIcUeProc);
-
-// 	XINPUT_STATE xstate2 = { 0 };
-// 	while (true)
-// 	{
-// 		DWORD dwResult = XInputGetState(0, &xstate2);
-// 		if (xstate2.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-// 			xstate2.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
-// 		{
-// 			int a = 1;
-// 		}
-// 		Sleep(1);
-// 	}
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
 	bool EnableWindowControls = false;
 	bool HeldEnableWindowControls = false;
 	bool SelectButtonPressed = false;
+	bool guidePressed = false;
 	bool TopMost = false;
 	bool ShouldHideCursor = true;
 	bool ButtonPressed = false;
@@ -119,6 +104,7 @@ int SteamHandler::StartSteamHandler()
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
 		while (true)
@@ -177,7 +163,11 @@ int SteamHandler::StartSteamHandler()
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
 						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-						HRESULT hr = pAutomation->ElementFromHandle(bpHwnd, &BPwindow);
+						if (bpHwnd) {
+							SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+							HRESULT hr = pAutomation->ElementFromHandle(bpHwnd, &BPwindow);
+
+						}
 						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 						sei.lpFile = programFilesPath.c_str();        // File to execute
@@ -238,31 +228,31 @@ int SteamHandler::StartSteamHandler()
 											BPwindow = nullptr;
 										}
 										inputHandler->turnOffXinputController();
- 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
- 										TerminateProcess(hProcess, 0);
-										CloseHandle(hProcess);
+//  										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+//  										TerminateProcess(hProcess, 0);
+// 										CloseHandle(hProcess);
 										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										if (hWndIC)
 										{
 											PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 										}
- 										PROCESS_INFORMATION pi = { 0 };
-										STARTUPINFOW si = { 0 };
- 										if (CreateProcessW(windowsExplorerPath.c_str(),
-											NULL,
- 											NULL,
-											NULL,
- 											FALSE,
- 											0,
- 											NULL,
- 											NULL,
-											&si,
- 											&pi
- 										))
- 										{
- 										CloseHandle(pi.hThread);
- 											CloseHandle(pi.hProcess);
- 										}
+//  										PROCESS_INFORMATION pi = { 0 };
+// 										STARTUPINFOW si = { 0 };
+//  										if (CreateProcessW(windowsExplorerPath.c_str(),
+// 											NULL,
+//  											NULL,
+// 											NULL,
+//  											FALSE,
+//  											0,
+//  											NULL,
+//  											NULL,
+// 											&si,
+//  											&pi
+//  										))
+//  										{
+//  											CloseHandle(pi.hThread);
+//  											CloseHandle(pi.hProcess);
+//  										}
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
@@ -329,6 +319,10 @@ int SteamHandler::StartSteamHandler()
 											{
 												GetWindowThreadProcessId(hWndIC, &icuePid);
 												ShowWindow(hWndIC, SW_HIDE);
+												if (bpHwnd) {
+													SetWindowPos(bpHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+													SetActiveWindow(bpHwnd);
+												}
 											}
 										}
 
@@ -355,10 +349,43 @@ int SteamHandler::StartSteamHandler()
  										}
 									}
 								}
-								DWORD dwResult = XInputGetState(0, &xstate); 
+								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
 								{
-
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+									{
+										if (!SelectButtonPressed)
+										{
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
+												SwitchToThisWindow(GetDesktopWindow(), TRUE);
+												SwitchToThisWindow(hWndBP2, TRUE);
+											}
+											SelectButtonPressed = true;
+										}
+									}
+									else
+									{
+										SelectButtonPressed = false;
+									}
+									if (xstate.Gamepad.wButtons & XBOX_GUIDE)
+									{
+										if (!guidePressed)
+										{
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
+												SwitchToThisWindow(GetDesktopWindow(), TRUE);
+												SwitchToThisWindow(hWndBP2, TRUE);
+											}
+											guidePressed = true;
+										}
+									}
+									else
+									{
+										guidePressed = false;
+									}
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
 										xticks.QuadPart == 0 && !ButtonPressed)
@@ -636,29 +663,21 @@ bool SteamHandler::isSteamRunning()
 	}
 	return false;
 }
-bool SteamHandler::SetSteamFocus()
+void SteamHandler::SetSteamFocus()
 {
 	if (isSteamRunning())
 	{
 		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
 		if (hWnd && BPwindow)
 		{
-			INPUT AltDownInput = {};
-			ZeroMemory(&AltDownInput, sizeof(AltDownInput));
-
-			AltDownInput.type = INPUT_MOUSE;
-			AltDownInput.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-			UINT uSent = SendInput(1, &AltDownInput, sizeof(INPUT));
-			//SetForegroundWindow(hWnd);
-			//SwitchToThisWindow(hWnd, TRUE);
-			//ShowWindow(hWnd, SW_SHOW);
-			//SetActiveWindow(hWnd);
-			INPUT AltUpInput = {};
-			ZeroMemory(&AltUpInput, sizeof(AltUpInput));
-			AltUpInput.type = INPUT_MOUSE;
-			AltUpInput.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-			uSent = SendInput(1, &AltUpInput, sizeof(INPUT));
+			BPwindow->SetFocus();
 		}
 	}
-	return false;
+}
+void SteamHandler::SetSteamGameFocus()
+{
+	if (isSteamRunning())
+	{
+		BPwindow->SetFocus();
+	}
 }
