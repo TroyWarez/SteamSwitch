@@ -12,6 +12,7 @@ public:
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
 	void ToggleMode();
+	void TogglePowerCEC(MonitorMode mode);
 	int getActiveMonitorCount();
 private:
 	MonitorMode currentMode;
@@ -19,6 +20,5 @@ private:
 	CEC::ICECAdapter* cecAdpater;
 	std::string deviceStrPort;
 	bool cecInit;
-	void TogglePowerCEC(MonitorMode mode);
 	void ToggleActiveMonitors(MonitorMode mode);
 };

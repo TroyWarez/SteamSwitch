@@ -122,7 +122,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-
+   AddNotificationIcon(hWnd);
    steamHandler = new SteamHandler(hWnd);
 
    ShowWindow(hWnd, SW_HIDE);
@@ -171,7 +171,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				//steamHandler->ShouldFocus(true);
             }
 		}
-
 		AddNotificationIcon(hWnd);
         break;
     }
@@ -191,6 +190,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
 			audioHandler.InitDefaultAudioDevice();
 		}
+        break;
+    }
+    case WM_SETTINGCHANGE:
+    {
+        if (steamHandler)
+        {
+            steamHandler->SetSteamFocus();
+        }
+        break;
+    }
+    case WM_QUERYENDSESSION:
+    {
+		if (steamHandler)
+		{
+			steamHandler->inputHandler->turnOffXinputController();
+            if (steamHandler->isSteamInBigPictureMode)
+            {
+                steamHandler->monHandler->ToggleMode();
+            }
+		}
+        break;
+    }
+    case WM_ENDSESSION:
+    {
+        PostQuitMessage(0);
         break;
     }
     case WM_PAINT:

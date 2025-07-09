@@ -81,12 +81,13 @@ int SteamHandler::StartSteamHandler()
 	bool HeldEnableWindowControls = false;
 	bool SelectButtonPressed = false;
 	bool TopMost = false;
-	if (monHandler && monHandler->getActiveMonitorCount() == 1)
-	{
-		ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-	}
-	DWORD er = GetLastError();
+	bool ShouldHideCursor = true;
+	bool ButtonPressed = false;
+	bool AButtonPressed = false;
+	bool StartButtonPressed = false;
 	bool ShouldRightClick = true;
+
+	DWORD er = GetLastError();
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
 	std::wstring windowsExplorerPath(windowsDir);
@@ -107,19 +108,32 @@ int SteamHandler::StartSteamHandler()
 	LARGE_INTEGER xticks = { 0 };
 	LARGE_INTEGER xticks2 = { 2 };
 
-	bool ShouldHideCursor = true;
-	bool ButtonPressed = false;
-
-	bool AButtonPressed = false;
-	bool StartButtonPressed = false;
-
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
 	MSG msg;
 	WCHAR programFiles[MAX_PATH] = { 0 };
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
-	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE.exe";
+	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+
+	while (true)
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+			{
+				break;
+			}
+
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		if (monHandler && monHandler->getActiveMonitorCount() == 1 && isSteamRunning())
+		{
+			ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+			break;
+		}
+	}
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -227,7 +241,7 @@ int SteamHandler::StartSteamHandler()
 										}
 										else
 										{
-											HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
+											HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);//Bad
 											TerminateProcess(hProcessIcUe, 0);
 											CloseHandle(hProcessIcUe);
 										}
@@ -661,9 +675,4 @@ bool SteamHandler::SetSteamFocus()
 		}
 	}
 	return false;
-}
-void SteamHandler::ShouldFocus(bool focus)
-{
-	ShouldRefocus = focus;
-	SetSteamFocus();
 }

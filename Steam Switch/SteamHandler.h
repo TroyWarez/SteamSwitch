@@ -33,6 +33,5 @@ public:
 	std::wstring steamBigPictureModeTitle;
 	bool isSteamInBigPictureMode;
 	bool ShouldRefocus;
-	void ShouldFocus(bool focus);
 };
 
