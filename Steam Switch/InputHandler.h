@@ -9,6 +9,7 @@ public:
 	void turnOffXinputController();
 	XINPUT_STATE lastXstate;
 	HINSTANCE hXInputDLL;
-
+	//GameInput::v1::IGameInput* gameInput;
+	//GameInput::v1::IGameInputDevice* gamepad;
 };
 

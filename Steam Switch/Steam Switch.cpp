@@ -7,7 +7,7 @@
 #include "AudioHandler.h"
 #include "MonitorHandler.h"
 
-#define MAX_LOADSTRING 100
+#define MAX_LOADSTRING 100 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
 
 // Global Variables:
@@ -168,7 +168,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
             if (!steamHandler->isSteamInGame())
             {
-				steamHandler->ShouldFocus(true);
+				//steamHandler->ShouldFocus(true);
             }
 		}
 

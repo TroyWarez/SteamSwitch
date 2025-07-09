@@ -79,7 +79,12 @@ int SteamHandler::StartSteamHandler()
 	bool TabTipCordHeld = false;
 	bool EnableWindowControls = false;
 	bool HeldEnableWindowControls = false;
+	bool SelectButtonPressed = false;
 	bool TopMost = false;
+	if (monHandler && monHandler->getActiveMonitorCount() == 1)
+	{
+		ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+	}
 	DWORD er = GetLastError();
 	bool ShouldRightClick = true;
 	WCHAR windowsDir[MAX_PATH] = { 0 };
@@ -318,15 +323,15 @@ int SteamHandler::StartSteamHandler()
 											ShowWindow(consoleHwndAlt, SW_HIDE);
 										}
 										
- 										if (!isSteamInGame())
- 										{
-											SwitchToThisWindow(hWndBP, TRUE);
+ 										//if (!isSteamInGame())
+ 										//{
+											//SwitchToThisWindow(hWndBP, TRUE);
 											//SetSteamFocus();
- 										}
-										else
-										{
-											ShowWindow(hWndBP, SW_HIDE);
-										}
+ 										//}
+										//else
+										//{
+											//ShowWindow(hWndBP, SW_HIDE);
+										//}
  										}
 									}
 								}
@@ -409,7 +414,25 @@ int SteamHandler::StartSteamHandler()
 									{
 										HeldEnableWindowControls = false;
 									}
-
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+									{
+										if (!SelectButtonPressed)
+										{
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
+												ShowWindow(hWndBP2, SW_SHOW);
+												SetActiveWindow(hWndBP2);
+												SetForegroundWindow(hWndBP2);
+												SwitchToThisWindow(hWndBP2, TRUE);
+											}
+											SelectButtonPressed = true;
+										}
+									}
+									else
+									{
+										SelectButtonPressed = false;
+									}
 									if (EnableWindowControls)
 									{
 										inputHandler->SendControllerInput(&xstate);

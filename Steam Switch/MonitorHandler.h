@@ -1,7 +1,5 @@
 #pragma once
 #include "framework.h"
-int getActiveMonitorCount();
-
 class MonitorHandler
 {
 public:

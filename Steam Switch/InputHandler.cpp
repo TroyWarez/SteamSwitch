@@ -4,8 +4,12 @@ extern SteamHandler* steamHandler;
 #define MOUSE_OFFSET 0.1111
 InputHandler::InputHandler()
 {
-	hXInputDLL = LoadLibraryW(L"XInput1_3.dll");
 	ZeroMemory(&lastXstate, sizeof(lastXstate));
+	hXInputDLL = LoadLibraryW(L"XInput1_3.dll");
+	//gameInput = nullptr;
+	//gamepad = nullptr;
+	//HRESULT hr = GameInput::v1::GameInputCreate(&gameInput);
+	//int a = 1;
 }
 InputHandler::~InputHandler()
 {
@@ -13,6 +17,10 @@ InputHandler::~InputHandler()
 	{
 		FreeLibrary(hXInputDLL);
 	}
+	//if (gameInput)
+	//{
+	//	gameInput->Release();
+	//}
 }
 void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 {

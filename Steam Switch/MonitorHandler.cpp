@@ -239,3 +239,10 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 
 
 }
+int MonitorHandler::getActiveMonitorCount()
+{
+	UINT32 NumPathArrayElements = 0;
+	UINT32 NumModeInfoArrayElements = 0;
+	HRESULT hr = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &NumPathArrayElements, &NumModeInfoArrayElements);
+	return NumPathArrayElements;
+}

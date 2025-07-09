@@ -12,6 +12,7 @@
 #include <commctrl.h>
 #include <Dbt.h>
 #include <Xinput.h>
+#include <GameInput.h>
 #include <psapi.h>
 #include <wctype.h>
 #include <uiautomationclient.h>
