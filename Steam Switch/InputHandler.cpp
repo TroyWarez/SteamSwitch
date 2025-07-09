@@ -148,5 +148,5 @@ void InputHandler::turnOffXinputController()
 }
 DWORD InputHandler::GetXInputStateDeviceIO(DWORD index, PXINPUT_STATE pXstate)
 {
-	return xbox_get(0, (xbox_state*)pXstate);
+	return xbox_get(0, pXstate);
 }

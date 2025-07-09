@@ -23,7 +23,7 @@ public:
 	bool isSteamRunning();
 	bool isSteamInGame();
 	void SetSteamFocus();
-	void SetSteamGameFocus();
+	bool getSteamFocus();
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
 	IUIAutomationElement* BPwindow;
@@ -33,6 +33,6 @@ public:
 	DWORD gamePid;
 	std::wstring steamBigPictureModeTitle;
 	bool isSteamInBigPictureMode;
-	bool ShouldRefocus;
+	bool isSteamFocused;
 };
 

@@ -161,7 +161,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         SHAppBarMessage(ABM_NEW, &appbarData);
         break;
     }
-    case (WM_USER + 201):
+    case WM_DISPLAYCHANGE:
     {
 		if (!steamHandler->isSteamInGame())
 		{
@@ -171,7 +171,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SwitchToThisWindow(hWndBP2, TRUE);
                 if (!steamHandler->isSteamInGame()){
 
-                    steamHandler->SetSteamFocus();
+					ShowWindow(hWndBP2, SW_MINIMIZE);
+					ShowWindow(hWndBP2, SW_SHOWDEFAULT);
             }
 			}
 
@@ -193,6 +194,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (wParam == DBT_DEVNODES_CHANGED)
 		{
 			audioHandler.InitDefaultAudioDevice();
+            break;
+		}
+		DEV_BROADCAST_HDR* hdr = (DEV_BROADCAST_HDR*)lParam;
+		if (lParam && hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
+		{
+			DEV_BROADCAST_DEVICEINTERFACE_W* dif = (DEV_BROADCAST_DEVICEINTERFACE_W*)hdr;
+			if (wParam == DBT_DEVICEARRIVAL)
+			{
+				DWORD index = xbox_connect(dif->dbcc_name);
+			}
+			else if (wParam == DBT_DEVICEREMOVECOMPLETE)
+			{
+				DWORD index = xbox_disconnect(dif->dbcc_name);
+			}
 		}
         break;
     }

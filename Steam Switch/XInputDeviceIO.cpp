@@ -141,7 +141,7 @@ int xbox_get_battery(DWORD index, xbox_battery* bat)
 }
 
 
-int xbox_get(DWORD index, xbox_state* state)
+int xbox_get(DWORD index, XINPUT_STATE* state)
 {
 	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == NULL)
 	{
@@ -157,15 +157,19 @@ int xbox_get(DWORD index, xbox_state* state)
 		return GetLastError();
 	}
 
-	state->packet = *(DWORD*)(out + 5);
-	state->buttons = *(WORD*)(out + 11);
-	state->left_trigger = out[13];
-	state->right_trigger = out[14];
-	state->left_thumb_x = *(SHORT*)(out + 15);
-	state->left_thumb_y = *(SHORT*)(out + 17);
-	state->right_thumb_x = *(SHORT*)(out + 19);
-	state->right_thumb_y = *(SHORT*)(out + 21);
-	return 0;
+
+	XINPUT_STATE xstate = { 0 };
+	DWORD dwResult = XInputGetState(index, &xstate);
+	WORD Buttons = *(WORD*)(out + 11);
+	if (Buttons & XBOX_GUIDE && state)
+	{
+		xstate.Gamepad.wButtons = xstate.Gamepad.wButtons | XBOX_GUIDE;
+	}
+	if (state)
+	{
+	*(state) = xstate;
+	}
+	return dwResult;
 }
 
 
