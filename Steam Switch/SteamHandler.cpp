@@ -64,12 +64,6 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
-	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-	if (hWndIC)
-	{
-		//ShowWindow(hWndIC, SW_HIDE);
-		PostMessageW(hWndIC, WM_QUIT, 0, 0);
-	}
 	// 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
 	// 										TerminateProcess(hProcessIcUeProc, 0);
 	// 										CloseHandle(hProcessIcUeProc);
@@ -244,34 +238,31 @@ int SteamHandler::StartSteamHandler()
 											BPwindow = nullptr;
 										}
 										inputHandler->turnOffXinputController();
-										//HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-										//TerminateProcess(hProcess, 0);
-										//CloseHandle(hProcess);
+ 										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
+ 										TerminateProcess(hProcess, 0);
+										CloseHandle(hProcess);
 										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										if (hWndIC)
 										{
 											PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 										}
-
-
-
-										//PROCESS_INFORMATION pi = { 0 };
-										//STARTUPINFOW si = { 0 };
-										//if (CreateProcessW(windowsExplorerPath.c_str(),
-									//		NULL,
-									//		NULL,
-									//		NULL,
-									//		FALSE,
-									//		0,
-									//		NULL,
-									//		NULL,
-								//			&si,
-								//			&pi
-								//		))
-							//			{
-							//				CloseHandle(pi.hThread);
-							//				CloseHandle(pi.hProcess);
-							//			}
+ 										PROCESS_INFORMATION pi = { 0 };
+										STARTUPINFOW si = { 0 };
+ 										if (CreateProcessW(windowsExplorerPath.c_str(),
+											NULL,
+ 											NULL,
+											NULL,
+ 											FALSE,
+ 											0,
+ 											NULL,
+ 											NULL,
+											&si,
+ 											&pi
+ 										))
+ 										{
+ 										CloseHandle(pi.hThread);
+ 											CloseHandle(pi.hProcess);
+ 										}
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
@@ -316,6 +307,18 @@ int SteamHandler::StartSteamHandler()
 
 										monHandler->ToggleMode();
 										isSteamInBigPictureMode = false;
+										HWND hWndDesk = NULL;
+										while (hWndDesk == NULL)
+										{
+											hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
+											if (hWndDesk)
+											{
+												SendMessage(hWndDesk, WM_CLOSE, 0, 0);
+												break;
+											}
+											Sleep(1);
+										}
+
 										break;
 									}
 									else
