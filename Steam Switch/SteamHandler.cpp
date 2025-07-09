@@ -64,6 +64,16 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
+	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+	if (hWndIC)
+	{
+		//ShowWindow(hWndIC, SW_HIDE);
+		PostMessageW(hWndIC, WM_QUIT, 0, 0);
+	}
+	// 										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
+	// 										TerminateProcess(hProcessIcUeProc, 0);
+	// 										CloseHandle(hProcessIcUeProc);
+
 // 	XINPUT_STATE xstate2 = { 0 };
 // 	while (true)
 // 	{
@@ -115,25 +125,28 @@ int SteamHandler::StartSteamHandler()
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
-
-	while (true)
+	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		while (true)
 		{
-			if (msg.message == WM_QUIT)
+			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
+				if (msg.message == WM_QUIT)
+				{
+					break;
+				}
+
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			if (isSteamRunning())
+			{
+				ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
 				break;
 			}
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		if (monHandler && monHandler->getActiveMonitorCount() == 1 && isSteamRunning())
-		{
-			ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-			break;
 		}
 	}
+
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -184,9 +197,9 @@ int SteamHandler::StartSteamHandler()
 						}
 						steamBigPictureModeTitle = title;
 
-						//HWND eH = FindWindowW(L"Progman", NULL);
-						//GetWindowThreadProcessId(eH, &PID);
-						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
+						HWND eH = FindWindowW(L"Progman", NULL);
+						GetWindowThreadProcessId(eH, &PID);
+						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -239,12 +252,6 @@ int SteamHandler::StartSteamHandler()
 										{
 											PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 										}
-										else
-										{
-											HANDLE hProcessIcUe = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);//Bad
-											TerminateProcess(hProcessIcUe, 0);
-											CloseHandle(hProcessIcUe);
-										}
 
 
 
@@ -267,10 +274,6 @@ int SteamHandler::StartSteamHandler()
 							//			}
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
 
-										HWND eH2 = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-										HANDLE hProcessIcUeProc = OpenProcess(PROCESS_TERMINATE, FALSE, icuePid);
-										TerminateProcess(hProcessIcUeProc, 0);
-										CloseHandle(hProcessIcUeProc);
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
@@ -321,8 +324,8 @@ int SteamHandler::StartSteamHandler()
 											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 											if (hWndIC)
 											{
-												PostMessage(hWndIC, WM_CLOSE, 0, 0);
 												GetWindowThreadProcessId(hWndIC, &icuePid);
+												ShowWindow(hWndIC, SW_HIDE);
 											}
 										}
 
