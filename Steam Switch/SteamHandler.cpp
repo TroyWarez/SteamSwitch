@@ -27,8 +27,8 @@ SteamHandler::SteamHandler(HWND hWnd)
 		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-		hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
-		if (tip)
+		Sleep(1000);
+		if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 		{
 			tip->Toggle(GetDesktopWindow());
 		}
@@ -191,9 +191,9 @@ int SteamHandler::StartSteamHandler()
 						}
 						steamBigPictureModeTitle = title;
 
-						HWND eH = FindWindowW(L"Progman", NULL);
-						GetWindowThreadProcessId(eH, &PID);
-						PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
+						//HWND eH = FindWindowW(L"Progman", NULL);
+						//GetWindowThreadProcessId(eH, &PID);
+						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -367,6 +367,8 @@ int SteamHandler::StartSteamHandler()
 										xticks.QuadPart += MOUSE_WAKETIME / 2;
 									}
 									else if (
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
 										xticks.QuadPart <= xticks2.QuadPart &&
 										xticks2.QuadPart != 2 &&
 										xticks.QuadPart != 0)
@@ -377,7 +379,7 @@ int SteamHandler::StartSteamHandler()
 										ButtonPressed = true;
 									}
 
-									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
 										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
 									{
 										xticks = { 0 };
@@ -392,23 +394,14 @@ int SteamHandler::StartSteamHandler()
 									{
 										if (tip)
 										{
-											if (FAILED(tip->Toggle(GetDesktopWindow())))
-											{
 											tip->Release();
-												WCHAR programFiles[MAX_PATH] = { 0 };
-												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
-												std::wstring programFilesPath(programFiles);
-												std::wstring programCommonFilesPath(programFiles);
-												programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
-												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
-												ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-												Sleep(250);
-											if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
-											{
-												tip->Toggle(GetDesktopWindow());
-											}
+											tip = nullptr;
 										}
-										TabTipCordHeld = true;
+										if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+										{
+											tip->Toggle(GetDesktopWindow());
+											TabTipCordHeld = true;
+										}
 									}
 									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
 										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
@@ -434,28 +427,16 @@ int SteamHandler::StartSteamHandler()
 									{
 										HeldEnableWindowControls = false;
 									}
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-									{
-										if (!SelectButtonPressed)
-										{
-											if (!isSteamInGame())
-											{
-												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
-												ShowWindow(hWndBP2, SW_SHOW);
-												SetActiveWindow(hWndBP2);
-												SetForegroundWindow(hWndBP2);
-												SwitchToThisWindow(hWndBP2, TRUE);
-											}
-											SelectButtonPressed = true;
-										}
-									}
-									else
-									{
-										SelectButtonPressed = false;
-									}
 									if (EnableWindowControls)
 									{
-										inputHandler->SendControllerInput(&xstate);
+										if (!isSteamInGame())
+										{
+											EnableWindowControls = false;
+										}
+										else
+										{
+											inputHandler->SendControllerInput(&xstate);
+										}
 									}
 									QueryPerformanceCounter(&xticks2);
 								}
@@ -569,7 +550,6 @@ int SteamHandler::StartSteamHandler()
 					}
 				}
 			}
-		}
 		Sleep(1);
 	}
 	return (int)msg.wParam;
