@@ -284,7 +284,7 @@ int SteamHandler::StartSteamHandler()
 										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 										if (hWndIC && IsWindowVisible(hWndIC))
 										{
-											SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											//SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 											ShowWindow(hWndIC, SW_HIDE);
 											//DestroyWindow(hWndIC);
 										}
