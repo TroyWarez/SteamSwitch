@@ -6,7 +6,6 @@ SteamHandler::SteamHandler(HWND hWnd)
 	mainHwnd = hWnd;
 	steamPid = getSteamPid();
 	gamePid = 0;
-	BPwindow = nullptr;
 	tip = nullptr;
 	isSteamFocused = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
@@ -16,7 +15,21 @@ SteamHandler::SteamHandler(HWND hWnd)
 	{
 		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
 	}
-	HRESULT hr = CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
+	if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+	{
+		WCHAR programFiles[MAX_PATH] = { 0 };
+		ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
+		std::wstring programFilesPath(programFiles);
+		std::wstring programCommonFilesPath(programFiles);
+		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
+		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
+		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+		HRESULT hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
+		if (tip)
+		{
+			tip->Toggle(GetDesktopWindow());
+		}
+	}
 }
 SteamHandler::~SteamHandler()
 {
@@ -28,16 +41,6 @@ SteamHandler::~SteamHandler()
 	{
 		delete inputHandler;
 	}
-	if (BPwindow)
-	{
-		BPwindow->Release();
-		BPwindow = nullptr;
-	}
-	if (pAutomation)
-	{
-		pAutomation->Release();
-		pAutomation = nullptr;
-	}
 	if (hKernel32)
 	{
 		FreeLibrary(hKernel32);
@@ -48,7 +51,6 @@ SteamHandler::~SteamHandler()
 
 int SteamHandler::StartSteamHandler()
 {
-
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
 	bool EnableWindowControls = false;
@@ -80,6 +82,12 @@ int SteamHandler::StartSteamHandler()
 
 	LARGE_INTEGER xticks = { 0 };
 	LARGE_INTEGER xticks2 = { 2 };
+
+	LARGE_INTEGER ticksGuide = { 0 };
+	LARGE_INTEGER ticksGuide2 = { 2 };
+
+	LARGE_INTEGER xticksGuide = { 0 };
+	LARGE_INTEGER xticksGuide2 = { 2 };
 
 	XINPUT_STATE xstate = { 0 };
 	POINT firstCursorPos = { 0 };
@@ -182,7 +190,7 @@ int SteamHandler::StartSteamHandler()
 						monHandler->ToggleMode();
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
-
+						//SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 						while (isSteamInBigPictureMode)
 						{
 							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -272,36 +280,28 @@ int SteamHandler::StartSteamHandler()
 
 										monHandler->ToggleMode();
 										isSteamInBigPictureMode = false;
-										HWND hWndDesk = NULL;
-										while (hWndDesk == NULL)
-										{
-											hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
-											if (hWndDesk)
-											{
-												SendMessage(hWndDesk, WM_CLOSE, 0, 0);
-												break;
-											}
-											Sleep(1);
-										}
+// 										HWND hWndDesk = NULL;
+// 										while (hWndDesk == NULL)
+// 										{
+// 											hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
+// 											if (hWndDesk)
+// 											{
+// 												SendMessage(hWndDesk, WM_CLOSE, 0, 0);
+// 												break;
+// 											}
+// 											Sleep(1);
+// 										}
 
 										break;
 									}
 									else
 									{
-										if (hProcessiCue) {
-											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-											if (hWndIC)
-											{
-												GetWindowThreadProcessId(hWndIC, &icuePid);
-												//SendMessage(hWndIC, WM_CLOSE, 0, 0);
-												ShowWindow(hWndIC, SW_HIDE);
-												Sleep(200);
-												if (bpHwnd) {
-													SetWindowPos(bpHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
-													SetActiveWindow(bpHwnd);
-													ShowWindow(bpHwnd, SW_SHOW);
-												}
-											}
+										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+										if (hWndIC && IsWindowVisible(hWndIC))
+										{
+											SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											ShowWindow(hWndIC, SW_HIDE);
+											//DestroyWindow(hWndIC);
 										}
 
 										HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
@@ -318,7 +318,6 @@ int SteamHandler::StartSteamHandler()
  										if (isSteamInGame())
  										{
 											isSteamFocused = false;
-
  										}
 										}
 									}
@@ -333,9 +332,9 @@ int SteamHandler::StartSteamHandler()
 											if (!isSteamInGame())
 											{
 												HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-												HRESULT hr = pAutomation->ElementFromHandle(hWndBP2, &BPwindow);
 												ShowWindow(hWndBP2, SW_MINIMIZE);
 												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+												SetForegroundWindow(hWndBP2);
 // 												if (SUCCEEDED(hr))
 // 												{
 // 													BPwindow->SetFocus();
@@ -353,33 +352,46 @@ int SteamHandler::StartSteamHandler()
 									{
 										SelectButtonPressed = false;
 									}
-									if (xstate.Gamepad.wButtons & XBOX_GUIDE && !isSteamFocused)
-									{
-										if (!guidePressed)
-										{
-											if (!isSteamInGame())
-											{
-												HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-												HRESULT hr = pAutomation->ElementFromHandle(hWndBP2, &BPwindow);
-												ShowWindow(hWndBP2, SW_MINIMIZE);
-												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-// 												if (SUCCEEDED(hr))
-// 												{
-// 													BPwindow->SetFocus();
-// 
-// 													BPwindow->Release();
-// 													BPwindow = nullptr;
-// 													SelectButtonPressed = true;
-// 													continue;
-// 												}
-											}
-											guidePressed = true;
-										}
-									}
-									else
-									{
-										guidePressed = false;
-									}
+// 									if (xstate.Gamepad.wButtons & XBOX_GUIDE && !isSteamFocused && xticksGuide.QuadPart == 0)
+// 									{
+// 										if (!guidePressed)
+// 										{
+// 											QueryPerformanceCounter(&xticksGuide);
+// 											xticksGuide.QuadPart += CONTROLLER_WAKETIME;
+// 											guidePressed = true;
+// 										}
+// 									}
+// 									else if (
+// 										xstate.Gamepad.wButtons & XBOX_GUIDE &&
+// 										xticksGuide.QuadPart <= xticksGuide2.QuadPart &&
+// 										xticksGuide2.QuadPart != 2 &&
+// 										xticksGuide.QuadPart != 0)
+// 									{
+// 										if (!isSteamInGame())
+// 										{
+// 											HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+// 											HRESULT hr = pAutomation->ElementFromHandle(hWndBP2, &BPwindow);
+// 											ShowWindow(hWndBP2, SW_MINIMIZE);
+// 											ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+// 											SetForegroundWindow(hWndBP2);
+// 											// 												if (SUCCEEDED(hr))
+// 											// 												{
+// 											// 													BPwindow->SetFocus();
+// 											// 
+// 											// 													BPwindow->Release();
+// 											// 													BPwindow = nullptr;
+// 											// 													SelectButtonPressed = true;
+// 											// 													continue;
+// 											// 												}
+// 										}
+// 										xticksGuide = { 0 };
+// 										xticksGuide2 = { 2 };
+// 										guidePressed = true;
+// 									}
+// 									else
+// 									{
+// 										guidePressed = false;
+// 									}
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
 										xticks.QuadPart == 0 && !ButtonPressed)
@@ -419,6 +431,10 @@ int SteamHandler::StartSteamHandler()
 											tip->Release();
 											tip = nullptr;
 										}
+										else
+										{
+
+										}
 										TabTipCordHeld = true;
 									}
 									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
@@ -457,6 +473,7 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 									QueryPerformanceCounter(&xticks2);
+									QueryPerformanceCounter(&xticksGuide2);
 								}
 								POINT cursorPos;
 								if (GetCursorPos(&cursorPos))
@@ -653,17 +670,6 @@ bool SteamHandler::isSteamRunning()
 		CloseHandle(hProcess);
 	}
 	return false;
-}
-void SteamHandler::SetSteamFocus()
-{
-	if (isSteamRunning())
-	{
-		HWND hWnd = FindWindowW(SDL_CLASS, steamBigPictureModeTitle.c_str());
-		if (hWnd && BPwindow)
-		{
-			//BPwindow->SetFocus();
-		}
-	}
 }
 bool SteamHandler::getSteamFocus()
 {

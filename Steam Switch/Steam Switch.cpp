@@ -211,14 +211,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         break;
     }
-    case WM_SETTINGCHANGE:
-    {
-        if (steamHandler)
-        {
-            steamHandler->SetSteamFocus();
-        }
-        break;
-    }
     case WM_ENDSESSION:
     {
 		if (steamHandler)
