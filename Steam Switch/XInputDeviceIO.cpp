@@ -150,26 +150,22 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 
 	BYTE in[3] = { 0x01, 0x01, 0x00 };
 	BYTE out[29];
+
 	DWORD size;
+	DWORD dwResult = ERROR_SUCCESS;
 	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in, sizeof(in), out, sizeof(out), &size, NULL) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
-		return GetLastError();
+		
+		return XInputGetState(index, state);
 	}
-
-
-	XINPUT_STATE xstate = { 0 };
-	DWORD dwResult = XInputGetState(index, &xstate);
+	dwResult = XInputGetState(index, state);
 	WORD Buttons = *(WORD*)(out + 11);
 	if (Buttons & XBOX_GUIDE && state)
 	{
-		xstate.Gamepad.wButtons = xstate.Gamepad.wButtons | XBOX_GUIDE;
+		state->Gamepad.wButtons = state->Gamepad.wButtons | XBOX_GUIDE;
 	}
-	if (state)
-	{
-	*(state) = xstate;
-	}
-	return dwResult;
+	return ERROR_SUCCESS;
 }
 
 
