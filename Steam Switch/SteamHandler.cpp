@@ -15,21 +15,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	{
 		*(FARPROC*)&NtQueryInformationProcess = GetProcAddress(hKernel32, "NtQueryInformationProcess");
 	}
-	if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
-	{
-		WCHAR programFiles[MAX_PATH] = { 0 };
-		ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
-		std::wstring programFilesPath(programFiles);
-		std::wstring programCommonFilesPath(programFiles);
-		programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
-		programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
-		ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-		HRESULT hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
-		if (tip)
-		{
-			tip->Toggle(GetDesktopWindow());
-		}
-	}
+
 }
 SteamHandler::~SteamHandler()
 {
@@ -428,12 +414,17 @@ int SteamHandler::StartSteamHandler()
 										if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 										{
 											tip->Toggle(GetDesktopWindow());
-											tip->Release();
-											tip = nullptr;
 										}
-										else
+										else if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 										{
-
+											WCHAR programFiles[MAX_PATH] = { 0 };
+											ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
+											std::wstring programFilesPath(programFiles);
+											std::wstring programCommonFilesPath(programFiles);
+											programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
+											programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
+											ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+											tip->Toggle(GetDesktopWindow());
 										}
 										TabTipCordHeld = true;
 									}
