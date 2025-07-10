@@ -427,8 +427,12 @@ int SteamHandler::StartSteamHandler()
 												programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 												ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
-												tip->Toggle(GetDesktopWindow());
-												tip->Release();
+												Sleep(10);
+												if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
+												{
+													tip->Toggle(GetDesktopWindow());
+													tip->Release();
+												}
 											}
 										}
 										TabTipCordHeld = true;

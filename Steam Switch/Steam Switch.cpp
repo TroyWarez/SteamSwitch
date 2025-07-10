@@ -123,6 +123,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
    AddNotificationIcon(hWnd);
+   DEV_BROADCAST_DEVICEINTERFACE_W db = { 0 };
+   db.dbcc_size = sizeof(db),
+       db.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE,
+       db.dbcc_classguid = xbox_guid,
+   RegisterDeviceNotificationW(hWnd, &db, DEVICE_NOTIFY_WINDOW_HANDLE);
    steamHandler = new SteamHandler(hWnd);
 
    ShowWindow(hWnd, SW_HIDE);
@@ -191,11 +196,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case WM_DEVICECHANGE:
     {
-		if (wParam == DBT_DEVNODES_CHANGED)
-		{
-			audioHandler.InitDefaultAudioDevice();
-            break;
-		}
 		DEV_BROADCAST_HDR* hdr = (DEV_BROADCAST_HDR*)lParam;
 		if (lParam && hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
 		{
@@ -208,6 +208,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				DWORD index = xbox_disconnect(dif->dbcc_name);
 			}
+		}
+		if (wParam == DBT_DEVNODES_CHANGED)
+		{
+			audioHandler.InitDefaultAudioDevice();
 		}
         break;
     }
