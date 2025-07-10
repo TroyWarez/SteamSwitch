@@ -25,7 +25,6 @@ public:
 	bool getSteamFocus();
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
-	ITipInvocation* tip;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;
