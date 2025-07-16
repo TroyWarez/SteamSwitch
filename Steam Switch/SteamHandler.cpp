@@ -1,8 +1,37 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
+static HWND g_HWND = NULL;
+static DWORD ChildProcWindowCount = 0;
+BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
+{
+	DWORD lpdwProcessId;
+	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
+	if (lpdwProcessId == lParam)
+	{
+		g_HWND = hwnd;
+		HWND foreHwnd = GetForegroundWindow();
+// 
+// 		WCHAR windowTitle[256] = { 0 };
+// 		GetWindowTextW(foreHwnd, windowTitle, 256);
+// 		std::wstring title(windowTitle);
+// 		WCHAR windowClassName[256] = { 0 };
+// 		GetClassNameW(foreHwnd, windowClassName, 256);
+// 		std::wstring classname(windowClassName);
+// 
+// 		WCHAR windowTitle2[256] = { 0 };
+// 		GetWindowTextW(foreHwnd, windowTitle2, 256);
+// 		std::wstring title(windowTitle2);
+// 		WCHAR windowClassName2[256] = { 0 };
+// 		GetClassNameW(foreHwnd, windowClassName2, 256);
+// 		std::wstring classname(windowClassName2);
+// 
+// 		SwitchToThisWindow(hwnd, TRUE);
+		return FALSE;
+	}
+	return TRUE;
+}
 SteamHandler::SteamHandler(HWND hWnd)
 {
-	HINSTANCE hXInputDLL = LoadLibraryA("XInput1_3.dll");
 	mainHwnd = hWnd;
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -281,29 +310,27 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
-										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-										if (hWndIC && IsWindowVisible(hWndIC))
+										if (!isSteamInGame())
 										{
-											//SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-											ShowWindow(hWndIC, SW_HIDE);
-											//DestroyWindow(hWndIC);
-										}
+											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+											if (hWndIC && IsWindowVisible(hWndIC))
+											{
+												//SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+												ShowWindow(hWndIC, SW_HIDE);
+												//DestroyWindow(hWndIC);
+											}
 
-										HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
-										if (consoleHwnd)
-										{
-											ShowWindow(consoleHwnd, SW_HIDE);
+											HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
+											if (consoleHwnd)
+											{
+												ShowWindow(consoleHwnd, SW_HIDE);
+											}
+											HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", NULL);
+											if (consoleHwndAlt)
+											{
+												ShowWindow(consoleHwndAlt, SW_HIDE);
+											}
 										}
-										HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", NULL);
-										if (consoleHwndAlt)
-										{
-											ShowWindow(consoleHwndAlt, SW_HIDE);
-										}
-										
- 										if (isSteamInGame())
- 										{
-											isSteamFocused = false;
- 										}
 										}
 									}
 								}
@@ -632,9 +659,10 @@ bool SteamHandler::isSteamInGame()
 						{
 							std::wstring processName(szProcessName);
 
-							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe")
+							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe" && processName != L"gameoverlayui64.exe" && processName != L"gameoverlayui.exe")
 							{
 								gamePid = processIds[i];
+								EnumWindows(EnumWindowsProcMy, gamePid);
 								return true;
 							}
 						}

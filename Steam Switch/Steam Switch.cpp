@@ -156,32 +156,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         AddNotificationIcon(hWnd);
         s_uTaskbarRestart = RegisterWindowMessageW(L"TaskbarCreated");
-
-        APPBARDATA appbarData = {};
-        appbarData.hWnd = hWnd;
-		appbarData.cbSize = sizeof(APPBARDATA);
-		appbarData.uCallbackMessage = WM_USER + 201;
-		appbarData.uEdge = ABM_SETPOS;
-		appbarData.rc = { 0, 0, 0, 0 };
-        SHAppBarMessage(ABM_NEW, &appbarData);
-        break;
-    }
-    case WM_DISPLAYCHANGE:
-    {
-		if (!steamHandler->isSteamInGame())
-		{
-			HWND hWndBP2 = FindWindowW(SDL_CLASS, steamHandler->getSteamBigPictureModeTitle());
-            if (hWndBP2)
-            {
-                SwitchToThisWindow(hWndBP2, TRUE);
-                if (!steamHandler->isSteamInGame()){
-
-					ShowWindow(hWndBP2, SW_MINIMIZE);
-					ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-            }
-			}
-
-		}
         break;
     }
     case APPWM_ICONNOTIFY:
@@ -261,8 +235,8 @@ BOOL AddNotificationIcon(HWND hwnd)
 	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
 	    nid.uCallbackMessage = WM_USER + 200;
 	    nid.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_STEAMSWITCH));
-	    lstrcpyW(nid.szTip, L"Click here to close Steam Switch");
-	    lstrcpyW(nid.szInfoTitle, L"Steam Switch");
+        std::copy(L"Click here to close Steam Switch", L"Click here to close Steam Switch" + 33, nid.szTip);
+        std::copy(L"Click here to close Steam Switch", L"Click here to close Steam Switch" + 13, nid.szTip);
         nid.uCallbackMessage = APPWM_ICONNOTIFY;
 	return Shell_NotifyIconW(NIM_ADD, &nid);
 }
