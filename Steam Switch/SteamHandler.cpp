@@ -1,31 +1,31 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
-static HWND g_HWND = NULL;
-static DWORD ChildProcWindowCount = 0;
+static bool MessageBoxFound = false;
+static bool SwitchedWindow = false;
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
-	DWORD lpdwProcessId;
+	DWORD lpdwProcessId = 0;
 	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
 	if (lpdwProcessId == lParam)
 	{
-		g_HWND = hwnd;
-		HWND foreHwnd = GetForegroundWindow();
-// 
-// 		WCHAR windowTitle[256] = { 0 };
-// 		GetWindowTextW(foreHwnd, windowTitle, 256);
-// 		std::wstring title(windowTitle);
-// 		WCHAR windowClassName[256] = { 0 };
-// 		GetClassNameW(foreHwnd, windowClassName, 256);
-// 		std::wstring classname(windowClassName);
-// 
-// 		WCHAR windowTitle2[256] = { 0 };
-// 		GetWindowTextW(foreHwnd, windowTitle2, 256);
-// 		std::wstring title(windowTitle2);
-// 		WCHAR windowClassName2[256] = { 0 };
-// 		GetClassNameW(foreHwnd, windowClassName2, 256);
-// 		std::wstring classname(windowClassName2);
-// 
-// 		SwitchToThisWindow(hwnd, TRUE);
+		HWND dlgH = GetDlgItem(hwnd, (int)0xFFFF);
+		if (dlgH)
+		{
+			if (!MessageBoxFound)
+			{
+				SetActiveWindow(hwnd);
+			}
+			MessageBoxFound = true;
+		}
+		else
+		{
+			MessageBoxFound = false;
+			if (!SwitchedWindow)
+			{
+				SetForegroundWindow(hwnd);
+				SwitchedWindow = true;
+			}
+		}
 		return FALSE;
 	}
 	return TRUE;
@@ -68,7 +68,6 @@ int SteamHandler::StartSteamHandler()
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
 	bool EnableWindowControls = false;
-	bool HeldEnableWindowControls = false;
 	bool SelectButtonPressed = false;
 	bool guidePressed = false;
 	bool TopMost = false;
@@ -323,12 +322,12 @@ int SteamHandler::StartSteamHandler()
 											HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
 											if (consoleHwnd)
 											{
-												ShowWindow(consoleHwnd, SW_HIDE);
+												ShowWindow(consoleHwnd, SW_MINIMIZE);
 											}
 											HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", NULL);
 											if (consoleHwndAlt)
 											{
-												ShowWindow(consoleHwndAlt, SW_HIDE);
+												ShowWindow(consoleHwndAlt, SW_MINIMIZE);
 											}
 										}
 										}
@@ -337,7 +336,7 @@ int SteamHandler::StartSteamHandler()
 								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
 								{
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK && !isSteamFocused)
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
 									{
 										if (!SelectButtonPressed)
 										{
@@ -356,6 +355,10 @@ int SteamHandler::StartSteamHandler()
 // 													SelectButtonPressed = true;
 // 													continue;
 // 												}
+											}
+											else
+											{
+												SwitchedWindow = false;
 											}
 											SelectButtonPressed = true;
 										}
@@ -470,23 +473,9 @@ int SteamHandler::StartSteamHandler()
 										TabTipCordHeld = false;
 									}
 
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+									if (MessageBoxFound)
 									{
-										if (EnableWindowControls && !HeldEnableWindowControls)
-										{
-											EnableWindowControls = false;
-										}
-										else if (!HeldEnableWindowControls)
-										{
-											EnableWindowControls = true;
-										}
-										HeldEnableWindowControls = true;
-									}
-									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
-									{
-										HeldEnableWindowControls = false;
+										EnableWindowControls = true;
 									}
 									if (EnableWindowControls)
 									{
