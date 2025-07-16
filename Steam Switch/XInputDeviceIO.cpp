@@ -156,7 +156,6 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in, sizeof(in), out, sizeof(out), &size, NULL) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
-		
 		return XInputGetState(index, state);
 	}
 	dwResult = XInputGetState(index, state);
@@ -167,7 +166,6 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 	}
 	return ERROR_SUCCESS;
 }
-
 
 int xbox_set(DWORD index, BYTE low_freq, BYTE high_freq)
 {

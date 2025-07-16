@@ -1,5 +1,6 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
+#include <GenericInput.h>
 static bool MessageBoxFound = false;
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
@@ -21,6 +22,7 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 	}
 	return TRUE;
 }
+
 SteamHandler::SteamHandler(HWND hWnd)
 {
 	mainHwnd = hWnd;
@@ -53,9 +55,9 @@ SteamHandler::~SteamHandler()
 	}
 	CoUninitialize();
 }
-
 int SteamHandler::StartSteamHandler()
 {
+
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
 	bool FocusCurrentWindowHeld = false;
@@ -100,7 +102,6 @@ int SteamHandler::StartSteamHandler()
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
-
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
 		while (true)
@@ -470,6 +471,77 @@ int SteamHandler::StartSteamHandler()
 									}
 									QueryPerformanceCounter(&xticks2);
 									QueryPerformanceCounter(&xticksGuide2);
+								}
+								else {
+									xstate = { 0 };
+									dwResult = GenericInputGetState(0, (GENERIC_INPUT_STATE*)&xstate);
+									if (dwResult == ERROR_SUCCESS){
+										if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											!SelectButtonPressed)
+										{
+
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+												ShowWindow(hWndBP2, SW_MINIMIZE);
+												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+												SetForegroundWindow(hWndBP2);
+												// 												if (SUCCEEDED(hr))
+												// 												{
+												// 													BPwindow->SetFocus();
+												// 
+												// 													BPwindow->Release();
+												// 													BPwindow = nullptr;
+												// 													SelectButtonPressed = true;
+												// 													continue;
+												// 												}
+											}
+											SelectButtonPressed = true;
+										}
+										else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+										{
+											SelectButtonPressed = false;
+										}
+
+
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+										xticks.QuadPart == 0 && !ButtonPressed)
+									{
+										QueryPerformanceCounter(&xticks);
+										xticks.QuadPart += MOUSE_WAKETIME / 2;
+									}
+									else if (
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+										xticks.QuadPart <= xticks2.QuadPart &&
+										xticks2.QuadPart != 2 &&
+										xticks.QuadPart != 0)
+									{
+										(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
+										xticks = { 0 };
+										xticks2 = { 2 };
+										ButtonPressed = true;
+									}
+
+									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
+									{
+										xticks = { 0 };
+										xticks2 = { 2 };
+										ButtonPressed = false;
+									}
+
+									if (MessageBoxFound)
+									{
+										if (isSteamInGame())
+										{
+											inputHandler->SendControllerInput(&xstate);
+										}
+									}
+									QueryPerformanceCounter(&xticks2);
+									QueryPerformanceCounter(&xticksGuide2);
+								}
 								}
 								POINT cursorPos;
 								if (GetCursorPos(&cursorPos))

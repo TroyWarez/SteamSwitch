@@ -6,7 +6,7 @@
 #include "SteamHandler.h"
 #include "AudioHandler.h"
 #include "MonitorHandler.h"
-
+#include <GenericInput.h>
 #define MAX_LOADSTRING 100 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
 
@@ -122,12 +122,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-   AddNotificationIcon(hWnd);
-   DEV_BROADCAST_DEVICEINTERFACE_W db = { 0 };
-   db.dbcc_size = sizeof(db),
-       db.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE,
-       db.dbcc_classguid = xbox_guid,
-   RegisterDeviceNotificationW(hWnd, &db, DEVICE_NOTIFY_WINDOW_HANDLE);
+   if (GenericInputInit(hWnd, FALSE) == ERROR_GEN_FAILURE)
+   {
+	   return FALSE;
+   }
+   GenericInputDeviceChange(hWnd, 0, 0, 0);
    steamHandler = new SteamHandler(hWnd);
 
    ShowWindow(hWnd, SW_HIDE);
@@ -149,7 +148,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static UINT s_uTaskbarRestart = 0;
-
+    GenericInputDeviceChange(hWnd, message, wParam, lParam);
     switch (message)
     {
     case WM_CREATE:
