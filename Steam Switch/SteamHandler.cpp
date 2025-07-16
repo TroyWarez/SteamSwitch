@@ -1,7 +1,6 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
 static bool MessageBoxFound = false;
-static bool SwitchedWindow = false;
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
 	DWORD lpdwProcessId = 0;
@@ -13,18 +12,10 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 		{
 			if (!MessageBoxFound)
 			{
-				SetActiveWindow(hwnd);
+				ShowWindow(dlgH, SW_MINIMIZE);
+				ShowWindow(dlgH, SW_SHOWDEFAULT);
 			}
 			MessageBoxFound = true;
-		}
-		else
-		{
-			MessageBoxFound = false;
-			if (!SwitchedWindow)
-			{
-				SetForegroundWindow(hwnd);
-				SwitchedWindow = true;
-			}
 		}
 		return FALSE;
 	}
@@ -67,7 +58,7 @@ int SteamHandler::StartSteamHandler()
 {
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
-	bool EnableWindowControls = false;
+	bool FocusCurrentWindowHeld = false;
 	bool SelectButtonPressed = false;
 	bool guidePressed = false;
 	bool TopMost = false;
@@ -336,37 +327,6 @@ int SteamHandler::StartSteamHandler()
 								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
 								{
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-									{
-										if (!SelectButtonPressed)
-										{
-											if (!isSteamInGame())
-											{
-												HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-												ShowWindow(hWndBP2, SW_MINIMIZE);
-												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-												SetForegroundWindow(hWndBP2);
-// 												if (SUCCEEDED(hr))
-// 												{
-// 													BPwindow->SetFocus();
-// 
-// 													BPwindow->Release();
-// 													BPwindow = nullptr;
-// 													SelectButtonPressed = true;
-// 													continue;
-// 												}
-											}
-											else
-											{
-												SwitchedWindow = false;
-											}
-											SelectButtonPressed = true;
-										}
-									}
-									else
-									{
-										SelectButtonPressed = false;
-									}
 // 									if (xstate.Gamepad.wButtons & XBOX_GUIDE && !isSteamFocused && xticksGuide.QuadPart == 0)
 // 									{
 // 										if (!guidePressed)
@@ -407,6 +367,34 @@ int SteamHandler::StartSteamHandler()
 // 									{
 // 										guidePressed = false;
 // 									}
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										!SelectButtonPressed)
+									{
+
+										if (!isSteamInGame())
+										{
+											HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+											ShowWindow(hWndBP2, SW_MINIMIZE);
+											ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+											SetForegroundWindow(hWndBP2);
+											// 												if (SUCCEEDED(hr))
+											// 												{
+											// 													BPwindow->SetFocus();
+											// 
+											// 													BPwindow->Release();
+											// 													BPwindow = nullptr;
+											// 													SelectButtonPressed = true;
+											// 													continue;
+											// 												}
+										}
+										SelectButtonPressed = true;
+									}
+									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+									{
+										SelectButtonPressed = false;
+									}
+
+
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
 										xticks.QuadPart == 0 && !ButtonPressed)
@@ -475,15 +463,7 @@ int SteamHandler::StartSteamHandler()
 
 									if (MessageBoxFound)
 									{
-										EnableWindowControls = true;
-									}
-									if (EnableWindowControls)
-									{
-										if (!isSteamInGame())
-										{
-											EnableWindowControls = false;
-										}
-										else
+										if (isSteamInGame())
 										{
 											inputHandler->SendControllerInput(&xstate);
 										}
@@ -648,10 +628,14 @@ bool SteamHandler::isSteamInGame()
 						{
 							std::wstring processName(szProcessName);
 
-							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe" && processName != L"gameoverlayui64.exe" && processName != L"gameoverlayui.exe")
-							{
-								gamePid = processIds[i];
-								EnumWindows(EnumWindowsProcMy, gamePid);
+							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe" )
+								{
+								if (processName != L"gameoverlayui64.exe" && processName != L"gameoverlayui.exe")
+								{
+									gamePid = processIds[i];
+									EnumWindows(EnumWindowsProcMy, gamePid);
+								}
+
 								return true;
 							}
 						}
