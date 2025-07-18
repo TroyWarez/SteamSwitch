@@ -57,7 +57,6 @@ SteamHandler::~SteamHandler()
 }
 int SteamHandler::StartSteamHandler()
 {
-
 	bool TabTipInvoked = false;
 	bool TabTipCordHeld = false;
 	bool FocusCurrentWindowHeld = false;
@@ -473,65 +472,63 @@ int SteamHandler::StartSteamHandler()
 									QueryPerformanceCounter(&xticksGuide2);
 								}
 								else {
-									xstate = { 0 };
-									dwResult = GenericInputGetState(0, (GENERIC_INPUT_STATE*)&xstate);
-									if (dwResult == ERROR_SUCCESS){
-										if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-											!SelectButtonPressed)
-										{
-
-											if (!isSteamInGame())
+									for (DWORD i = 0; i < 12; i++)
+									{
+										xstate = { 0 };
+										dwResult = GenericInputGetState(i, (GENERIC_INPUT_STATE*)&xstate);
+										if (dwResult == ERROR_SUCCESS) {
+											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+												!SelectButtonPressed)
 											{
-												HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-												ShowWindow(hWndBP2, SW_MINIMIZE);
-												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-												SetForegroundWindow(hWndBP2);
-												// 												if (SUCCEEDED(hr))
-												// 												{
-												// 													BPwindow->SetFocus();
-												// 
-												// 													BPwindow->Release();
-												// 													BPwindow = nullptr;
-												// 													SelectButtonPressed = true;
-												// 													continue;
-												// 												}
+
+												if (!isSteamInGame())
+												{
+													HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+													ShowWindow(hWndBP2, SW_MINIMIZE);
+													ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+													SetForegroundWindow(hWndBP2);
+												}
+												SelectButtonPressed = true;
 											}
-											SelectButtonPressed = true;
+											else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+											{
+												SelectButtonPressed = false;
+											}
+
+
+											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+												xticks.QuadPart == 0 && !ButtonPressed)
+											{
+												QueryPerformanceCounter(&xticks);
+												xticks.QuadPart += MOUSE_WAKETIME / 2;
+											}
+											else if (
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+												xticks.QuadPart <= xticks2.QuadPart &&
+												xticks2.QuadPart != 2 &&
+												xticks.QuadPart != 0)
+											{
+												(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
+												xticks = { 0 };
+												xticks2 = { 2 };
+												ButtonPressed = true;
+											}
+
+											if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+												!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
+											{
+												xticks = { 0 };
+												xticks2 = { 2 };
+												ButtonPressed = false;
+											}
 										}
-										else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+										else
 										{
-											SelectButtonPressed = false;
+											break;
 										}
-
-
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										xticks.QuadPart == 0 && !ButtonPressed)
-									{
-										QueryPerformanceCounter(&xticks);
-										xticks.QuadPart += MOUSE_WAKETIME / 2;
 									}
-									else if (
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										xticks.QuadPart <= xticks2.QuadPart &&
-										xticks2.QuadPart != 2 &&
-										xticks.QuadPart != 0)
-									{
-										(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
-										xticks = { 0 };
-										xticks2 = { 2 };
-										ButtonPressed = true;
-									}
-
-									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
-									{
-										xticks = { 0 };
-										xticks2 = { 2 };
-										ButtonPressed = false;
-									}
-
 									if (MessageBoxFound)
 									{
 										if (isSteamInGame())
@@ -541,7 +538,6 @@ int SteamHandler::StartSteamHandler()
 									}
 									QueryPerformanceCounter(&xticks2);
 									QueryPerformanceCounter(&xticksGuide2);
-								}
 								}
 								POINT cursorPos;
 								if (GetCursorPos(&cursorPos))
