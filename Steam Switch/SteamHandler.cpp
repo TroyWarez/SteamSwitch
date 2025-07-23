@@ -11,6 +11,12 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 		{
 			ShowWindow(hWndIC, SW_HIDE);
 		}
+		Sleep(1);
+	}
+	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+	if (hWndIC)
+	{
+		PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 	}
 	return 0;
 }
@@ -242,26 +248,7 @@ int SteamHandler::StartSteamHandler()
 
 										SetEvent(hShutdownEvent);
 										inputHandler->turnOffXinputController();
-//  										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
-//  										TerminateProcess(hProcess, 0);
-// 										CloseHandle(hProcess);
-//  										PROCESS_INFORMATION pi = { 0 };
-// 										STARTUPINFOW si = { 0 };
-//  										if (CreateProcessW(windowsExplorerPath.c_str(),
-// 											NULL,
-//  											NULL,
-// 											NULL,
-//  											FALSE,
-//  											0,
-//  											NULL,
-//  											NULL,
-// 											&si,
-//  											&pi
-//  										))
-//  										{
-//  											CloseHandle(pi.hThread);
-//  											CloseHandle(pi.hProcess);
-//  										}
+
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
