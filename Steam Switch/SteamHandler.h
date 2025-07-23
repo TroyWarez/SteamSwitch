@@ -9,7 +9,7 @@
 #define ICUE_TITLE L"iCUE"
 #define MOUSE_WAKETIME 50000000
 #define CONTROLLER_WAKETIME 20000000
-
+DWORD WINAPI ICUEThread(LPVOID lpParam);
 class SteamHandler
 {
 public:

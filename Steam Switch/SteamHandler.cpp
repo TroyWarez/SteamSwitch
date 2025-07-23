@@ -2,6 +2,18 @@
 #include "InvisibleMouse.h"
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
+static HANDLE hShutdownEvent = NULL;
+DWORD WINAPI ICUEThread(LPVOID lpParam) {
+	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
+	{
+		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+		if (hWndIC && IsWindowVisible(hWndIC))
+		{
+			ShowWindow(hWndIC, SW_HIDE);
+		}
+	}
+	return 0;
+}
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
 	DWORD lpdwProcessId = 0;
@@ -26,6 +38,10 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 SteamHandler::SteamHandler(HWND hWnd)
 {
 	mainHwnd = hWnd;
+	if (!hShutdownEvent)
+	{
+		hShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	}
 	steamPid = getSteamPid();
 	gamePid = 0;
 	isSteamFocused = true;
@@ -40,6 +56,11 @@ SteamHandler::SteamHandler(HWND hWnd)
 }
 SteamHandler::~SteamHandler()
 {
+	if (hShutdownEvent)
+	{
+		CloseHandle(hShutdownEvent);
+		hShutdownEvent = NULL;
+	}
 	if (monHandler)
 	{
 		delete monHandler;
@@ -158,6 +179,11 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						if (hShutdownEvent)
+						{
+							ResetEvent(hShutdownEvent);
+						}
+						CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
 						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
@@ -214,15 +240,11 @@ int SteamHandler::StartSteamHandler()
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
 
+										SetEvent(hShutdownEvent);
 										inputHandler->turnOffXinputController();
 //  										HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 //  										TerminateProcess(hProcess, 0);
 // 										CloseHandle(hProcess);
-										HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-										if (hWndIC)
-										{
-											PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
-										}
 //  										PROCESS_INFORMATION pi = { 0 };
 // 										STARTUPINFOW si = { 0 };
 //  										if (CreateProcessW(windowsExplorerPath.c_str(),
@@ -302,13 +324,6 @@ int SteamHandler::StartSteamHandler()
 									{
 										if (!isSteamInGame())
 										{
-											HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-											if (hWndIC && IsWindowVisible(hWndIC))
-											{
-												//SetWindowPos(hWndIC, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-												ShowWindow(hWndIC, SW_HIDE);
-												//DestroyWindow(hWndIC);
-											}
 
 											HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
 											if (consoleHwnd)
