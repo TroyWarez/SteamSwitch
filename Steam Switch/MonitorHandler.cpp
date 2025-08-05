@@ -6,20 +6,53 @@
 
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
+	HANDLE hConfigFile = CreateFile("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
+	if (hConfigFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD fileSize = GetFileSize(hConfigFile, NULL);
+		if (fileSize == INVALID_FILE_SIZE || fileSize != 1)
+		{
+			// If the file is empty, write a default value
+			cec_config.iHDMIPort = 1; // Default HDMI port
+			const char fHdmiPort = 49; // '1' in ASCII
+			BOOL Ret = WriteFile(hConfigFile, &fHdmiPort, 1, 0, NULL);
+		}
+		else
+		{
+			char fHdmiPort = 0;
+			char* ptrHdmiPort = &fHdmiPort;
+			if (ReadFile(hConfigFile, ptrHdmiPort, sizeof(fHdmiPort), NULL, NULL))
+			{
+				if ((fHdmiPort - 48) > 0 && (fHdmiPort - 48) < 5)
+				{
+					cec_config.iHDMIPort = (fHdmiPort - 48);
+				}
+				else
+				{
+					cec_config.iHDMIPort = 1; // Default HDMI port
+					const char fHdmiPort = 49; // '1' in ASCII
+					BOOL Ret = WriteFile(hConfigFile, &fHdmiPort, 1, 0, NULL);
+				}
+			}
+		}
+		CloseHandle(hConfigFile);
+	}
 	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
-	cec_config.iHDMIPort = 3; //Auto detection of the active HDMI port doesn't work with some libCEC devices
-
+	cec_config.bAutoPowerOn = 0;
+	cec_config.iPhysicalAddress = 0;
+	cec_config.bAutodetectAddress = 0;
+	cec_config.bGetSettingsFromROM = 1;
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 	cecAdpater = LibCecInitialise(&cec_config);
-
 	cecInit = false;
 	currentMode = mode;
 	if (cecAdpater)
 	{
+		//bool ret = cecAdpater->SetConfiguration(&cec_config);
 		cecAdpater->InitVideoStandalone();
 		CEC::cec_adapter_descriptor device[1];
 		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
@@ -29,6 +62,9 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 		{
 			deviceStrPort = device[0].strComName;
 			cecInit = true;
+			cecAdpater->Open(deviceStrPort.c_str());
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			cecAdpater->Close();
 		}
 	}
 
