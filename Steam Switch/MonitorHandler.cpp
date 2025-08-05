@@ -6,7 +6,7 @@
 
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
-	HANDLE hConfigFile = CreateFile("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hConfigFile != INVALID_HANDLE_VALUE)
 	{

@@ -128,6 +128,11 @@ int SteamHandler::StartSteamHandler()
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+	HANDLE hiCueTestFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hiCueTestFile == INVALID_HANDLE_VALUE)
+	{
+		programFilesPath = L"";
+	}
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
 		while (true)
@@ -185,21 +190,24 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
-						if (hShutdownEvent)
+						if (programFilesPath != L"")
 						{
-							ResetEvent(hShutdownEvent);
-						}
-						CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
-						HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-						SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
-						sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
-						sei.lpFile = programFilesPath.c_str();        // File to execute
-						sei.nShow = SW_HIDE;       // How to show the window
-						HANDLE hProcessiCue = NULL;
+							if (hShutdownEvent)
+							{
+								ResetEvent(hShutdownEvent);
+							}
+							CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
+							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
+							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
+							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
+							sei.lpFile = programFilesPath.c_str();        // File to execute
+							sei.nShow = SW_HIDE;       // How to show the window
+							HANDLE hProcessiCue = NULL;
 
-						if (ShellExecuteExW(&sei)) {
-							if (sei.hProcess != NULL) {
-								hProcessiCue = sei.hProcess;
+							if (ShellExecuteExW(&sei)) {
+								if (sei.hProcess != NULL) {
+									hProcessiCue = sei.hProcess;
+								}
 							}
 						}
 						steamBigPictureModeTitle = title;
@@ -245,8 +253,10 @@ int SteamHandler::StartSteamHandler()
 								{
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-
-										SetEvent(hShutdownEvent);
+										if (programFiles != L"")
+										{
+											SetEvent(hShutdownEvent);
+										}
 										inputHandler->turnOffXinputController();
 
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
