@@ -3,13 +3,21 @@
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 static HANDLE hShutdownEvent = NULL;
+static HANDLE hSafeToRestoreEvent = NULL;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
+	bool iCueRunning = true;
 	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
 	{
 		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 		if (hWndIC && IsWindowVisible(hWndIC))
 		{
 			ShowWindow(hWndIC, SW_HIDE);
+			if (WaitForSingleObject(hSafeToRestoreEvent, 1) == WAIT_TIMEOUT && iCueRunning)
+			{
+				Sleep(500);
+				iCueRunning = false;
+				SetEvent(hSafeToRestoreEvent);
+			}
 		}
 		Sleep(1);
 	}
@@ -46,7 +54,11 @@ SteamHandler::SteamHandler(HWND hWnd)
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
-		hShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+	}
+	if (!hSafeToRestoreEvent)
+	{
+		hSafeToRestoreEvent = CreateEventW(NULL, TRUE, FALSE, L"SafeToRestoreWnd");
 	}
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -66,6 +78,11 @@ SteamHandler::~SteamHandler()
 	{
 		CloseHandle(hShutdownEvent);
 		hShutdownEvent = NULL;
+	}
+	if (hSafeToRestoreEvent)
+	{
+		CloseHandle(hSafeToRestoreEvent);
+		hSafeToRestoreEvent = NULL;
 	}
 	if (monHandler)
 	{
@@ -95,7 +112,7 @@ int SteamHandler::StartSteamHandler()
 	bool AButtonPressed = false;
 	bool StartButtonPressed = false;
 	bool ShouldRightClick = true;
-
+	bool iCueRunning = false;
 	XINPUT_STATE xstate2 = { 0 };
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
@@ -190,6 +207,24 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+						DestroyCursor(h);
+						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
+						LONG wndLong = GetWindowLongW(foreHwnd, GWL_STYLE);
+						SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 						if (!monHandler->ToggleMode())
 						{
 							INPUT inputs[4] = {};
@@ -213,23 +248,30 @@ int SteamHandler::StartSteamHandler()
 							Sleep(500);
 							continue;
 						}
+
+						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
 						if (programFilesPath != L"")
 						{
 							if (hShutdownEvent)
 							{
 								ResetEvent(hShutdownEvent);
 							}
+							if (hSafeToRestoreEvent)
+							{
+								ResetEvent(hSafeToRestoreEvent);
+							}
 							CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 							sei.lpFile = programFilesPath.c_str();        // File to execute
-							sei.nShow = SW_HIDE;       // How to show the window
+							sei.nShow = SW_MINIMIZE;       // How to show the window
 							HANDLE hProcessiCue = NULL;
 
 							if (ShellExecuteExW(&sei)) {
 								if (sei.hProcess != NULL) {
 									hProcessiCue = sei.hProcess;
+									iCueRunning = true;
 								}
 							}
 						}
@@ -238,25 +280,9 @@ int SteamHandler::StartSteamHandler()
 						//HWND eH = FindWindowW(L"Progman", NULL);
 						//GetWindowThreadProcessId(eH, &PID);
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
-
-						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
-						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-						DestroyCursor(h);
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
-						//SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
 						while (isSteamInBigPictureMode)
 						{
 							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -273,6 +299,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								if (isSteamRunning())
 								{
+
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
 										if (programFiles != L"")
@@ -341,6 +368,12 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
+										if (iCueRunning && hWndBP && (WaitForSingleObject(hSafeToRestoreEvent, 1) != WAIT_TIMEOUT))
+										{
+											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+											SetWindowLongW(hWndBP, GWL_STYLE, wndLong);
+											iCueRunning = false;
+										}
 										if (!isSteamInGame())
 										{
 
