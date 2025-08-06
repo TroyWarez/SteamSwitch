@@ -176,10 +176,10 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 		while (isDSCEnabled())
 		{
 			int msgboxID = MessageBoxW(
-				GetDesktopWindow(),
+				NULL,
 				(LPCWSTR)L"Display stream compression (DSC) is turned on and must be turned off to use Big Picture Mode.\nDo you want to try again?",
-				(LPCWSTR)L"Display Error",
-				MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2
+				(LPCWSTR)L"Steam Switch Critical Display Error",
+				MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2 | MB_TOPMOST
 			);
 
 			switch (msgboxID)

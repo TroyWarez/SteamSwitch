@@ -192,7 +192,6 @@ int SteamHandler::StartSteamHandler()
 					{
 						if (!monHandler->ToggleMode())
 						{
-							SwitchToThisWindow(foreHwnd, TRUE);
 							INPUT inputs[4] = {};
 							ZeroMemory(inputs, sizeof(inputs));
 
