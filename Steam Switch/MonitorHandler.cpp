@@ -6,6 +6,16 @@
 
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
+	cec_config.Clear();
+
+	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
+	cec_config.bActivateSource = 0;
+	cec_config.bAutoPowerOn = 0;
+	cec_config.iPhysicalAddress = 0;
+	cec_config.bAutodetectAddress = 0;
+	cec_config.bGetSettingsFromROM = 1;
+	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+
 	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hConfigFile != INVALID_HANDLE_VALUE)
@@ -38,14 +48,6 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 		}
 		CloseHandle(hConfigFile);
 	}
-	cec_config.Clear();
-	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
-	cec_config.bActivateSource = 0;
-	cec_config.bAutoPowerOn = 0;
-	cec_config.iPhysicalAddress = 0;
-	cec_config.bAutodetectAddress = 0;
-	cec_config.bGetSettingsFromROM = 1;
-	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 	cecAdpater = LibCecInitialise(&cec_config);
 	cecInit = false;
@@ -60,11 +62,17 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 
 		if (iDevicesFound > 0)
 		{
+			CEC::libcec_configuration cec_configRom;
+			if (cecAdpater->GetCurrentConfiguration(&cec_configRom))
+			{
+				if (cec_configRom.iHDMIPort != cec_config.iHDMIPort)
+				{
+					cec_configRom.iHDMIPort = cec_config.iHDMIPort;
+					cecAdpater->SetConfiguration(&cec_config);
+				}
+			}
 			deviceStrPort = device[0].strComName;
 			cecInit = true;
-			cecAdpater->Open(deviceStrPort.c_str());
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			cecAdpater->Close();
 		}
 	}
 
@@ -132,32 +140,54 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 		cecAdpater->Close();
 	}
 }
-void MonitorHandler::ToggleMode()
+bool MonitorHandler::ToggleMode()
 {
 	switch (currentMode)
 	{
 		case MonitorHandler::BP_MODE:
 		{
-			currentMode = MonitorHandler::DESK_MODE;
 			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
+			currentMode = MonitorHandler::DESK_MODE;
 			TogglePowerCEC(MonitorHandler::DESK_MODE);
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
 		{
+			if (!ToggleActiveMonitors(MonitorHandler::BP_MODE))
+			{
+				return false;
+			}
 			currentMode = MonitorHandler::BP_MODE;
-			ToggleActiveMonitors(MonitorHandler::BP_MODE);
 			TogglePowerCEC(MonitorHandler::BP_MODE);
 			break;
 		}
 	}
-	return;
+	return true;
 }
-void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
+bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 {
 	if (mode == DESK_MODE)
 	{
 		SetDisplayConfig(0, NULL, 0, NULL, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
+	}
+
+	if (mode == BP_MODE)
+	{
+		while (isDSCEnabled())
+		{
+			int msgboxID = MessageBoxW(
+				GetDesktopWindow(),
+				(LPCWSTR)L"Display stream compression (DSC) is turned on and must be turned off to use Big Picture Mode.\nDo you want to try again?",
+				(LPCWSTR)L"Display Error",
+				MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2
+			);
+
+			switch (msgboxID)
+			{
+			case IDCANCEL:
+				return false;
+			}
+		}
 	}
 	HRESULT hr = S_OK;
 	UINT32 NumPathArrayElements = 0;
@@ -273,7 +303,51 @@ void MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 		}
 	}
 
+	return true;
+}
+bool MonitorHandler::isDSCEnabled()
+{
+	// This is a placeholder function. Implementing actual DSC detection requires specific APIs or hardware queries.
+	// For now, we'll return false to indicate DSC is not enabled.
+	HRESULT hr = S_OK;
+	UINT32 NumPathArrayElements = 0;
+	UINT32 NumModeInfoArrayElements = 0;
+	hr = GetDisplayConfigBufferSizes((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &NumModeInfoArrayElements);
+	std::vector<DISPLAYCONFIG_PATH_INFO> PathInfoArray2(NumPathArrayElements);
+	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
+	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
+	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
+	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
 
+	int HDMIMonitorCount = 0;
+	int DPMonitorCount = 0;
+
+	if (hr == S_OK)
+	{
+
+		DISPLAYCONFIG_SOURCE_DEVICE_NAME SourceName = {};
+		SourceName.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+		SourceName.header.size = sizeof(SourceName);
+
+		DISPLAYCONFIG_TARGET_PREFERRED_MODE PreferedMode = {};
+		PreferedMode.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_PREFERRED_MODE;
+		PreferedMode.header.size = sizeof(PreferedMode);
+
+
+		int newId = 0;
+
+		if (hr == S_OK)
+		{
+			for (UINT32 i = 0; i < NumPathArrayElements; i++)
+			{
+				if (PathInfoArray2[i].targetInfo.refreshRate.Numerator > 360113)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 int MonitorHandler::getActiveMonitorCount()
 {

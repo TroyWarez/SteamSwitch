@@ -190,6 +190,30 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						if (!monHandler->ToggleMode())
+						{
+							SwitchToThisWindow(foreHwnd, TRUE);
+							INPUT inputs[4] = {};
+							ZeroMemory(inputs, sizeof(inputs));
+
+							inputs[0].type = INPUT_KEYBOARD;
+							inputs[0].ki.wVk = VK_MENU;
+
+							inputs[1].type = INPUT_KEYBOARD;
+							inputs[1].ki.wVk = VK_RETURN;
+
+							inputs[2].type = INPUT_KEYBOARD;
+							inputs[2].ki.wVk = VK_MENU;
+							inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+
+							inputs[3].type = INPUT_KEYBOARD;
+							inputs[3].ki.wVk = VK_RETURN;
+							inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+
+							UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+							Sleep(500);
+							continue;
+						}
 						if (programFilesPath != L"")
 						{
 							if (hShutdownEvent)
@@ -231,7 +255,6 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-						monHandler->ToggleMode();
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
 						//SetWindowPos(bpHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
