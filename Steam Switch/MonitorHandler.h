@@ -11,7 +11,7 @@ public:
 	~MonitorHandler();
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
-	bool ToggleMode();
+	bool ToggleMode(bool isIcueInstalled);
 	void TogglePowerCEC(MonitorMode mode);
 	int getActiveMonitorCount();
 private:
@@ -20,6 +20,7 @@ private:
 	CEC::ICECAdapter* cecAdpater;
 	std::string deviceStrPort;
 	bool cecInit;
+	bool icueInstalled;
 	bool ToggleActiveMonitors(MonitorMode mode);
 	bool isDSCEnabled();
 };

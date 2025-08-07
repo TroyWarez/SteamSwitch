@@ -195,7 +195,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			steamHandler->inputHandler->turnOffXinputController();
 			if (steamHandler->isSteamInBigPictureMode)
 			{
-				steamHandler->monHandler->ToggleMode();
+				steamHandler->monHandler->ToggleMode(false);
 			}
 		}
         PostQuitMessage(0);

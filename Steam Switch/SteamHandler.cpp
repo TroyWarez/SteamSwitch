@@ -125,6 +125,7 @@ int SteamHandler::StartSteamHandler()
 	}
 	DWORD PID = 0;
 	DWORD icuePid = 0;
+	LONG wndLong = 0;
 
 	LARGE_INTEGER ticks = { 0 };
 	LARGE_INTEGER ticks2 = { 2 };
@@ -152,6 +153,10 @@ int SteamHandler::StartSteamHandler()
 	if (hiCueTestFile == INVALID_HANDLE_VALUE)
 	{
 		programFilesPath = L"";
+	}
+	else
+	{
+		CloseHandle(hiCueTestFile);
 	}
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
@@ -226,9 +231,13 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-						LONG wndLong = GetWindowLongW(foreHwnd, GWL_STYLE);
-						SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						if (!monHandler->ToggleMode())
+						if (programFilesPath != L"")
+						{
+							wndLong = GetWindowLongW(foreHwnd, GWL_STYLE);
+							SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						}
+
+						if (!monHandler->ToggleMode((programFilesPath != L"")))
 						{
 							INPUT inputs[4] = {};
 							ZeroMemory(inputs, sizeof(inputs));
@@ -353,7 +362,7 @@ int SteamHandler::StartSteamHandler()
 										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
 
 
-										monHandler->ToggleMode();
+										monHandler->ToggleMode((programFilesPath != L""));
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 										isSteamInBigPictureMode = false;
 // 										HWND hWndDesk = NULL;
@@ -372,7 +381,8 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
-										if (iCueRunning && hWndBP && (WaitForSingleObject(hSafeToRestoreEvent, 1) != WAIT_TIMEOUT))
+										if (iCueRunning && hWndBP && (WaitForSingleObject(hSafeToRestoreEvent, 1) != WAIT_TIMEOUT) &&
+											programFiles != L"")
 										{
 											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 											SetWindowLongW(hWndBP, GWL_STYLE, wndLong);

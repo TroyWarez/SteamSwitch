@@ -6,8 +6,9 @@
 
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
-	cec_config.Clear();
+	icueInstalled = false;
 
+	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
 	cec_config.bAutoPowerOn = 0;
@@ -140,8 +141,10 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 		cecAdpater->Close();
 	}
 }
-bool MonitorHandler::ToggleMode()
+bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 {
+	icueInstalled = isIcueInstalled;
+
 	switch (currentMode)
 	{
 		case MonitorHandler::BP_MODE:
@@ -175,7 +178,6 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 	{
 		if (isDSCEnabled())
 		{
-			SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2), (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2));
 			WCHAR windowsDir[MAX_PATH] = { 0 };
 			std::wstring windowsPath(windowsDir);
 			if (GetWindowsDirectoryW(windowsDir, MAX_PATH))
@@ -221,7 +223,11 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 
 			cursorFileName = windowsPath + L"aero_working.ani";
 			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
-			SetWindowPos(GetForegroundWindow(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+			if (icueInstalled)
+			{
+				SetWindowPos(GetForegroundWindow(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
 
 			while (isDSCEnabled())
 			{
