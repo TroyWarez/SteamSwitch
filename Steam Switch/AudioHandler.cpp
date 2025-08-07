@@ -145,3 +145,40 @@ LPCWSTR AudioHandler::getDefaultAudioDevice()
 {
 	return audioDeviceName.c_str();
 }
+bool AudioHandler::BPisDefaultAudioDevice()
+{
+	IMMDeviceEnumerator* pEnum = NULL;
+	// Create a multimedia device enumerator.
+	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
+		CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum);
+    if (SUCCEEDED(hr))
+    {
+        //Determine if it is the default audio device
+        bool bExit = false;
+        IMMDevice* pDefDevice = NULL;
+        hr = pEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &pDefDevice);
+        if (SUCCEEDED(hr))
+        {
+            IPropertyStore* pStore;
+            hr = pDefDevice->OpenPropertyStore(STGM_READ, &pStore);
+            if (SUCCEEDED(hr))
+            {
+                PROPVARIANT friendlyName;
+                PropVariantInit(&friendlyName);
+                hr = pStore->GetValue(PKEY_Device_FriendlyName, &friendlyName);
+                if (SUCCEEDED(hr))
+                {
+                    std::wstring strTmp = friendlyName.pwszVal;
+                    if (strTmp == audioDeviceName)
+                    {
+                        return true;
+                    }
+                    PropVariantClear(&friendlyName);
+                }
+                pStore->Release();
+            }
+            pDefDevice->Release();
+        }
+    }
+    return false;
+}

@@ -9,7 +9,7 @@
 #include <GenericInput.h>
 #define MAX_LOADSTRING 100 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
-
+extern HANDLE hSafeToRestoreEvent = NULL;
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -184,7 +184,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		if (wParam == DBT_DEVNODES_CHANGED)
 		{
-			audioHandler.InitDefaultAudioDevice();
+			if (steamHandler->isSteamRunning())
+			{
+                if (!steamHandler->hasSteamBeenReopened && audioHandler.BPisDefaultAudioDevice())
+                {
+                    if (hSafeToRestoreEvent != NULL)
+                    {
+                        WaitForSingleObject(hSafeToRestoreEvent, INFINITE);
+                    }
+					ShellExecuteW(hWnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+                    Sleep(1000);
+					steamHandler->hasSteamBeenReopened = true;
+                }
+				break;
+			}
 		}
         break;
     }

@@ -8,6 +8,7 @@ public:
 	std::wstring audioDeviceName;
 	void setDefaultAudioDevice(LPCWSTR newDevice);
 	LPCWSTR getDefaultAudioDevice();
+	bool BPisDefaultAudioDevice();
 	void InitDefaultAudioDevice();
 };
 

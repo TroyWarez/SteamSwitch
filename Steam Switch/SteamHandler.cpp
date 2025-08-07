@@ -51,14 +51,11 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
+	hasSteamBeenReopened = false;
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
 		hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
-	}
-	if (!hSafeToRestoreEvent)
-	{
-		hSafeToRestoreEvent = CreateEventW(NULL, TRUE, FALSE, L"SafeToRestoreWnd");
 	}
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -113,6 +110,9 @@ int SteamHandler::StartSteamHandler()
 	bool StartButtonPressed = false;
 	bool ShouldRightClick = true;
 	bool iCueRunning = false;
+
+	hasSteamBeenReopened = false;
+
 	XINPUT_STATE xstate2 = { 0 };
 	WCHAR windowsDir[MAX_PATH] = { 0 };
 	std::wstring windowsPath(windowsDir);
@@ -157,6 +157,10 @@ int SteamHandler::StartSteamHandler()
 	else
 	{
 		CloseHandle(hiCueTestFile);
+		if (!hSafeToRestoreEvent)
+		{
+			hSafeToRestoreEvent = CreateEventW(NULL, TRUE, FALSE, L"SafeToRestoreWnd");
+		}
 	}
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
@@ -215,6 +219,24 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						INPUT inputs[4] = {};
+						ZeroMemory(inputs, sizeof(inputs));
+
+						inputs[0].type = INPUT_KEYBOARD;
+						inputs[0].ki.wVk = VK_MENU;
+
+						inputs[1].type = INPUT_KEYBOARD;
+						inputs[1].ki.wVk = VK_RETURN;
+
+						inputs[2].type = INPUT_KEYBOARD;
+						inputs[2].ki.wVk = VK_MENU;
+						inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+
+						inputs[3].type = INPUT_KEYBOARD;
+						inputs[3].ki.wVk = VK_RETURN;
+						inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+
+						UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
 						GetCursorPos(&deskCursorPos);
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
@@ -294,7 +316,23 @@ int SteamHandler::StartSteamHandler()
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
+						while (!hasSteamBeenReopened)
+						{
+							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+							{
+								if (msg.message == WM_QUIT)
+								{
+									break;
+								}
 
+								TranslateMessage(&msg);
+								DispatchMessage(&msg);
+							}
+							else
+							{
+								Sleep(1);
+							}
+						}
 						while (isSteamInBigPictureMode)
 						{
 							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -314,6 +352,7 @@ int SteamHandler::StartSteamHandler()
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
+										hasSteamBeenReopened = false;
 										if (programFiles != L"")
 										{
 											SetEvent(hShutdownEvent);

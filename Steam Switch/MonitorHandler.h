@@ -18,7 +18,6 @@ private:
 	HANDLE hCECThread;
 	MonitorMode currentMode;
 	CEC::libcec_configuration cec_config;
-	std::string deviceStrPort;
 	bool cecInit;
 	bool icueInstalled;
 	bool ToggleActiveMonitors(MonitorMode mode);
