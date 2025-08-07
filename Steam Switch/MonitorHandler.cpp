@@ -2,11 +2,58 @@
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
+static CEC::ICECAdapter* cecAdpater;
 // It may be be possible to have two cec usb devices on the same cable
+DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
+	LPCSTR devicePath = (LPCSTR)lpParam;
+	if (cecAdpater && lpParam)
+	{
+		cecAdpater->Open(devicePath);
+		cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
+		if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+			cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
+		{
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			}
+		}
+		cecAdpater->Close();
+	}
+	return 0;
+}
+DWORD WINAPI CecPowerOffThread(LPVOID lpParam) {
+	LPCSTR devicePath = (LPCSTR)lpParam;
+	if (cecAdpater && lpParam) {
+		cecAdpater->Open(devicePath);
+		if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
+		{
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+		}
+		cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+
+		if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
+			cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
+		{
+			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
+				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
+			{
+				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+			}
+		}
+		cecAdpater->Close();
+	}
+	return 0;
+}
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
 	icueInstalled = false;
+
+	hCECThread = NULL;
 
 	cec_config.Clear();
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
@@ -99,46 +146,27 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 {
 	if (cecInit)
 	{
-		cecAdpater->Open(deviceStrPort.c_str());
-		CEC::cec_power_status pwrStatus = cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV);
+		DWORD result = WaitForSingleObject(hCECThread, 0);
+
+		if (result != WAIT_OBJECT_0) {
+			TerminateThread(hCECThread, 0);
+		}
+		else
+		{
+			CloseHandle(hCECThread);
+			hCECThread = NULL;
+		}
 		switch (currentMode)
 		{
 		case MonitorHandler::DESK_MODE: {
-			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			}
-			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
-			{
-				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
-					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
-				{
-					cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-				}
-			}
+			hCECThread = CreateThread(NULL, 0, CecPowerOffThread, (LPVOID)deviceStrPort.c_str(), 0, NULL);
 			break;
 		}
 		case MonitorHandler::BP_MODE: {
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
-					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
-				{
-					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				}
-			}
+			hCECThread = CreateThread(NULL, 0, CecPowerOnThread, (LPVOID)deviceStrPort.c_str(), 0, NULL);
 			break;
 		}
 		}
-		cecAdpater->Close();
 	}
 }
 bool MonitorHandler::ToggleMode(bool isIcueInstalled)
