@@ -25,7 +25,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 		}
 		cecAdpater->Close();
 		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-		Sleep(1000);
+		Sleep(3000);
 	}
 	return 0;
 }
