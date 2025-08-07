@@ -51,7 +51,6 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
-	hasSteamBeenReopened = false;
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
@@ -110,8 +109,6 @@ int SteamHandler::StartSteamHandler()
 	bool StartButtonPressed = false;
 	bool ShouldRightClick = true;
 	bool iCueRunning = false;
-
-	hasSteamBeenReopened = false;
 
 	XINPUT_STATE xstate2 = { 0 };
 	WCHAR windowsDir[MAX_PATH] = { 0 };
@@ -279,7 +276,6 @@ int SteamHandler::StartSteamHandler()
 							inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
 
 							UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
-							Sleep(500);
 							continue;
 						}
 
@@ -316,7 +312,7 @@ int SteamHandler::StartSteamHandler()
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
-						while (!hasSteamBeenReopened)
+						while (true)
 						{
 							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 							{
@@ -330,7 +326,10 @@ int SteamHandler::StartSteamHandler()
 							}
 							else
 							{
-								Sleep(1);
+								if (monHandler->hCECThread && WaitForSingleObject(monHandler->hCECThread, INFINITE) == WAIT_OBJECT_0)
+								{
+									break;
+								}
 							}
 						}
 						while (isSteamInBigPictureMode)
@@ -352,7 +351,6 @@ int SteamHandler::StartSteamHandler()
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) {
-										hasSteamBeenReopened = false;
 										if (programFiles != L"")
 										{
 											SetEvent(hShutdownEvent);

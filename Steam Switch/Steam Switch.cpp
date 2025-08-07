@@ -184,45 +184,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		if (wParam == DBT_DEVNODES_CHANGED)
 		{
-			if (steamHandler->isSteamRunning())
-			{
-                if (!steamHandler->hasSteamBeenReopened && audioHandler.BPisDefaultAudioDevice())
-                {
-                    if (hSafeToRestoreEvent != NULL)
-                    {
-                        WaitForSingleObject(hSafeToRestoreEvent, INFINITE);
-                    }
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-					while (true)
-					{
-						HWND foreHwnd = GetForegroundWindow();
-
-						WCHAR windowTitle[256] = { 0 };
-						GetWindowTextW(foreHwnd, windowTitle, 256);
-						std::wstring title(windowTitle);
-						std::wstring subtitle = L"";
-						if (title.size() > 5)
-						{
-							subtitle = title.substr(0, 5);
-						}
-						WCHAR windowClassName[256] = { 0 };
-						GetClassNameW(foreHwnd, windowClassName, 256);
-						std::wstring classname(windowClassName);
-						if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
-						{
-                            Sleep(1000);
-							break;
-						}
-                        else
-                        {
-							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-                        }
-					}
-
-					steamHandler->hasSteamBeenReopened = true;
-                }
-				break;
-			}
+            audioHandler.InitDefaultAudioDevice();
 		}
         break;
     }

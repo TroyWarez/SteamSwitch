@@ -14,10 +14,11 @@ public:
 	bool ToggleMode(bool isIcueInstalled);
 	void TogglePowerCEC(MonitorMode mode);
 	int getActiveMonitorCount();
-private:
 	HANDLE hCECThread;
+private:
 	MonitorMode currentMode;
 	CEC::libcec_configuration cec_config;
+	std::string deviceStrPort;
 	bool cecInit;
 	bool icueInstalled;
 	bool ToggleActiveMonitors(MonitorMode mode);

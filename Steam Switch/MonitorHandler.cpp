@@ -3,12 +3,12 @@
 #include <cecloader.h>
 #include <vector>
 static CEC::ICECAdapter* cecAdpater;
-static std::string deviceStrPort;
+static std::string* deviceStrPortPtr;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
-	if (cecAdpater)
+	if (cecAdpater && deviceStrPortPtr)
 	{
-		cecAdpater->Open(deviceStrPort.c_str());
+		cecAdpater->Open(deviceStrPortPtr->c_str());
 		cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 		if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
@@ -22,12 +22,14 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 			}
 		}
 		cecAdpater->Close();
+		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+		Sleep(1000);
 	}
 	return 0;
 }
 DWORD WINAPI CecPowerOffThread(LPVOID lpParam) {
-	if (cecAdpater) {
-		cecAdpater->Open(deviceStrPort.c_str());
+	if (cecAdpater && deviceStrPortPtr) {
+		cecAdpater->Open(deviceStrPortPtr->c_str());
 		if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 		{
 			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
@@ -61,8 +63,10 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	cec_config.iPhysicalAddress = 0;
 	cec_config.bAutodetectAddress = 0;
 	cec_config.bGetSettingsFromROM = 0;
+	cec_config.iHDMIPort = 3; // Default HDMI port
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
+	cecAdpater = LibCecInitialise(&cec_config);
 	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hConfigFile != INVALID_HANDLE_VALUE)
@@ -95,8 +99,6 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 		}
 		CloseHandle(hConfigFile);
 	}
-
-	cecAdpater = LibCecInitialise(&cec_config);
 	cecInit = false;
 	currentMode = mode;
 	if (cecAdpater)
@@ -109,16 +111,8 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 
 		if (iDevicesFound > 0)
 		{
-			CEC::libcec_configuration cec_configRom;
-			if (cecAdpater->GetCurrentConfiguration(&cec_configRom))
-			{
-				if (cec_configRom.iHDMIPort != cec_config.iHDMIPort)
-				{
-					cec_configRom.iHDMIPort = cec_config.iHDMIPort;
-					cecAdpater->SetConfiguration(&cec_config);
-				}
-			}
 			deviceStrPort = device[0].strComName;
+			deviceStrPortPtr = &deviceStrPort;
 			cecInit = true;
 		}
 	}
