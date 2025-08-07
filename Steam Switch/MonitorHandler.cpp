@@ -173,21 +173,91 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 
 	if (mode == BP_MODE)
 	{
-		while (isDSCEnabled())
+		if (isDSCEnabled())
 		{
-			int msgboxID = MessageBoxW(
-				NULL,
-				(LPCWSTR)L"Display stream compression (DSC) is turned on and must be turned off to use Big Picture Mode.\nDo you want to try again?",
-				(LPCWSTR)L"Steam Switch Critical Display Error",
-				MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2 | MB_TOPMOST
-			);
-
-			switch (msgboxID)
+			SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2), (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2));
+			WCHAR windowsDir[MAX_PATH] = { 0 };
+			std::wstring windowsPath(windowsDir);
+			if (GetWindowsDirectoryW(windowsDir, MAX_PATH))
 			{
-			case IDCANCEL:
-				return false;
+				windowsPath = windowsDir;
+				windowsPath = windowsPath + L"\\Cursors\\";
+			}
+			std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
+			BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
+
+			cursorFileName = windowsPath + L"beam_i.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
+
+			cursorFileName = windowsPath + L"aero_working.ani";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_WAIT);
+
+			cursorFileName = windowsPath + L"cross_i.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_CROSS);
+
+			cursorFileName = windowsPath + L"aero_up_l.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_UP);
+
+			cursorFileName = windowsPath + L"aero_nwse.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENWSE);
+
+			cursorFileName = windowsPath + L"aero_nesw.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENESW);
+
+			cursorFileName = windowsPath + L"aero_ew.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEWE);
+
+			cursorFileName = windowsPath + L"aero_ns.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENS);
+
+			cursorFileName = windowsPath + L"aero_move.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEALL);
+
+			cursorFileName = windowsPath + L"no_i.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NO);
+
+			cursorFileName = windowsPath + L"aero_link.cur";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_HAND);
+
+			cursorFileName = windowsPath + L"aero_working.ani";
+			ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
+			SetWindowPos(GetForegroundWindow(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+			while (isDSCEnabled())
+			{
+				int msgboxID = MessageBoxW(
+					NULL,
+					(LPCWSTR)L"Display stream compression (DSC) is turned on and must be turned off to use Big Picture Mode.\nDo you want to try again?",
+					(LPCWSTR)L"Steam Switch Critical Display Error",
+					MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2 | MB_TOPMOST
+				);
+
+				switch (msgboxID)
+				{
+				case IDCANCEL:
+					return false;
+				}
+			}
+			if (!isDSCEnabled())
+			{
+				HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+				BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+				ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+				ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+				ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+				ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+				ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+				ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+				ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+				ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+				ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+				ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+				ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+				ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+				DestroyCursor(h);
 			}
 		}
+
 	}
 	HRESULT hr = S_OK;
 	UINT32 NumPathArrayElements = 0;

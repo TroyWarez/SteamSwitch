@@ -139,7 +139,10 @@ int SteamHandler::StartSteamHandler()
 	LARGE_INTEGER xticksGuide2 = { 2 };
 
 	XINPUT_STATE xstate = { 0 };
+
 	POINT firstCursorPos = { 0 };
+	POINT deskCursorPos = { 0 };
+
 	MSG msg;
 	WCHAR programFiles[MAX_PATH] = { 0 };
 	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
@@ -207,6 +210,7 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						GetCursorPos(&deskCursorPos);
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
 						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
@@ -222,7 +226,6 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
 						LONG wndLong = GetWindowLongW(foreHwnd, GWL_STYLE);
 						SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 						if (!monHandler->ToggleMode())
@@ -351,6 +354,7 @@ int SteamHandler::StartSteamHandler()
 
 
 										monHandler->ToggleMode();
+										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 										isSteamInBigPictureMode = false;
 // 										HWND hWndDesk = NULL;
 // 										while (hWndDesk == NULL)
