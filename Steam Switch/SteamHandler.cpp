@@ -216,24 +216,28 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
-						INPUT inputs[4] = {};
-						ZeroMemory(inputs, sizeof(inputs));
+						if (monHandler->getActiveMonitorCount() != 1)
+						{
+							INPUT inputs[4] = {};
+							ZeroMemory(inputs, sizeof(inputs));
 
-						inputs[0].type = INPUT_KEYBOARD;
-						inputs[0].ki.wVk = VK_MENU;
+							inputs[0].type = INPUT_KEYBOARD;
+							inputs[0].ki.wVk = VK_MENU;
 
-						inputs[1].type = INPUT_KEYBOARD;
-						inputs[1].ki.wVk = VK_RETURN;
+							inputs[1].type = INPUT_KEYBOARD;
+							inputs[1].ki.wVk = VK_RETURN;
 
-						inputs[2].type = INPUT_KEYBOARD;
-						inputs[2].ki.wVk = VK_MENU;
-						inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+							inputs[2].type = INPUT_KEYBOARD;
+							inputs[2].ki.wVk = VK_MENU;
+							inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
 
-						inputs[3].type = INPUT_KEYBOARD;
-						inputs[3].ki.wVk = VK_RETURN;
-						inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+							inputs[3].type = INPUT_KEYBOARD;
+							inputs[3].ki.wVk = VK_RETURN;
+							inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
 
-						UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+							UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+						}
+
 						GetCursorPos(&deskCursorPos);
 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
