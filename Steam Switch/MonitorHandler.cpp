@@ -6,8 +6,7 @@ static CEC::ICECAdapter* cecAdpater;
 static std::string deviceStrPort;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
-	LPCSTR devicePath = (LPCSTR)lpParam;
-	if (cecAdpater && lpParam)
+	if (cecAdpater)
 	{
 		cecAdpater->Open(deviceStrPort.c_str());
 		cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
@@ -27,8 +26,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 	return 0;
 }
 DWORD WINAPI CecPowerOffThread(LPVOID lpParam) {
-	LPCSTR devicePath = (LPCSTR)lpParam;
-	if (cecAdpater && lpParam) {
+	if (cecAdpater) {
 		cecAdpater->Open(deviceStrPort.c_str());
 		if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 		{
@@ -62,7 +60,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	cec_config.bAutoPowerOn = 0;
 	cec_config.iPhysicalAddress = 0;
 	cec_config.bAutodetectAddress = 0;
-	cec_config.bGetSettingsFromROM = 1;
+	cec_config.bGetSettingsFromROM = 0;
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -147,15 +145,15 @@ void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 {
 	if (cecInit)
 	{
-		DWORD result = WaitForSingleObject(hCECThread, 0);
+		DWORD result = WaitForSingleObject(hCECThread, INFINITE);
 
-		if (result != WAIT_OBJECT_0) {
-			TerminateThread(hCECThread, 0);
+		if (result == WAIT_OBJECT_0) {
+			CloseHandle(hCECThread);
+			hCECThread = NULL;
 		}
 		else
 		{
-			CloseHandle(hCECThread);
-			hCECThread = NULL;
+			TerminateThread(hCECThread, 0);
 		}
 		switch (currentMode)
 		{
