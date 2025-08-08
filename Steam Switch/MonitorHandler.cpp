@@ -32,7 +32,6 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 		}
 		cecAdpater->Close();
 		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-		HANDLE hSafeToRestoreEvent = OpenEventW(SYNCHRONIZE, FALSE, L"SafeToRestoreWnd");
 		while(true)
 		{
 			HWND foreHwnd = GetForegroundWindow();
@@ -53,7 +52,9 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 			{
 				if (iCueThreadHandle)
 				{
+					SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					WaitForSingleObject(iCueThreadHandle, INFINITE);
+					SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					CloseHandle(iCueThreadHandle);
 					iCueThreadHandle = NULL;
 				}

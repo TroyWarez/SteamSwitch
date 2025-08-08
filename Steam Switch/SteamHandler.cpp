@@ -363,10 +363,8 @@ int SteamHandler::StartSteamHandler()
 
 										HWND hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
 										//SetWindowLongW(hWndDesk, GWL_STYLE, wndLong);
-										SetWindowPos(hWndDesk, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										monHandler->ToggleMode((programFilesPath != L""));
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
-										SetWindowPos(hWndDesk, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
@@ -428,8 +426,6 @@ int SteamHandler::StartSteamHandler()
 										if (iCueRunning && hWndBP && (WaitForSingleObject(hSafeToRestoreEvent, 1) != WAIT_TIMEOUT) &&
 											programFiles != L"")
 										{
-											SetWindowPos(hWndBP, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-											SetWindowLongW(hWndBP, GWL_STYLE, wndLong);
 											iCueRunning = false;
 										}
 										if (!isSteamInGame())
