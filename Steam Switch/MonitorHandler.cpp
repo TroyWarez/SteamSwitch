@@ -60,7 +60,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 				{
 					SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					WaitForSingleObject(iCueThreadHandle, INFINITE);
-					Sleep(100);
+					Sleep(500);
 					SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					CloseHandle(iCueThreadHandle);
 					iCueThreadHandle = NULL;
