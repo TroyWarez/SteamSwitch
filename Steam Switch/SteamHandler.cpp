@@ -3,29 +3,33 @@
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 static HANDLE hShutdownEvent = NULL;
-static HANDLE hSafeToRestoreEvent = NULL;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	bool iCueRunning = true;
-	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
+	HANDLE hSafeToRestoreEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SafeToRestoreWnd");
+	if (hSafeToRestoreEvent)
 	{
-		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-		if (hWndIC && IsWindowVisible(hWndIC))
+		while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
 		{
-			ShowWindow(hWndIC, SW_HIDE);
-			if (WaitForSingleObject(hSafeToRestoreEvent, 1) == WAIT_TIMEOUT && iCueRunning)
+			HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+			if (hWndIC && IsWindowVisible(hWndIC))
 			{
-				Sleep(500);
-				iCueRunning = false;
-				SetEvent(hSafeToRestoreEvent);
+				ShowWindow(hWndIC, SW_HIDE);
+				if (WaitForSingleObject(hSafeToRestoreEvent, 1) == WAIT_TIMEOUT && iCueRunning)
+				{
+					iCueRunning = false;
+					SetEvent(hSafeToRestoreEvent);
+				}
 			}
+			Sleep(1);
 		}
-		Sleep(1);
+		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+		if (hWndIC)
+		{
+			PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
+		}
+		CloseHandle(hSafeToRestoreEvent);
 	}
-	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-	if (hWndIC)
-	{
-		PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
-	}
+
 	return 0;
 }
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
@@ -51,6 +55,7 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
+	hSafeToRestoreEvent = NULL;
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
@@ -254,11 +259,6 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-						if (programFilesPath != L"")
-						{
-							wndLong = GetWindowLongW(foreHwnd, GWL_STYLE);
-							SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						}
 
 						if (!monHandler->ToggleMode((programFilesPath != L"")))
 						{
@@ -294,7 +294,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								ResetEvent(hSafeToRestoreEvent);
 							}
-							CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
+							iCueThreadHandle = CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle

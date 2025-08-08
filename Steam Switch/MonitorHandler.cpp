@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
+
 static CEC::ICECAdapter* cecAdpater;
 static std::string* deviceStrPortPtr;
 // It may be be possible to have two cec usb devices on the same cable
@@ -31,7 +32,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 		}
 		cecAdpater->Close();
 		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-
+		HANDLE hSafeToRestoreEvent = OpenEventW(SYNCHRONIZE, FALSE, L"SafeToRestoreWnd");
 		while(true)
 		{
 			HWND foreHwnd = GetForegroundWindow();
@@ -50,6 +51,12 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 
 			if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 			{
+				if (iCueThreadHandle)
+				{
+					WaitForSingleObject(iCueThreadHandle, INFINITE);
+					CloseHandle(iCueThreadHandle);
+					iCueThreadHandle = NULL;
+				}
 				break;
 			}
 			Sleep(1);
