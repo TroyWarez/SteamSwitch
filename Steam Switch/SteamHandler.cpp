@@ -5,29 +5,19 @@ static bool MessageBoxFound = false;
 static HANDLE hShutdownEvent = NULL;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	bool iCueRunning = true;
-	HANDLE hSafeToRestoreEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SafeToRestoreWnd");
-	if (hSafeToRestoreEvent)
+	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
 	{
-		while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
-		{
-			HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-			if (hWndIC && IsWindowVisible(hWndIC))
-			{
-				ShowWindow(hWndIC, SW_HIDE);
-				if (WaitForSingleObject(hSafeToRestoreEvent, 1) == WAIT_TIMEOUT && iCueRunning)
-				{
-					iCueRunning = false;
-					SetEvent(hSafeToRestoreEvent);
-				}
-			}
-			Sleep(1);
-		}
 		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-		if (hWndIC)
+		if (hWndIC && IsWindowVisible(hWndIC))
 		{
-			PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
+			ShowWindow(hWndIC, SW_HIDE);
 		}
-		CloseHandle(hSafeToRestoreEvent);
+		Sleep(1);
+	}
+	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+	if (hWndIC)
+	{
+		PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
 	}
 
 	return 0;
@@ -55,7 +45,6 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
-	hSafeToRestoreEvent = NULL;
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
@@ -79,11 +68,6 @@ SteamHandler::~SteamHandler()
 	{
 		CloseHandle(hShutdownEvent);
 		hShutdownEvent = NULL;
-	}
-	if (hSafeToRestoreEvent)
-	{
-		CloseHandle(hSafeToRestoreEvent);
-		hSafeToRestoreEvent = NULL;
 	}
 	if (monHandler)
 	{
@@ -159,10 +143,6 @@ int SteamHandler::StartSteamHandler()
 	else
 	{
 		CloseHandle(hiCueTestFile);
-		if (!hSafeToRestoreEvent)
-		{
-			hSafeToRestoreEvent = CreateEventW(NULL, TRUE, FALSE, L"SafeToRestoreWnd");
-		}
 	}
 	if (monHandler && monHandler->getActiveMonitorCount() == 1)
 	{
@@ -289,10 +269,6 @@ int SteamHandler::StartSteamHandler()
 							if (hShutdownEvent)
 							{
 								ResetEvent(hShutdownEvent);
-							}
-							if (hSafeToRestoreEvent)
-							{
-								ResetEvent(hSafeToRestoreEvent);
 							}
 							iCueThreadHandle = CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
@@ -423,7 +399,7 @@ int SteamHandler::StartSteamHandler()
 									}
 									else
 									{
-										if (iCueRunning && hWndBP && (WaitForSingleObject(hSafeToRestoreEvent, 1) != WAIT_TIMEOUT) &&
+										if (iCueRunning && hWndBP &&
 											programFiles != L"")
 										{
 											iCueRunning = false;
