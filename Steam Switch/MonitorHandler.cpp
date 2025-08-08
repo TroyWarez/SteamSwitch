@@ -31,7 +31,10 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 			Sleep(1);
 		}
 		cecAdpater->Close();
-		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+		if (FindWindowW(SDL_CLASS, STEAM_DESK))
+		{
+			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+		}
 		while(true)
 		{
 			HWND foreHwnd = GetForegroundWindow();
@@ -92,6 +95,7 @@ DWORD WINAPI CecPowerOffThread(LPVOID lpParam) {
 }
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
+
 	icueInstalled = false;
 
 	hCECThread = NULL;
