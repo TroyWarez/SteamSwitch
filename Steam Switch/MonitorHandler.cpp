@@ -1,4 +1,5 @@
 #include "MonitorHandler.h"
+#include "SteamHandler.h"
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
@@ -23,9 +24,38 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			}
 		}
+		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN))
+		{
+			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			Sleep(1);
+		}
 		cecAdpater->Close();
 		ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-		Sleep(3000);
+
+		while(true)
+		{
+			HWND foreHwnd = GetForegroundWindow();
+
+			WCHAR windowTitle[256] = { 0 };
+			GetWindowTextW(foreHwnd, windowTitle, 256);
+			std::wstring title(windowTitle);
+			std::wstring subtitle = L"";
+			if (title.size() > 5)
+			{
+				subtitle = title.substr(0, 5);
+			}
+			WCHAR windowClassName[256] = { 0 };
+			GetClassNameW(foreHwnd, windowClassName, 256);
+			std::wstring classname(windowClassName);
+
+			if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
+			{
+				break;
+			}
+			Sleep(1);
+		}
+
+
 	}
 	return 0;
 }
