@@ -1,11 +1,13 @@
 #include "MonitorHandler.h"
 #include "SteamHandler.h"
+#include "AudioHandler.h"
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
 
 static CEC::ICECAdapter* cecAdpater;
 static std::string* deviceStrPortPtr;
+extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 	if (cecAdpater && deviceStrPortPtr)
@@ -31,6 +33,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 			Sleep(1);
 		}
 		cecAdpater->Close();
+		audioHandler.InitDefaultAudioDevice();
 		if (FindWindowW(SDL_CLASS, STEAM_DESK))
 		{
 			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
@@ -57,6 +60,7 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 				{
 					SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					WaitForSingleObject(iCueThreadHandle, INFINITE);
+					Sleep(100);
 					SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 					CloseHandle(iCueThreadHandle);
 					iCueThreadHandle = NULL;
