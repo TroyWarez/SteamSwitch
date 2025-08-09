@@ -34,6 +34,8 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 		}
 		cecAdpater->Close();
 		audioHandler.InitDefaultAudioDevice();
+		Sleep(500);
+		HANDLE hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
 		if (FindWindowW(SDL_CLASS, STEAM_DESK))
 		{
 			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
@@ -56,14 +58,13 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 
 			if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 			{
-				if (iCueThreadHandle)
+				if (hICUEEvent)
 				{
 					SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-					WaitForSingleObject(iCueThreadHandle, INFINITE);
-					Sleep(500);
+					WaitForSingleObject(hICUEEvent, INFINITE);
 					SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-					CloseHandle(iCueThreadHandle);
-					iCueThreadHandle = NULL;
+					CloseHandle(hICUEEvent);
+					hICUEEvent = NULL;
 				}
 				break;
 			}

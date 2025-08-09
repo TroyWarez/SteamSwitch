@@ -5,14 +5,31 @@ static bool MessageBoxFound = false;
 static HANDLE hShutdownEvent = NULL;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	bool iCueRunning = true;
+	HANDLE hICUEEvent = CreateEventW(NULL, TRUE, FALSE, L"ICUEEvent");
+	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
+		if (hICUEEvent)
+		{
+			ResetEvent(hICUEEvent);
+		}
+	}
 	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
 	{
 		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 		if (hWndIC && IsWindowVisible(hWndIC))
 		{
 			ShowWindow(hWndIC, SW_HIDE);
+			if (hICUEEvent)
+			{
+				SetEvent(hICUEEvent);
+			}
 		}
 		Sleep(1);
+	}
+	if (hICUEEvent)
+	{
+		CloseHandle(hICUEEvent);
 	}
 	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 	if (hWndIC)
@@ -270,7 +287,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								ResetEvent(hShutdownEvent);
 							}
-							iCueThreadHandle = CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
+							CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
@@ -306,7 +323,7 @@ int SteamHandler::StartSteamHandler()
 							}
 							else
 							{
-								if (monHandler->hCECThread && WaitForSingleObject(monHandler->hCECThread, INFINITE) == WAIT_OBJECT_0)
+								if (monHandler->hCECThread && WaitForSingleObject(monHandler->hCECThread, 1) != WAIT_TIMEOUT)
 								{
 									break;
 								}
