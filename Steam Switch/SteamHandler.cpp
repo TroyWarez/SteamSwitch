@@ -3,11 +3,11 @@
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
-	if (!lpParam)
+	HANDLE hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
+	if (!hShutdownEvent)
 	{
 		return 1;
 	}
-	HANDLE hShutdownEvent = (HANDLE)lpParam;
 	bool iCueRunning = true;
 	HANDLE hICUEEvent = CreateEventW(NULL, TRUE, FALSE, L"ICUEEvent");
 	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -34,6 +34,10 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	if (hICUEEvent)
 	{
 		CloseHandle(hICUEEvent);
+	}
+	if (hShutdownEvent)
+	{
+		CloseHandle(hShutdownEvent);
 	}
 	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 	if (hWndIC)
@@ -291,7 +295,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								ResetEvent(hShutdownEvent);
 							}
-							CreateThread(NULL, 0, ICUEThread, NULL, 0, NULL);
+							CreateThread(NULL, 0, 0, hShutdownEvent, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
