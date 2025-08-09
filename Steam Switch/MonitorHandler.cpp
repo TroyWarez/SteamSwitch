@@ -10,6 +10,12 @@ static std::string* deviceStrPortPtr;
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
+	UNREFERENCED_PARAMETER(lpParam);
+	HANDLE hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
+	if (!hShutdownEvent)
+	{
+		return 1;
+	}
 	if (cecAdpater && deviceStrPortPtr)
 	{
 		cecAdpater->Open(deviceStrPortPtr->c_str());
@@ -27,20 +33,27 @@ DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			}
 		}
-		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN))
+		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 		{
 			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 			Sleep(1);
 		}
 		cecAdpater->Close();
-		audioHandler.InitDefaultAudioDevice();
-		Sleep(500);
+		while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
+		{
+			audioHandler.InitDefaultAudioDevice();
+
+		}
 		HANDLE hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
 		if (FindWindowW(SDL_CLASS, STEAM_DESK))
 		{
 			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
 		}
-		while(true)
+		else
+		{
+			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+		}
+		while(WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 		{
 			HWND foreHwnd = GetForegroundWindow();
 

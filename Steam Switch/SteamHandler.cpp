@@ -2,8 +2,12 @@
 #include "InvisibleMouse.h"
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
-static HANDLE hShutdownEvent = NULL;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
+	if (!lpParam)
+	{
+		return 1;
+	}
+	HANDLE hShutdownEvent = (HANDLE)lpParam;
 	bool iCueRunning = true;
 	HANDLE hICUEEvent = CreateEventW(NULL, TRUE, FALSE, L"ICUEEvent");
 	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -14,7 +18,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			ResetEvent(hICUEEvent);
 		}
 	}
-	while (WaitForSingleObject(hShutdownEvent, 100) == WAIT_TIMEOUT)
+	while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 	{
 		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 		if (hWndIC && IsWindowVisible(hWndIC))
@@ -65,7 +69,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	mainHwnd = hWnd;
 	if (!hShutdownEvent)
 	{
-		hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+		hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, L"ShutdownEvent");
 	}
 	steamPid = getSteamPid();
 	gamePid = 0;

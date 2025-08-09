@@ -31,5 +31,6 @@ public:
 	std::wstring steamBigPictureModeTitle;
 	bool isSteamInBigPictureMode;
 	bool isSteamFocused;
+	HANDLE hShutdownEvent;
 };
 
