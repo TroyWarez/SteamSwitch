@@ -15,12 +15,13 @@ public:
 	void TogglePowerCEC(MonitorMode mode);
 	int getActiveMonitorCount();
 	HANDLE hCECThread;
+	HANDLE hCECPowerOffEvent;
+	HANDLE hCECPowerOnEvent;
+	HANDLE hShutdownEvent;
+	HANDLE hMonitorThread;
+	bool icueInstalled;
 private:
 	MonitorMode currentMode;
-	CEC::libcec_configuration cec_config;
-	std::string deviceStrPort;
-	bool cecInit;
-	bool icueInstalled;
 	bool ToggleActiveMonitors(MonitorMode mode);
 	bool isDSCEnabled();
 };

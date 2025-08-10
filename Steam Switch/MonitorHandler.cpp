@@ -4,131 +4,16 @@
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
-
-static CEC::ICECAdapter* cecAdpater;
-static std::string* deviceStrPortPtr;
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
-DWORD WINAPI CecPowerOnThread(LPVOID lpParam) {
-	UNREFERENCED_PARAMETER(lpParam);
-	HANDLE hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
-	if (!hShutdownEvent)
-	{
-		return 1;
-	}
-	if (cecAdpater && deviceStrPortPtr)
-	{
-		cecAdpater->Open(deviceStrPortPtr->c_str());
-		if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
-		{
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-		}
-		else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
-			cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
-		{
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			}
-		}
-		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
-		{
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			Sleep(1);
-		}
-		cecAdpater->Close();
-		while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
-		{
-			audioHandler.InitDefaultAudioDevice();
-
-		}
-		HANDLE hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
-		if (FindWindowW(SDL_CLASS, STEAM_DESK))
-		{
-			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-		}
-		else
-		{
-			ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
-		}
-		while(WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
-		{
-			HWND foreHwnd = GetForegroundWindow();
-
-			WCHAR windowTitle[256] = { 0 };
-			GetWindowTextW(foreHwnd, windowTitle, 256);
-			std::wstring title(windowTitle);
-			std::wstring subtitle = L"";
-			if (title.size() > 5)
-			{
-				subtitle = title.substr(0, 5);
-			}
-			WCHAR windowClassName[256] = { 0 };
-			GetClassNameW(foreHwnd, windowClassName, 256);
-			std::wstring classname(windowClassName);
-
-			if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
-			{
-				if (hICUEEvent)
-				{
-					SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-					WaitForSingleObject(hICUEEvent, INFINITE);
-					SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-					CloseHandle(hICUEEvent);
-					hICUEEvent = NULL;
-				}
-				break;
-			}
-			Sleep(1);
-		}
-
-
-	}
-	return 0;
-}
-DWORD WINAPI CecPowerOffThread(LPVOID lpParam) {
-	if (cecAdpater && deviceStrPortPtr) {
-		cecAdpater->Open(deviceStrPortPtr->c_str());
-		if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
-		{
-			cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-		}
-		cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-
-		if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
-			cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
-		{
-			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
-			{
-				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-			}
-		}
-		cecAdpater->Close();
-	}
-	return 0;
-}
-MonitorHandler::MonitorHandler(MonitorMode mode)
-{
-
-	icueInstalled = false;
-
-	hCECThread = NULL;
-
+DWORD WINAPI CecPowerThread(LPVOID lpParam) {
+	CEC::libcec_configuration cec_config;
+	std::string deviceStrPort = "";
+	CEC::ICECAdapter* cecAdpater;
 	cec_config.Clear();
-	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
-	cec_config.bActivateSource = 0;
-	cec_config.bAutoPowerOn = 0;
-	cec_config.iPhysicalAddress = 0;
-	cec_config.bAutodetectAddress = 0;
-	cec_config.bGetSettingsFromROM = 0;
-	cec_config.iHDMIPort = 3; // Default HDMI port
-	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+	cec_config.iHDMIPort = 1; // Default HDMI port
+	HANDLE hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
 
-	cecAdpater = LibCecInitialise(&cec_config);
 	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hConfigFile != INVALID_HANDLE_VALUE)
@@ -161,32 +46,226 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 		}
 		CloseHandle(hConfigFile);
 	}
-	cecInit = false;
-	currentMode = mode;
-	if (cecAdpater)
+	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
+	cec_config.bActivateSource = 0;
+	cec_config.bAutoPowerOn = 0;
+	cec_config.iPhysicalAddress = 0;
+	cec_config.bAutodetectAddress = 0;
+	cec_config.bGetSettingsFromROM = 0;
+	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+
+	cecAdpater = LibCecInitialise(&cec_config);
+
+	if (cecAdpater == NULL)
 	{
-		//bool ret = cecAdpater->SetConfiguration(&cec_config);
-		cecAdpater->InitVideoStandalone();
-		CEC::cec_adapter_descriptor device[1];
-		uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
-
-
-		if (iDevicesFound > 0)
+		return 1;
+	}
+	//bool ret = cecAdpater->SetConfiguration(&cec_config);
+	cecAdpater->InitVideoStandalone();
+	CEC::cec_adapter_descriptor device[1];
+	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
+	if (iDevicesFound > 0)
+	{
+		deviceStrPort = device[0].strComName;
+	}
+	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hShutdownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECShutdownEvent");
+		if (hShutdownEvent)
 		{
-			deviceStrPort = device[0].strComName;
-			deviceStrPortPtr = &deviceStrPort;
-			cecInit = true;
+			ResetEvent(hShutdownEvent);
+		}
+	}
+	HANDLE hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
+	if (hCECPowerOffEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCECPowerOffEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOffEvent");
+		if (hCECPowerOffEvent)
+		{
+			ResetEvent(hCECPowerOffEvent);
+		}
+	}
+	HANDLE hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
+	if (hCECPowerOnEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCECPowerOnEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEvent");
+		if (hCECPowerOnEvent)
+		{
+			ResetEvent(hCECPowerOnEvent);
 		}
 	}
 
+	HANDLE hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
+		if (hBPEvent)
+		{
+			ResetEvent(hBPEvent);
+		}
+	}
+	std::vector<HANDLE> hEvents;
 
-}
-MonitorHandler::~MonitorHandler()
-{
+	if (!hShutdownEvent)
+	{
+		return 1;
+	}
+	hEvents.push_back(hShutdownEvent);
+	hEvents.push_back(hCECPowerOnEvent);
+	hEvents.push_back(hCECPowerOffEvent);
+	if (cecAdpater && deviceStrPort != "")
+	{
+		DWORD dwWaitResult = 0;
+		while (dwWaitResult < ((DWORD)hEvents.size() - 1)){
+		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
+		switch (dwWaitResult)
+		{
+			case 0: // hShutdownEvent
+			{
+				for (size_t i = 0; i < hEvents.size(); i++)
+				{
+					if (hEvents[i] != NULL)
+					{
+						CloseHandle(hEvents[i]);
+					}
+				}
+				if (cecAdpater)
+				{
+					UnloadLibCec(cecAdpater);
+					cecAdpater = 0;
+				}
+				return 0;
+			}
+		case 1: // hCECPowerOnEvent
+		{
+			if (hCECPowerOnEvent)
+			{
+				ResetEvent(hCECPowerOnEvent);
+			}
+			cecAdpater->Open(deviceStrPort.c_str());
+			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			}
+			else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
+				{
+					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+				}
+			}
+		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+				Sleep(1);
+			}
+			cecAdpater->Close();
+			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
+			{
+				audioHandler.InitDefaultAudioDevice();
+				Sleep(1);
+			}
+			if (FindWindowW(SDL_CLASS, STEAM_DESK))
+			{
+				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+			}
+			else
+			{
+				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+			}
+			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+			{
+				HWND foreHwnd = GetForegroundWindow();
+
+				WCHAR windowTitle[256] = { 0 };
+				GetWindowTextW(foreHwnd, windowTitle, 256);
+				std::wstring title(windowTitle);
+				std::wstring subtitle = L"";
+				if (title.size() > 5)
+				{
+					subtitle = title.substr(0, 5);
+				}
+				WCHAR windowClassName[256] = { 0 };
+				GetClassNameW(foreHwnd, windowClassName, 256);
+				std::wstring classname(windowClassName);
+
+				if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
+				{
+					if (hBPEvent)
+					{
+						SetEvent(hBPEvent);
+					}
+					if (hICUEEvent)
+					{
+						SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						WaitForSingleObject(hICUEEvent, INFINITE);
+						SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+						CloseHandle(hICUEEvent);
+						hICUEEvent = NULL;
+					}
+					break;
+				}
+				Sleep(1);
+			}
+			break;
+		}
+		case 2: // hCECPowerOffEvent
+		{
+			if (hCECPowerOffEvent)
+			{
+				ResetEvent(hCECPowerOffEvent);
+			}
+			cecAdpater->Open(deviceStrPort.c_str());
+			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
+			{
+				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+			}
+			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+
+			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
+				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
+			{
+				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
+					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
+				{
+					cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+				}
+			}
+			cecAdpater->Close();
+			break;
+		}
+		}
+		}
+	}
 	if (cecAdpater)
 	{
 		UnloadLibCec(cecAdpater);
 		cecAdpater = 0;
+	}
+	return 0;
+}
+MonitorHandler::MonitorHandler(MonitorMode mode)
+{
+	currentMode = mode;
+	hCECThread = NULL;
+	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
+	hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
+	hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	hMonitorThread = CreateThread(NULL, 0, CecPowerThread, 0, 0, NULL);
+	icueInstalled = false;
+}
+MonitorHandler::~MonitorHandler()
+{
+	if (hShutdownEvent)
+	{
+		SetEvent(hShutdownEvent);
+		CloseHandle(hShutdownEvent);
+		hShutdownEvent = NULL;
 	}
 }
 void MonitorHandler::setMonitorMode(MonitorMode mode)
@@ -199,41 +278,39 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 }
 void MonitorHandler::TogglePowerCEC(MonitorMode mode)
 {
-	if (cecInit)
-	{
-		DWORD result = WaitForSingleObject(hCECThread, INFINITE);
+	DWORD result = WaitForSingleObject(hCECThread, INFINITE);
 
-		if (result == WAIT_OBJECT_0) {
-			CloseHandle(hCECThread);
-			hCECThread = NULL;
-		}
-		else
-		{
-			TerminateThread(hCECThread, 0);
-		}
-		switch (currentMode)
-		{
-		case MonitorHandler::DESK_MODE: {
-			hCECThread = CreateThread(NULL, 0, CecPowerOffThread, NULL, 0, NULL);
-			break;
-		}
-		case MonitorHandler::BP_MODE: {
-			hCECThread = CreateThread(NULL, 0, CecPowerOnThread, NULL, 0, NULL);
-			break;
-		}
-		}
+	if (result == WAIT_OBJECT_0) {
+		CloseHandle(hCECThread);
+		hCECThread = NULL;
+	}
+	else
+	{
+		TerminateThread(hCECThread, 0);
+	}
+	switch (currentMode)
+	{
+	case MonitorHandler::DESK_MODE: {
+		break;
+	}
+	case MonitorHandler::BP_MODE: {
+		break;
+	}
 	}
 }
 bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 {
-	icueInstalled = isIcueInstalled;
-
 	switch (currentMode)
 	{
 		case MonitorHandler::BP_MODE:
 		{
 			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
 			currentMode = MonitorHandler::DESK_MODE;
+			if (hCECPowerOffEvent && hCECPowerOnEvent)
+			{
+				SetEvent(hCECPowerOffEvent);
+				ResetEvent(hCECPowerOnEvent);
+			}
 			TogglePowerCEC(MonitorHandler::DESK_MODE);
 			break;
 		}
@@ -242,6 +319,11 @@ bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 			if (!ToggleActiveMonitors(MonitorHandler::BP_MODE))
 			{
 				return false;
+			}
+			if (hCECPowerOffEvent && hCECPowerOnEvent)
+			{
+				SetEvent(hCECPowerOnEvent);
+				ResetEvent(hCECPowerOffEvent);
 			}
 			currentMode = MonitorHandler::BP_MODE;
 			TogglePowerCEC(MonitorHandler::BP_MODE);

@@ -3,7 +3,7 @@
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
-	HANDLE hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
+	HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
 	if (!hShutdownEvent)
 	{
 		return 1;
@@ -71,9 +71,23 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 SteamHandler::SteamHandler(HWND hWnd)
 {
 	mainHwnd = hWnd;
-	if (!hShutdownEvent)
+	hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, L"ShutdownEvent");
+		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
+		if (hBPEvent)
+		{
+			ResetEvent(hBPEvent);
+		}
+	}
+	hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, L"ShutdownEvent");
+	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
+		if (hShutdownEvent)
+		{
+			ResetEvent(hShutdownEvent);
+		}
 	}
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -295,7 +309,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								ResetEvent(hShutdownEvent);
 							}
-							CreateThread(NULL, 0, 0, hShutdownEvent, 0, NULL);
+							CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
@@ -331,8 +345,9 @@ int SteamHandler::StartSteamHandler()
 							}
 							else
 							{
-								if (monHandler->hCECThread && WaitForSingleObject(monHandler->hCECThread, 1) != WAIT_TIMEOUT)
+								if (hBPEvent && WaitForSingleObject(hBPEvent, 1) != WAIT_TIMEOUT)
 								{
+									ResetEvent(hBPEvent);
 									break;
 								}
 							}

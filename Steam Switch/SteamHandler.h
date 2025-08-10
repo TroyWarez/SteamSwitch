@@ -32,5 +32,6 @@ public:
 	bool isSteamInBigPictureMode;
 	bool isSteamFocused;
 	HANDLE hShutdownEvent;
+	HANDLE hBPEvent;
 };
 
