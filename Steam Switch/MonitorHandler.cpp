@@ -117,7 +117,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (cecAdpater && deviceStrPort != "")
 	{
 		DWORD dwWaitResult = 0;
-		while (dwWaitResult < ((DWORD)hEvents.size() - 1)){
+		while (dwWaitResult <= ((DWORD)hEvents.size() - 1)){
 		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
 		switch (dwWaitResult)
 		{
