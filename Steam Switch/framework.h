@@ -8,6 +8,7 @@
 // Windows Header Files
 #define OEMRESOURCE
 #include <windows.h>
+#include <shlwapi.h> 
 #include <shellapi.h>
 #include <commctrl.h>
 #include <dbt.h>
@@ -22,7 +23,9 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
-
+// WinRT Header Files
+#include <winrt/windows.ui.popups.h>
+#include <shobjidl.h>
 
 #include <mmsystem.h>
 #include <mmdeviceapi.h>

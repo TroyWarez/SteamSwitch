@@ -3,8 +3,11 @@ using namespace std;
 
 AudioHandler::AudioHandler()
 {
-	HANDLE hFile = CreateFileW(L"AudioDevice.txt", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    DWORD er = GetLastError();
+	WCHAR programFiles[MAX_PATH] = { 0 };
+	ExpandEnvironmentStringsW(L"%userProfile%", programFiles, MAX_PATH);
+	std::wstring programFilesPath(programFiles);
+	programFilesPath = programFilesPath + L"\\SteamSwitch\\AudioDevice.txt";
+	HANDLE hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile != INVALID_HANDLE_VALUE)
     {
         DWORD bytesRead;

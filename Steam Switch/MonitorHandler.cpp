@@ -4,48 +4,17 @@
 #include <iostream>
 #include <cecloader.h>
 #include <vector>
+#include <debugapi.h>
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
+	UNREFERENCED_PARAMETER(lpParam);
 	CEC::libcec_configuration cec_config;
 	std::string deviceStrPort = "";
 	CEC::ICECAdapter* cecAdpater;
 	cec_config.Clear();
 	cec_config.iHDMIPort = 1; // Default HDMI port
-	HANDLE hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
 
-	HANDLE hConfigFile = CreateFileA("cecHDMI_Port.txt", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (hConfigFile != INVALID_HANDLE_VALUE)
-	{
-		DWORD fileSize = GetFileSize(hConfigFile, NULL);
-		if (fileSize == INVALID_FILE_SIZE || fileSize != 1)
-		{
-			// If the file is empty, write a default value
-			cec_config.iHDMIPort = 1; // Default HDMI port
-			const char fHdmiPort = 49; // '1' in ASCII
-			BOOL Ret = WriteFile(hConfigFile, &fHdmiPort, 1, 0, NULL);
-		}
-		else
-		{
-			char fHdmiPort = 0;
-			char* ptrHdmiPort = &fHdmiPort;
-			if (ReadFile(hConfigFile, ptrHdmiPort, sizeof(fHdmiPort), NULL, NULL))
-			{
-				if ((fHdmiPort - 48) > 0 && (fHdmiPort - 48) < 5)
-				{
-					cec_config.iHDMIPort = (fHdmiPort - 48);
-				}
-				else
-				{
-					cec_config.iHDMIPort = 1; // Default HDMI port
-					const char fHdmiPort = 49; // '1' in ASCII
-					BOOL Ret = WriteFile(hConfigFile, &fHdmiPort, 1, 0, NULL);
-				}
-			}
-		}
-		CloseHandle(hConfigFile);
-	}
 	cec_config.clientVersion = CEC::LIBCEC_VERSION_CURRENT;
 	cec_config.bActivateSource = 0;
 	cec_config.bAutoPowerOn = 0;
@@ -54,13 +23,37 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	cec_config.bGetSettingsFromROM = 0;
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
+	//bool ret = cecAdpater->SetConfiguration(&cec_config);
+	WCHAR programFiles[MAX_PATH] = { 0 };
+	ExpandEnvironmentStringsW(L"%userProfile%", programFiles, MAX_PATH);
+	std::wstring programFilesPath(programFiles);
+	programFilesPath = programFilesPath + L"\\SteamSwitch\\cecHDMI_Port.txt";
+	HANDLE hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD bytesRead;
+		CHAR buffer[MAX_PATH] = { 0 };
+		WCHAR wbuffer[MAX_PATH] = { 0 };
+		bytesRead = GetFileSize(hFile, NULL);
+		if (bytesRead > 0 && bytesRead < MAX_PATH)
+		{
+			if (ReadFile(hFile, buffer, bytesRead, &bytesRead, NULL))
+			{
+				cec_config.iHDMIPort = std::stoi(buffer);
+			}
+		}
+		CloseHandle(hFile);
+	}
+	if (hFile &&& hFile == INVALID_HANDLE_VALUE)
+	{
+		MessageBoxW(NULL, L"ERROR", L"ERROR", MB_ICONERROR);
+	}
 	cecAdpater = LibCecInitialise(&cec_config);
 
 	if (cecAdpater == NULL)
 	{
 		return 1;
 	}
-	//bool ret = cecAdpater->SetConfiguration(&cec_config);
 	cecAdpater->InitVideoStandalone();
 	CEC::cec_adapter_descriptor device[1];
 	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
@@ -68,6 +61,16 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	{
 		deviceStrPort = device[0].strComName;
 	}
+	HANDLE hICUEEvent = CreateEventW(NULL, FALSE, FALSE, L"ICUEEvent");
+	if (hICUEEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hICUEEvent = OpenEventW(SYNCHRONIZE, FALSE, L"ICUEEvent");
+		if (hICUEEvent)
+		{
+			ResetEvent(hICUEEvent);
+		}
+	}
+
 	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{

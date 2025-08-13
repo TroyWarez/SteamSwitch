@@ -70,6 +70,13 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
+// 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
+// 	
+// 
+// 	winrt::hstring Title = L"Hello";
+// 	winrt::hstring Content = L"Some cool content!";
+// 	winrt::Windows::UI::Popups::MessageDialog dialog(Content, Title);
+
 	mainHwnd = hWnd;
 	hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
 	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
