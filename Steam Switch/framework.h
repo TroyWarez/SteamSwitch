@@ -13,6 +13,8 @@
 #include <commctrl.h>
 #include <dbt.h>
 #include <setupapi.h>
+#include <initguid.h>
+#include <cfgmgr32.h>
 #include <Xinput.h>
 #include "XInputDeviceIO.h"
 #include <GameInput.h>

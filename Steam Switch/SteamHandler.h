@@ -2,6 +2,7 @@
 #include "framework.h"
 #include "MonitorHandler.h"
 #include "InputHandler.h"
+#include "SerialHandler.h"
 
 #define STEAM_DESK L"Steam"
 #define SDL_CLASS L"SDL_app"
@@ -15,6 +16,7 @@ class SteamHandler
 public:
 	SteamHandler(HWND hWnd);
 	~SteamHandler();
+	SerialHandler serialHandler;
 	HWND mainHwnd;
 	HMODULE hKernel32;
 	int StartSteamHandler();

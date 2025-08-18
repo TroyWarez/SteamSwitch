@@ -5,7 +5,8 @@ class AudioHandler
 public:
 	AudioHandler();
 	~AudioHandler();
-	std::wstring audioDeviceName;
+	std::wstring BPaudioDeviceName;
+	std::wstring DESKaudioDeviceName;
 	void setDefaultAudioDevice(LPCWSTR newDevice);
 	LPCWSTR getDefaultAudioDevice();
 	bool BPisDefaultAudioDevice();

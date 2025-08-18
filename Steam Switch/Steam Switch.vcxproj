@@ -102,6 +102,7 @@
     <ClInclude Include="MonitorHandler.h" />
     <ClInclude Include="PolicyConfig.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SerialHandler.h" />
     <ClInclude Include="Steam Switch.h" />
     <ClInclude Include="SteamHandler.h" />
     <ClInclude Include="targetver.h" />
@@ -111,6 +112,7 @@
     <ClCompile Include="AudioHandler.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="MonitorHandler.cpp" />
+    <ClCompile Include="SerialHandler.cpp" />
     <ClCompile Include="Steam Switch.cpp" />
     <ClCompile Include="SteamHandler.cpp" />
     <ClCompile Include="XInputDeviceIO.cpp" />

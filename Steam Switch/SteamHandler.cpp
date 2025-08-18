@@ -78,6 +78,13 @@ SteamHandler::SteamHandler(HWND hWnd)
 // 	winrt::Windows::UI::Popups::MessageDialog dialog(Content, Title);
 
 	mainHwnd = hWnd;
+
+	DEV_BROADCAST_DEVICEINTERFACE hidFilter = { };
+	hidFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
+	hidFilter.dbcc_classguid = GUID_DEVINTERFACE_COMPORT;
+	hidFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+	HDEVNOTIFY hDeviceHID = RegisterDeviceNotificationW(mainHwnd, &hidFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
+
 	hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
 	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
