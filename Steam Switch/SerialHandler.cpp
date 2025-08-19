@@ -32,7 +32,7 @@ SerialHandler::SerialHandler()
 	}
 
 	UCHAR pwrStatus = 0;
-	UCHAR cmd = 0x00af;
+	USHORT cmd = 0x00af;
  	while (hSerial != INVALID_HANDLE_VALUE)
 	{
 		if (hSerial)
