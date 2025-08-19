@@ -3,6 +3,134 @@
 #define PI_VID L"0525"
 #define PI_PID L"a4a7"
 
+DWORD WINAPI SerialThread(LPVOID lpParam) {
+	std::wstring* comPath = (std::wstring*)lpParam;
+	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (hSerial == INVALID_HANDLE_VALUE)
+	{
+		hSerial = NULL;
+		return 1;
+	}
+
+
+	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hShutdownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECShutdownEvent");
+		if (hShutdownEvent)
+		{
+			ResetEvent(hShutdownEvent);
+		}
+	}
+
+	HANDLE hIRPowerEvent = CreateEventW(NULL, FALSE, FALSE, L"IRPowerEvent");
+	if (hIRPowerEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hIRPowerEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRPowerEvent");
+		if (hIRPowerEvent)
+		{
+			ResetEvent(hIRPowerEvent);
+		}
+	}
+	HANDLE hIRVolumeUpEvent = CreateEventW(NULL, FALSE, FALSE, L"IRVolumeUpEvent");
+	if (hIRVolumeUpEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hIRVolumeUpEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRVolumeUpEvent");
+		if (hIRVolumeUpEvent)
+		{
+			ResetEvent(hIRVolumeUpEvent);
+		}
+	}
+
+	HANDLE hIRVolumeDownEvent = CreateEventW(NULL, FALSE, FALSE, L"IRVolumeDownEvent");
+	if (hIRVolumeDownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hIRVolumeDownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRVolumeDownEvent");
+		if (hIRVolumeDownEvent)
+		{
+			ResetEvent(hIRVolumeDownEvent);
+		}
+	}
+	HANDLE hIRMuteEvent = CreateEventW(NULL, FALSE, FALSE, L"IRMuteEvent");
+	if (hIRMuteEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hIRMuteEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRMuteEvent");
+		if (hIRMuteEvent)
+		{
+			ResetEvent(hIRMuteEvent);
+		}
+	}
+	std::vector<HANDLE> hEvents;
+
+	if (!hShutdownEvent)
+	{
+		return 1;
+	}
+	hEvents.push_back(hShutdownEvent);
+	hEvents.push_back(hIRPowerEvent);
+	hEvents.push_back(hIRVolumeUpEvent);
+	hEvents.push_back(hIRVolumeDownEvent);
+	hEvents.push_back(hIRMuteEvent);
+
+
+
+	UCHAR pwrStatus = 0;
+	USHORT cmd = 0x00af;
+	DWORD dwWaitResult = 0;
+	while (dwWaitResult <= ((DWORD)hEvents.size() - 1) || dwWaitResult == WAIT_TIMEOUT) {
+		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, 1);
+		if (hSerial)
+		{
+
+			if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			}
+			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			}
+		}
+	}
+
+// 	DWORD dwWaitResult = 0;
+// 	while (dwWaitResult <= ((DWORD)hEvents.size() - 1)) {
+// 		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
+// 		switch (dwWaitResult)
+// 		{
+// 		case 0: // hShutdownEvent
+// 		{
+// 			for (size_t i = 0; i < hEvents.size(); i++)
+// 			{
+// 				if (hEvents[i] != NULL)
+// 				{
+// 					CloseHandle(hEvents[i]);
+// 				}
+// 			}
+// 			return 0;
+// 		}
+// 		case 1: // hIRVolumeUpEvent
+// 		{
+// 			if (hIRPowerEvent)
+// 			{
+// 				ResetEvent(hIRPowerEvent);
+// 			}
+// 			break;
+// 		}
+// 		case 2: // hIRVolumeUpEvent
+// 		{
+// 			if (hIRVolumeUpEvent)
+// 			{
+// 				ResetEvent(hIRVolumeUpEvent);
+// 			}
+// 			break;
+// 		}
+// 		}
+// 	}
+	return 0;
+}
 BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePaths, std::vector<std::wstring>* DeviceNames);
 
 SerialHandler::SerialHandler()
@@ -21,36 +149,10 @@ SerialHandler::SerialHandler()
 				devicePort = DeviceNames[i].substr(DeviceNames[i].find(L"COM"), DeviceNames[i].find(L")"));
 				devicePort = devicePort.substr(0, 5);
 				comPath = L"\\\\.\\" + devicePort;
-			}
-			hSerial = CreateFileW(comPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-			if (hSerial == INVALID_HANDLE_VALUE)
-			{
-				hSerial = NULL;
+				hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
 			}
 			break;
 		}
-	}
-
-	UCHAR pwrStatus = 0;
-	USHORT cmd = 0x00af;
- 	while (hSerial != INVALID_HANDLE_VALUE)
-	{
-		if (hSerial)
-		{
-			
-			if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
-			{
-				CloseHandle(hSerial);
-				hSerial = CreateFileW(comPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-			}
-			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
-			{
-				CloseHandle(hSerial);
-				hSerial = CreateFileW(comPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-			}
-			Sleep(1);
-		}
-
 	}
 
 }
