@@ -31,16 +31,27 @@ SerialHandler::SerialHandler()
 		}
 	}
 
-//  	while (hSerial != INVALID_HANDLE_VALUE)
-// 	{
-// 		if (hSerial)
-// 		{
-// 			int a = 0x00af;
-// 			BOOL ret = WriteFile(hSerial, &a, 1, NULL, NULL);
-// 			Sleep(1);
-// 		}
-// 
-// 	}
+	UCHAR pwrStatus = 0;
+	UCHAR cmd = 0x00af;
+ 	while (hSerial != INVALID_HANDLE_VALUE)
+	{
+		if (hSerial)
+		{
+			
+			if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = CreateFileW(comPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			}
+			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = CreateFileW(comPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			}
+			Sleep(1);
+		}
+
+	}
 
 }
 SerialHandler::~SerialHandler()
