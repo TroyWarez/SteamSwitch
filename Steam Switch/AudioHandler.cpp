@@ -10,6 +10,7 @@ AudioHandler::AudioHandler()
 	programFilesPath = programFilesPath + L"\\SteamSwitch\\BPAudioDevice.txt";
     programFilesDeskPath = programFilesDeskPath + L"\\SteamSwitch\\DESKAudioDevice.txt";
 	HANDLE hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD re3 = GetLastError();
     if (hFile != INVALID_HANDLE_VALUE)
     {
         DWORD bytesRead;
@@ -25,6 +26,11 @@ AudioHandler::AudioHandler()
             }
 		}
         CloseHandle(hFile);
+    }
+    else
+    {
+		MessageBoxW(NULL, (L"Could not default audio file: " + programFilesPath + L"\nError code: " + std::to_wstring(re3)).c_str(), L"Error", MB_ICONERROR);
+		PostQuitMessage(0);
     }
 
 	hFile = CreateFileW(programFilesDeskPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
