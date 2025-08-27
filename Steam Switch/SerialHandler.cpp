@@ -85,12 +85,12 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
 			{
 				CloseHandle(hSerial);
-				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+				return 1;
 			}
 			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
 			{
 				CloseHandle(hSerial);
-				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+				return 2;
 			}
 		}
 	}
@@ -136,6 +136,18 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 SerialHandler::SerialHandler()
 {
 	hSerial = NULL;
+	ScanForSerialDevices();
+}
+SerialHandler::~SerialHandler()
+{
+	if (hSerial)
+	{
+		TerminateThread(hSerial, 0);
+		CloseHandle(hSerial);
+	}
+}
+void SerialHandler::ScanForSerialDevices()
+{
 	std::vector<std::wstring> DevicePaths;
 	std::vector<std::wstring> DeviceNames;
 	FindAllDevices((LPGUID)&GUID_DEVINTERFACE_COMPORT, DevicePaths, &DeviceNames);
@@ -149,16 +161,18 @@ SerialHandler::SerialHandler()
 				devicePort = DeviceNames[i].substr(DeviceNames[i].find(L"COM"), DeviceNames[i].find(L")"));
 				devicePort = devicePort.substr(0, 5);
 				comPath = L"\\\\.\\" + devicePort;
+				DWORD exitCode = 0;
+				if (hSerial != NULL && GetExitCodeThread(hSerial, &exitCode) && exitCode == STILL_ACTIVE)
+				{
+					TerminateThread(hSerial, 0);
+					CloseHandle(hSerial);
+					hSerial = NULL;
+				}
 				hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
 			}
 			break;
 		}
 	}
-
-}
-SerialHandler::~SerialHandler()
-{
-
 }
 BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePaths, std::vector<std::wstring>* DeviceNames)
 {

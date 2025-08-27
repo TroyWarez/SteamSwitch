@@ -184,6 +184,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (wParam == DBT_DEVNODES_CHANGED)
 		{
             audioHandler.InitDefaultAudioDevice();
+            if (steamHandler)
+            {
+				steamHandler->serialHandler.ScanForSerialDevices();
+            }
 		}
         break;
     }
