@@ -218,7 +218,7 @@ int SteamHandler::StartSteamHandler()
 			}
 		}
 	}
-
+	serialHandler.ScanForSerialDevices();
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))

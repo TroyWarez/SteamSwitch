@@ -5,13 +5,18 @@
 
 DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
-	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, 0, NULL);
+	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, NULL);
 	if (hSerial == INVALID_HANDLE_VALUE)
 	{
 		hSerial = NULL;
 		return 1;
 	}
 
+	DCB dcb = { 0 };
+	dcb.DCBlength = sizeof(dcb);
+	GetCommState(hSerial, &dcb);
+	dcb.BaudRate = CBR_9600;
+	SetCommState(hSerial, &dcb);
 
 	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -77,21 +82,24 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	UCHAR pwrStatus = 0;
 	USHORT cmd = 0x00af;
 	DWORD dwWaitResult = 0;
+	if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
+	{
+		CloseHandle(hSerial);
+		return 1;
+	}
+	Sleep(1);
 	while (dwWaitResult <= ((DWORD)hEvents.size() - 1) || dwWaitResult == WAIT_TIMEOUT) {
 		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, 1);
 		if (hSerial)
 		{
 
-			if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
-			{
-				CloseHandle(hSerial);
-				return 1;
-			}
+
 			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
 			{
 				CloseHandle(hSerial);
 				return 2;
 			}
+			Sleep(1);
 		}
 	}
 
@@ -142,7 +150,6 @@ SerialHandler::~SerialHandler()
 {
 	if (hSerial)
 	{
-		TerminateThread(hSerial, 0);
 		CloseHandle(hSerial);
 	}
 }
@@ -162,13 +169,16 @@ void SerialHandler::ScanForSerialDevices()
 				devicePort = devicePort.substr(0, 5);
 				comPath = L"\\\\.\\" + devicePort;
 				DWORD exitCode = 0;
-				if (hSerial != NULL && GetExitCodeThread(hSerial, &exitCode) && exitCode == STILL_ACTIVE)
+				if (hSerial == NULL)
 				{
-					TerminateThread(hSerial, 0);
-					CloseHandle(hSerial);
-					hSerial = NULL;
+					hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
 				}
-				hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
+				else if (GetExitCodeThread(hSerial, &exitCode) && exitCode != STILL_ACTIVE)
+				{
+					CloseHandle(hSerial);
+					hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
+				}
+
 			}
 			break;
 		}
