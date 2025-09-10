@@ -38,7 +38,6 @@
 
 #include <cec.h>
 
-#include <initguid.h>
 #include <Objbase.h>
 #pragma hdrstop
 
