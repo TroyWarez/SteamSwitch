@@ -3,6 +3,12 @@
 #define PI_VID L"0525"
 #define PI_PID L"a4a7"
 
+// GIP Commands
+#define RASPBERRY_PI_GIP_POLL 0x00af
+#define RASPBERRY_PI_GIP_SYNC 0x00b0
+#define RASPBERRY_PI_GIP_CLEAR 0x00b1
+#define RASPBERRY_PI_GIP_LOCK 0x00b2
+
 DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
 	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, NULL);
@@ -80,7 +86,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 
 
 	UCHAR pwrStatus = 0;
-	USHORT cmd = 0x00af;
+	USHORT cmd = RASPBERRY_PI_GIP_POLL;
 	DWORD dwWaitResult = 0;
 	if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
 	{
