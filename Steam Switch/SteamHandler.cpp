@@ -505,6 +505,8 @@ int SteamHandler::StartSteamHandler()
 										xticksAudio2.QuadPart != 2 &&
 										xticksAudio.QuadPart != 0)
 									{
+										audioHandler->ToggleAudioDevice();
+
 										xticksAudio = { 0 };
 										xticksAudio2 = { 2 };
 										AudioCordPressed = true;
@@ -631,6 +633,7 @@ int SteamHandler::StartSteamHandler()
 												xticksAudio2.QuadPart != 2 &&
 												xticksAudio.QuadPart != 0)
 											{
+												audioHandler->ToggleAudioDevice();
 												xticksAudio = { 0 };
 												xticksAudio2 = { 2 };
 												AudioCordPressed = true;
