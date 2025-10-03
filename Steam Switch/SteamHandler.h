@@ -3,6 +3,7 @@
 #include "MonitorHandler.h"
 #include "InputHandler.h"
 #include "SerialHandler.h"
+#include "AudioHandler.h"
 
 #define STEAM_DESK L"Steam"
 #define SDL_CLASS L"SDL_app"
@@ -27,6 +28,7 @@ public:
 	bool getSteamFocus();
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
+	AudioHandler* audioHandler;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;

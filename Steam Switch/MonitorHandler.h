@@ -15,6 +15,7 @@ public:
 	void StandByAllDevicesCEC();
 	void StartCecPowerThread(void* stmPtr);
 	int getActiveMonitorCount();
+	bool isSingleDisplayHDMI();
 	HANDLE hCECThread;
 	HANDLE hCECPowerOffEvent;
 	HANDLE hCECPowerOnEvent;

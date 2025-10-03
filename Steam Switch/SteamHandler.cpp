@@ -70,13 +70,6 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 SteamHandler::SteamHandler(HWND hWnd)
 {
-// 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
-// 	
-// 
-// 	winrt::hstring Title = L"Hello";
-// 	winrt::hstring Content = L"Some cool content!";
-// 	winrt::Windows::UI::Popups::MessageDialog dialog(Content, Title);
-
 	mainHwnd = hWnd;
 
 	DEV_BROADCAST_DEVICEINTERFACE hidFilter = { };
@@ -108,6 +101,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	isSteamFocused = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	inputHandler = new InputHandler();
+	audioHandler = new AudioHandler();
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
 	if (hKernel32)
 	{
@@ -135,6 +129,10 @@ SteamHandler::~SteamHandler()
 		FreeLibrary(hKernel32);
 		hKernel32 = nullptr;
 	}
+	if (audioHandler)
+	{
+		delete audioHandler;
+	}
 	CoUninitialize();
 }
 int SteamHandler::StartSteamHandler()
@@ -146,7 +144,10 @@ int SteamHandler::StartSteamHandler()
 	bool guidePressed = false;
 	bool TopMost = false;
 	bool ShouldHideCursor = true;
-	bool ButtonPressed = false;
+
+	bool MouseCordPressed = false;
+	bool AudioCordPressed = false;
+
 	bool AButtonPressed = false;
 	bool StartButtonPressed = false;
 	bool ShouldRightClick = true;
@@ -172,11 +173,8 @@ int SteamHandler::StartSteamHandler()
 	LARGE_INTEGER xticks = { 0 };
 	LARGE_INTEGER xticks2 = { 2 };
 
-	LARGE_INTEGER ticksGuide = { 0 };
-	LARGE_INTEGER ticksGuide2 = { 2 };
-
-	LARGE_INTEGER xticksGuide = { 0 };
-	LARGE_INTEGER xticksGuide2 = { 2 };
+	LARGE_INTEGER xticksAudio = { 0 };
+	LARGE_INTEGER xticksAudio2 = { 2 };
 
 	XINPUT_STATE xstate = { 0 };
 
@@ -416,17 +414,6 @@ int SteamHandler::StartSteamHandler()
 										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
 
 										isSteamInBigPictureMode = false;
-// 										HWND hWndDesk = NULL;
-// 										while (hWndDesk == NULL)
-// 										{
-// 											hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
-// 											if (hWndDesk)
-// 											{
-// 												SendMessage(hWndDesk, WM_CLOSE, 0, 0);
-// 												break;
-// 											}
-// 											Sleep(1);
-// 										}
 
 										break;
 									}
@@ -457,46 +444,6 @@ int SteamHandler::StartSteamHandler()
 								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
 								{
-// 									if (xstate.Gamepad.wButtons & XBOX_GUIDE && !isSteamFocused && xticksGuide.QuadPart == 0)
-// 									{
-// 										if (!guidePressed)
-// 										{
-// 											QueryPerformanceCounter(&xticksGuide);
-// 											xticksGuide.QuadPart += CONTROLLER_WAKETIME;
-// 											guidePressed = true;
-// 										}
-// 									}
-// 									else if (
-// 										xstate.Gamepad.wButtons & XBOX_GUIDE &&
-// 										xticksGuide.QuadPart <= xticksGuide2.QuadPart &&
-// 										xticksGuide2.QuadPart != 2 &&
-// 										xticksGuide.QuadPart != 0)
-// 									{
-// 										if (!isSteamInGame())
-// 										{
-// 											HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-// 											HRESULT hr = pAutomation->ElementFromHandle(hWndBP2, &BPwindow);
-// 											ShowWindow(hWndBP2, SW_MINIMIZE);
-// 											ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-// 											SetForegroundWindow(hWndBP2);
-// 											// 												if (SUCCEEDED(hr))
-// 											// 												{
-// 											// 													BPwindow->SetFocus();
-// 											// 
-// 											// 													BPwindow->Release();
-// 											// 													BPwindow = nullptr;
-// 											// 													SelectButtonPressed = true;
-// 											// 													continue;
-// 											// 												}
-// 										}
-// 										xticksGuide = { 0 };
-// 										xticksGuide2 = { 2 };
-// 										guidePressed = true;
-// 									}
-// 									else
-// 									{
-// 										guidePressed = false;
-// 									}
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										!SelectButtonPressed)
 									{
@@ -507,15 +454,6 @@ int SteamHandler::StartSteamHandler()
 											ShowWindow(hWndBP2, SW_MINIMIZE);
 											ShowWindow(hWndBP2, SW_SHOWDEFAULT);
 											SetForegroundWindow(hWndBP2);
-											// 												if (SUCCEEDED(hr))
-											// 												{
-											// 													BPwindow->SetFocus();
-											// 
-											// 													BPwindow->Release();
-											// 													BPwindow = nullptr;
-											// 													SelectButtonPressed = true;
-											// 													continue;
-											// 												}
 										}
 										SelectButtonPressed = true;
 									}
@@ -527,7 +465,7 @@ int SteamHandler::StartSteamHandler()
 
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										xticks.QuadPart == 0 && !ButtonPressed)
+										xticks.QuadPart == 0 && !MouseCordPressed)
 									{
 										QueryPerformanceCounter(&xticks);
 										xticks.QuadPart += MOUSE_WAKETIME / 2;
@@ -542,17 +480,43 @@ int SteamHandler::StartSteamHandler()
 										(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
 										xticks = { 0 };
 										xticks2 = { 2 };
-										ButtonPressed = true;
+										MouseCordPressed = true;
 									}
 
 									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
 									{
 										xticks = { 0 };
 										xticks2 = { 2 };
-										ButtonPressed = false;
+										MouseCordPressed = false;
 									}
 
+									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+										xticks.QuadPart == 0 && !AudioCordPressed)
+									{
+										QueryPerformanceCounter(&xticksAudio);
+										xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
+									}
+									else if (
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+										xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
+										xticksAudio2.QuadPart != 2 &&
+										xticksAudio.QuadPart != 0)
+									{
+										xticksAudio = { 0 };
+										xticksAudio2 = { 2 };
+										AudioCordPressed = true;
+									}
+
+									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
+									{
+										xticksAudio = { 0 };
+										xticksAudio2 = { 2 };
+										AudioCordPressed = false;
+									}
 
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
@@ -599,7 +563,6 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 									QueryPerformanceCounter(&xticks2);
-									QueryPerformanceCounter(&xticksGuide2);
 								}
 								else {
 									for (DWORD i = 0; i < 12; i++)
@@ -613,7 +576,7 @@ int SteamHandler::StartSteamHandler()
 
 												if (!isSteamInGame())
 												{
-													HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+													HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
 													ShowWindow(hWndBP2, SW_MINIMIZE);
 													ShowWindow(hWndBP2, SW_SHOWDEFAULT);
 													SetForegroundWindow(hWndBP2);
@@ -628,7 +591,7 @@ int SteamHandler::StartSteamHandler()
 
 											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-												xticks.QuadPart == 0 && !ButtonPressed)
+												xticks.QuadPart == 0 && !MouseCordPressed)
 											{
 												QueryPerformanceCounter(&xticks);
 												xticks.QuadPart += MOUSE_WAKETIME / 2;
@@ -643,7 +606,7 @@ int SteamHandler::StartSteamHandler()
 												(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
 												xticks = { 0 };
 												xticks2 = { 2 };
-												ButtonPressed = true;
+												MouseCordPressed = true;
 											}
 
 											if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
@@ -651,7 +614,34 @@ int SteamHandler::StartSteamHandler()
 											{
 												xticks = { 0 };
 												xticks2 = { 2 };
-												ButtonPressed = false;
+												MouseCordPressed = false;
+											}
+
+											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+												xticks.QuadPart == 0 && !AudioCordPressed)
+											{
+												QueryPerformanceCounter(&xticksAudio);
+												xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
+											}
+											else if (
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+												xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
+												xticksAudio2.QuadPart != 2 &&
+												xticksAudio.QuadPart != 0)
+											{
+												xticksAudio = { 0 };
+												xticksAudio2 = { 2 };
+												AudioCordPressed = true;
+											}
+
+											if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+												!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
+											{
+												xticksAudio = { 0 };
+												xticksAudio2 = { 2 };
+												AudioCordPressed = false;
 											}
 										}
 										else
@@ -667,7 +657,6 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 									QueryPerformanceCounter(&xticks2);
-									QueryPerformanceCounter(&xticksGuide2);
 								}
 								POINT cursorPos;
 								if (GetCursorPos(&cursorPos))

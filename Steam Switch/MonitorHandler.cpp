@@ -62,17 +62,27 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	HANDLE hICUEEvent = CreateEventW(NULL, FALSE, FALSE, L"ICUEEvent");
 	if (hICUEEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hICUEEvent = OpenEventW(SYNCHRONIZE, FALSE, L"ICUEEvent");
+		hICUEEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ICUEEvent");
 		if (hICUEEvent)
 		{
 			ResetEvent(hICUEEvent);
 		}
 	}
 
+	HANDLE hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
+	if (hCECPowerOffFinishedEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCECPowerOffFinishedEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOffFinishedEvent");
+		if (hCECPowerOffFinishedEvent)
+		{
+			ResetEvent(hCECPowerOffFinishedEvent);
+		}
+	}
+
 	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hShutdownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECShutdownEvent");
+		hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
 		if (hShutdownEvent)
 		{
 			ResetEvent(hShutdownEvent);
@@ -81,27 +91,17 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	HANDLE hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
 	if (hCECPowerOffEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hCECPowerOffEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOffEvent");
+		hCECPowerOffEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOffEvent");
 		if (hCECPowerOffEvent)
 		{
 			ResetEvent(hCECPowerOffEvent);
 		}
 	}
 
-	HANDLE hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
-	if (hCECPowerOffFinishedEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		hCECPowerOffFinishedEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOffFinishedEvent");
-		if (hCECPowerOffFinishedEvent)
-		{
-			ResetEvent(hCECPowerOffFinishedEvent);
-		}
-	}
-
 	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
 	if (hCECPowerOnEventSerial == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEventSerial");
+		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEventSerial");
 		if (hCECPowerOnEventSerial)
 		{
 			ResetEvent(hCECPowerOnEventSerial);
@@ -111,7 +111,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	HANDLE hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
 	if (hCECPowerOnEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hCECPowerOnEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEvent");
+		hCECPowerOnEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEvent");
 		if (hCECPowerOnEvent)
 		{
 			ResetEvent(hCECPowerOnEvent);
@@ -121,7 +121,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	HANDLE hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
 	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
+		hBPEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"BPEvent");
 		if (hBPEvent)
 		{
 			ResetEvent(hBPEvent);
@@ -588,8 +588,6 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 }
 bool MonitorHandler::isDSCEnabled()
 {
-	// This is a placeholder function. Implementing actual DSC detection requires specific APIs or hardware queries.
-	// For now, we'll return false to indicate DSC is not enabled.
 	HRESULT hr = S_OK;
 	UINT32 NumPathArrayElements = 0;
 	UINT32 NumModeInfoArrayElements = 0;
@@ -600,36 +598,38 @@ bool MonitorHandler::isDSCEnabled()
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
 	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
 
-	int HDMIMonitorCount = 0;
-	int DPMonitorCount = 0;
-
 	if (hr == S_OK)
 	{
-
-		DISPLAYCONFIG_SOURCE_DEVICE_NAME SourceName = {};
-		SourceName.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-		SourceName.header.size = sizeof(SourceName);
-
-		DISPLAYCONFIG_TARGET_PREFERRED_MODE PreferedMode = {};
-		PreferedMode.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_PREFERRED_MODE;
-		PreferedMode.header.size = sizeof(PreferedMode);
-
-
-		int newId = 0;
-
-		if (hr == S_OK)
+		for (UINT32 i = 0; i < NumPathArrayElements; i++)
 		{
-			for (UINT32 i = 0; i < NumPathArrayElements; i++)
+			if (PathInfoArray2[i].targetInfo.refreshRate.Numerator > 360113)
 			{
-				if (PathInfoArray2[i].targetInfo.refreshRate.Numerator > 360113)
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 	}
 	return false;
 }
+
+bool MonitorHandler::isSingleDisplayHDMI()
+{
+	HRESULT hr = S_OK;
+	UINT32 NumPathArrayElements = 0;
+	UINT32 NumModeInfoArrayElements = 0;
+	hr = GetDisplayConfigBufferSizes((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &NumModeInfoArrayElements);
+	std::vector<DISPLAYCONFIG_PATH_INFO> PathInfoArray2(NumPathArrayElements);
+	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
+	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
+	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
+	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
+
+	if (hr == S_OK && NumPathArrayElements && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
+	{
+		return true;
+	}
+	return false;
+}
+
 int MonitorHandler::getActiveMonitorCount()
 {
 	UINT32 NumPathArrayElements = 0;

@@ -3,13 +3,15 @@ using namespace std;
 
 AudioHandler::AudioHandler()
 {
-	WCHAR programFiles[MAX_PATH] = { 0 };
-	ExpandEnvironmentStringsW(L"%userProfile%", programFiles, MAX_PATH);
-	std::wstring programFilesPath(programFiles);
-    std::wstring programFilesDeskPath(programFiles);
-	programFilesPath = programFilesPath + L"\\SteamSwitch\\BPAudioDevice.txt";
-    programFilesDeskPath = programFilesDeskPath + L"\\SteamSwitch\\DESKAudioDevice.txt";
-	HANDLE hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	WCHAR userProfile[MAX_PATH] = { 0 };
+	ExpandEnvironmentStringsW(L"%userProfile%", userProfile, MAX_PATH);
+	std::wstring userProfileFilePath(userProfile);
+    std::wstring userProfileLastFilePath(userProfile);
+    std::wstring userProfileDeskPath(userProfile);
+    userProfileFilePath = userProfileFilePath + L"\\SteamSwitch\\BPAudioDevice.txt";
+    userProfileLastFilePath = userProfileLastFilePath + L"\\SteamSwitch\\LastBPAudioDevice.txt";
+    userProfileDeskPath = userProfileDeskPath + L"\\SteamSwitch\\DESKAudioDevice.txt";
+	HANDLE hFile = CreateFileW(userProfileFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	DWORD re3 = GetLastError();
     if (hFile != INVALID_HANDLE_VALUE)
     {
@@ -29,11 +31,29 @@ AudioHandler::AudioHandler()
     }
     else
     {
-		MessageBoxW(NULL, (L"Could not default audio file: " + programFilesPath + L"\nError code: " + std::to_wstring(re3)).c_str(), L"Error", MB_ICONERROR);
+		MessageBoxW(NULL, (L"Could not default audio file: " + userProfileFilePath + L"\nError code: " + std::to_wstring(re3)).c_str(), L"Error", MB_ICONERROR);
 		PostQuitMessage(0);
     }
 
-	hFile = CreateFileW(programFilesDeskPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	hFile = CreateFileW(userProfileLastFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD bytesRead;
+		CHAR buffer[MAX_PATH] = { 0 };
+		WCHAR wbuffer[MAX_PATH] = { 0 };
+		bytesRead = GetFileSize(hFile, NULL);
+		if (bytesRead > 0 && bytesRead < MAX_PATH)
+		{
+			if (ReadFile(hFile, buffer, bytesRead, &bytesRead, NULL))
+			{
+				MultiByteToWideChar(CP_UTF8, 0, buffer, bytesRead, wbuffer, MAX_PATH);
+				lastBPaudioDeviceName = wbuffer;
+			}
+		}
+		CloseHandle(hFile);
+	}
+
+	hFile = CreateFileW(userProfileDeskPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		DWORD bytesRead;
@@ -50,9 +70,53 @@ AudioHandler::AudioHandler()
 		}
 		CloseHandle(hFile);
 	}
+
 }
 AudioHandler::~AudioHandler()
 {}
+void AudioHandler::ToggleAudioDevice()
+{
+    if (BPaudioDeviceName == L"" || lastBPaudioDeviceName == L"" || BPaudioDeviceName == lastBPaudioDeviceName)
+    {
+        return;
+	}
+
+
+    std::wstring temp = BPaudioDeviceName;
+    BPaudioDeviceName = lastBPaudioDeviceName;
+    lastBPaudioDeviceName = temp;
+    InitDefaultAudioDevice();
+    WCHAR userProfile[MAX_PATH] = { 0 };
+    ExpandEnvironmentStringsW(L"%userProfile%", userProfile, MAX_PATH);
+    std::wstring userProfileFilePath(userProfile);
+    std::wstring userProfileLastFilePath(userProfile);
+    userProfileFilePath = userProfileFilePath + L"\\SteamSwitch\\BPAudioDevice.txt";
+    userProfileLastFilePath = userProfileLastFilePath + L"\\SteamSwitch\\LastBPAudioDevice.txt";
+    HANDLE hFile = CreateFileW(userProfileFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        DWORD bytesWritten;
+        CHAR buffer[MAX_PATH] = { 0 };
+        int size = WideCharToMultiByte(CP_UTF8, 0, BPaudioDeviceName.c_str(), -1, buffer, MAX_PATH, NULL, NULL);
+        if (size > 0 && size < MAX_PATH)
+        {
+            WriteFile(hFile, buffer, size - 1, &bytesWritten, NULL);
+        }
+        CloseHandle(hFile);
+    }
+    hFile = CreateFileW(userProfileLastFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        DWORD bytesWritten;
+        CHAR buffer[MAX_PATH] = { 0 };
+        int size = WideCharToMultiByte(CP_UTF8, 0, lastBPaudioDeviceName.c_str(), -1, buffer, MAX_PATH, NULL, NULL);
+        if (size > 0 && size < MAX_PATH)
+        {
+            WriteFile(hFile, buffer, size - 1, &bytesWritten, NULL);
+        }
+        CloseHandle(hFile);
+	}
+}
 HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
 {
     IPolicyConfigVista* pPolicyConfig;

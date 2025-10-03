@@ -16,7 +16,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 SteamHandler* steamHandler = nullptr;
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
-
+static UINT s_uTaskbarRestart = 0;
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -150,10 +150,42 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static UINT s_uTaskbarRestart = 0;
     GenericInputDeviceChange(hWnd, message, wParam, lParam);
     switch (message)
     {
+	case WM_POWERBROADCAST:
+	{
+		if (wParam == PBT_APMRESUMEAUTOMATIC)
+		{
+			HANDLE hNewDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+			if (hNewDeviceEvent)
+			{
+				SetEvent(hNewDeviceEvent);
+				CloseHandle(hNewDeviceEvent);
+			}
+
+			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+			{
+				HANDLE hCECPowerOnEvent = OpenEventW( SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEvent");
+				if (hCECPowerOnEvent)
+				{
+					SetEvent(hCECPowerOnEvent);
+					CloseHandle(hCECPowerOnEvent);
+				}
+			}
+		}
+        if (wParam == PBT_APMSUSPEND)
+        {
+			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+			{
+				steamHandler->monHandler->StandByAllDevicesCEC();
+				WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
+			}
+        }
+		break;
+		AddNotificationIcon(hWnd);
+		break;
+	}
     case WM_CREATE:
     {
         AddNotificationIcon(hWnd);
@@ -198,7 +230,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_QUERYENDSESSION:
     {
 		if (steamHandler && steamHandler->isSteamInBigPictureMode &&
-            steamHandler->monHandler && steamHandler->monHandler->getActiveMonitorCount() == 1)
+            steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 		{
 			steamHandler->monHandler->StandByAllDevicesCEC();
 			WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
