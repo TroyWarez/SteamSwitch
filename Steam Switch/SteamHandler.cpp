@@ -197,27 +197,6 @@ int SteamHandler::StartSteamHandler()
 	{
 		CloseHandle(hiCueTestFile);
 	}
-	if (monHandler && monHandler->getActiveMonitorCount() == 1)
-	{
-		while (true)
-		{
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-			{
-				if (msg.message == WM_QUIT)
-				{
-					break;
-				}
-
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			if (isSteamRunning())
-			{
-				ShellExecuteW(mainHwnd, L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-				break;
-			}
-		}
-	}
 	serialHandler.ScanForSerialDevices();
 	while (true)
 	{

@@ -8,7 +8,8 @@
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
-	UNREFERENCED_PARAMETER(lpParam);
+	HRESULT hr = CoInitialize(nullptr);
+	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
 	std::string deviceStrPort = "";
 	CEC::ICECAdapter* cecAdpater;
@@ -28,7 +29,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	ExpandEnvironmentStringsW(L"%userProfile%", programFiles, MAX_PATH);
 	std::wstring programFilesPath(programFiles);
 	programFilesPath = programFilesPath + L"\\SteamSwitch\\cecHDMI_Port.txt";
-	HANDLE hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = INVALID_HANDLE_VALUE;
+	hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		DWORD bytesRead;
@@ -43,10 +45,6 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			}
 		}
 		CloseHandle(hFile);
-	}
-	if (hFile &&& hFile == INVALID_HANDLE_VALUE)
-	{
-		MessageBoxW(NULL, L"ERROR", L"ERROR", MB_ICONERROR);
 	}
 	cecAdpater = LibCecInitialise(&cec_config);
 
@@ -89,6 +87,27 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			ResetEvent(hCECPowerOffEvent);
 		}
 	}
+
+	HANDLE hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
+	if (hCECPowerOffFinishedEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCECPowerOffFinishedEvent = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOffFinishedEvent");
+		if (hCECPowerOffFinishedEvent)
+		{
+			ResetEvent(hCECPowerOffFinishedEvent);
+		}
+	}
+
+	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
+	if (hCECPowerOnEventSerial == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEventSerial");
+		if (hCECPowerOnEventSerial)
+		{
+			ResetEvent(hCECPowerOnEventSerial);
+		}
+	}
+
 	HANDLE hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
 	if (hCECPowerOnEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
@@ -117,6 +136,17 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	hEvents.push_back(hShutdownEvent);
 	hEvents.push_back(hCECPowerOnEvent);
 	hEvents.push_back(hCECPowerOffEvent);
+	hEvents.push_back(hCECPowerOnEventSerial);
+
+	if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->getActiveMonitorCount() == 1)
+	{
+		if (hCECPowerOnEvent)
+		{
+			SetEvent(hCECPowerOnEvent);
+		}
+
+	}
+
 	if (cecAdpater && deviceStrPort != "")
 	{
 		DWORD dwWaitResult = 0;
@@ -124,7 +154,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
 		switch (dwWaitResult)
 		{
-			case 0: // hShutdownEvent
+		case 0: // hShutdownEvent
 			{
 				for (size_t i = 0; i < hEvents.size(); i++)
 				{
@@ -140,6 +170,18 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				}
 				return 0;
 			}
+		case 3: // hCECPowerOnEventSerial
+		{
+			if (hCECPowerOnEventSerial)
+			{
+				ResetEvent(hCECPowerOnEventSerial);
+				if (hCECPowerOnEvent)
+				{
+					SetEvent(hCECPowerOnEvent);
+				}
+			}
+			break;
+		}
 		case 1: // hCECPowerOnEvent
 		{
 			if (hCECPowerOnEvent)
@@ -241,6 +283,10 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				}
 			}
 			cecAdpater->Close();
+			if (hCECPowerOffFinishedEvent)
+			{
+				SetEvent(hCECPowerOffFinishedEvent);
+			}
 			break;
 		}
 		}
@@ -253,14 +299,21 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	}
 	return 0;
 }
+void MonitorHandler::StartCecPowerThread(void* stmPtr)
+{
+	if (hCECThread == NULL || stmPtr == nullptr)
+	{
+		hCECThread = CreateThread(NULL, 0, CecPowerThread, stmPtr, 0, NULL);
+	}
+}
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
 	currentMode = mode;
 	hCECThread = NULL;
 	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
+	hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
 	hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
 	hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
-	hMonitorThread = CreateThread(NULL, 0, CecPowerThread, 0, 0, NULL);
 	icueInstalled = false;
 }
 MonitorHandler::~MonitorHandler()
@@ -280,26 +333,11 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
-void MonitorHandler::TogglePowerCEC(MonitorMode mode)
+void MonitorHandler::StandByAllDevicesCEC()
 {
-	DWORD result = WaitForSingleObject(hCECThread, INFINITE);
-
-	if (result == WAIT_OBJECT_0) {
-		CloseHandle(hCECThread);
-		hCECThread = NULL;
-	}
-	else
+	if (hCECPowerOffEvent)
 	{
-		TerminateThread(hCECThread, 0);
-	}
-	switch (currentMode)
-	{
-	case MonitorHandler::DESK_MODE: {
-		break;
-	}
-	case MonitorHandler::BP_MODE: {
-		break;
-	}
+		SetEvent(hCECPowerOffEvent);
 	}
 }
 bool MonitorHandler::ToggleMode(bool isIcueInstalled)
@@ -315,7 +353,6 @@ bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 				SetEvent(hCECPowerOffEvent);
 				ResetEvent(hCECPowerOnEvent);
 			}
-			TogglePowerCEC(MonitorHandler::DESK_MODE);
 			break;
 		}
 		case MonitorHandler::DESK_MODE:
@@ -330,7 +367,6 @@ bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 				ResetEvent(hCECPowerOffEvent);
 			}
 			currentMode = MonitorHandler::BP_MODE;
-			TogglePowerCEC(MonitorHandler::BP_MODE);
 			break;
 		}
 	}

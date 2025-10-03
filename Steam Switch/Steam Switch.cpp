@@ -127,6 +127,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
    GenericInputDeviceChange(hWnd, 0, 0, 0);
    steamHandler = new SteamHandler(hWnd);
+   if (steamHandler && steamHandler->monHandler)
+   {
+       steamHandler->monHandler->StartCecPowerThread(steamHandler);
+   }
 
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
@@ -191,17 +195,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         break;
     }
-    case WM_ENDSESSION:
+    case WM_QUERYENDSESSION:
     {
-		if (steamHandler)
+		if (steamHandler && steamHandler->isSteamInBigPictureMode &&
+            steamHandler->monHandler && steamHandler->monHandler->getActiveMonitorCount() == 1)
 		{
-			steamHandler->inputHandler->turnOffXinputController();
-			if (steamHandler->isSteamInBigPictureMode)
-			{
-				steamHandler->monHandler->ToggleMode(false);
-			}
+			steamHandler->monHandler->StandByAllDevicesCEC();
+			WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
 		}
-        PostQuitMessage(0);
         break;
     }
     case WM_PAINT:

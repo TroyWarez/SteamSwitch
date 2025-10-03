@@ -3,11 +3,12 @@
 #define PI_VID L"0525"
 #define PI_PID L"a4a7"
 
-// GIP Commands
-#define RASPBERRY_PI_GIP_POLL 0x00af
-#define RASPBERRY_PI_GIP_SYNC 0x00b0
-#define RASPBERRY_PI_GIP_CLEAR 0x00b1
-#define RASPBERRY_PI_GIP_LOCK 0x00b2
+// GIP Polling Command
+#define RASPBERRY_PI_GIP_GET_PWR_STATUS 0xb3
+
+// Power Status Responses
+#define PWR_STATUS_PI 0xef
+#define PWR_STATUS_OTHER 0xaf
 
 DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
@@ -23,6 +24,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	GetCommState(hSerial, &dcb);
 	dcb.BaudRate = CBR_9600;
 	SetCommState(hSerial, &dcb);
+	HANDLE hEvents[2] = { NULL };
 
 	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -33,116 +35,111 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			ResetEvent(hShutdownEvent);
 		}
 	}
-
-	HANDLE hIRPowerEvent = CreateEventW(NULL, FALSE, FALSE, L"IRPowerEvent");
-	if (hIRPowerEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hNewDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+	if (hNewDeviceEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hIRPowerEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRPowerEvent");
-		if (hIRPowerEvent)
-		{
-			ResetEvent(hIRPowerEvent);
-		}
+		hNewDeviceEvent = CreateEventW(NULL, FALSE, FALSE, L"NewDeviceEvent");
 	}
-	HANDLE hIRVolumeUpEvent = CreateEventW(NULL, FALSE, FALSE, L"IRVolumeUpEvent");
-	if (hIRVolumeUpEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+
+	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
+	if (hCECPowerOnEventSerial == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hIRVolumeUpEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRVolumeUpEvent");
-		if (hIRVolumeUpEvent)
+		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEventSerial");
+		if (hCECPowerOnEventSerial)
 		{
-			ResetEvent(hIRVolumeUpEvent);
+			ResetEvent(hCECPowerOnEventSerial);
 		}
 	}
 
-	HANDLE hIRVolumeDownEvent = CreateEventW(NULL, FALSE, FALSE, L"IRVolumeDownEvent");
-	if (hIRVolumeDownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	if (hShutdownEvent)
 	{
-		hIRVolumeDownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRVolumeDownEvent");
-		if (hIRVolumeDownEvent)
+		hEvents[0] = hShutdownEvent;
+	}
+	if (hNewDeviceEvent)
+	{
+		hEvents[1] = hNewDeviceEvent;
+	}
+
+	int pwrStatus = 0;
+	int cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
+	bool serialEvent = false;
+	DWORD dwWaitResult = WAIT_TIMEOUT;
+	while (dwWaitResult <= (ARRAYSIZE(hEvents)) || dwWaitResult == WAIT_TIMEOUT) {
+		dwWaitResult = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, 50);
+		switch (dwWaitResult)
 		{
-			ResetEvent(hIRVolumeDownEvent);
-		}
-	}
-	HANDLE hIRMuteEvent = CreateEventW(NULL, FALSE, FALSE, L"IRMuteEvent");
-	if (hIRMuteEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		hIRMuteEvent = OpenEventW(SYNCHRONIZE, FALSE, L"IRMuteEvent");
-		if (hIRMuteEvent)
+		case 0:
 		{
-			ResetEvent(hIRMuteEvent);
-		}
-	}
-	std::vector<HANDLE> hEvents;
-
-	if (!hShutdownEvent)
-	{
-		return 1;
-	}
-	hEvents.push_back(hShutdownEvent);
-	hEvents.push_back(hIRPowerEvent);
-	hEvents.push_back(hIRVolumeUpEvent);
-	hEvents.push_back(hIRVolumeDownEvent);
-	hEvents.push_back(hIRMuteEvent);
-
-
-
-	UCHAR pwrStatus = 0;
-	USHORT cmd = RASPBERRY_PI_GIP_POLL;
-	DWORD dwWaitResult = 0;
-	if (!ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
-	{
-		CloseHandle(hSerial);
-		return 1;
-	}
-	Sleep(1);
-	while (dwWaitResult <= ((DWORD)hEvents.size() - 1) || dwWaitResult == WAIT_TIMEOUT) {
-		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, 1);
-		if (hSerial)
-		{
-
-
-			if (!WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
+			for (size_t i = 0; i < ARRAYSIZE(hEvents); i++)
+			{
+				if (hEvents[i] != NULL)
+				{
+					CloseHandle(hEvents[i]);
+				}
+			}
+			if (hSerial)
 			{
 				CloseHandle(hSerial);
-				return 2;
+				hSerial = NULL;
 			}
-			Sleep(1);
+			if (hCECPowerOnEventSerial)
+			{
+				CloseHandle(hCECPowerOnEventSerial);
+				hCECPowerOnEventSerial = NULL;
+			}
+			return 0;
+		}
+		case 1:
+		{
+			if (hSerial)
+			{
+				CloseHandle(hSerial);
+			}
+			hSerial = NULL;
+			if (hEvents[1])
+			{
+				ResetEvent((hEvents[1]));
+			}
+			if (comPath->c_str() != L"")
+			{
+				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, NULL);
+				if (hSerial == INVALID_HANDLE_VALUE)
+				{
+					hSerial = NULL;
+				}
+				else
+				{
+					DCB dcb = { 0 };
+					dcb.DCBlength = sizeof(dcb);
+					GetCommState(hSerial, &dcb);
+					dcb.BaudRate = CBR_9600;
+					SetCommState(hSerial, &dcb);
+				}
+				serialEvent = false;
+			}
+			break;
+		}
+		case WAIT_TIMEOUT:
+		{
+			if (hSerial && !WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = NULL;
+			}
+			if (hSerial && !ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
+			{
+				CloseHandle(hSerial);
+				hSerial = NULL;
+			}
+			if (!serialEvent && pwrStatus == PWR_STATUS_PI && hCECPowerOnEventSerial && WaitForSingleObject(hCECPowerOnEventSerial, 1) != WAIT_OBJECT_0)
+			{
+				SetEvent(hCECPowerOnEventSerial);
+				serialEvent = true;
+			}
+			break;
+		}
 		}
 	}
-
-// 	DWORD dwWaitResult = 0;
-// 	while (dwWaitResult <= ((DWORD)hEvents.size() - 1)) {
-// 		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
-// 		switch (dwWaitResult)
-// 		{
-// 		case 0: // hShutdownEvent
-// 		{
-// 			for (size_t i = 0; i < hEvents.size(); i++)
-// 			{
-// 				if (hEvents[i] != NULL)
-// 				{
-// 					CloseHandle(hEvents[i]);
-// 				}
-// 			}
-// 			return 0;
-// 		}
-// 		case 1: // hIRVolumeUpEvent
-// 		{
-// 			if (hIRPowerEvent)
-// 			{
-// 				ResetEvent(hIRPowerEvent);
-// 			}
-// 			break;
-// 		}
-// 		case 2: // hIRVolumeUpEvent
-// 		{
-// 			if (hIRVolumeUpEvent)
-// 			{
-// 				ResetEvent(hIRVolumeUpEvent);
-// 			}
-// 			break;
-// 		}
-// 		}
-// 	}
 	return 0;
 }
 BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePaths, std::vector<std::wstring>* DeviceNames);

@@ -12,13 +12,14 @@ public:
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
 	bool ToggleMode(bool isIcueInstalled);
-	void TogglePowerCEC(MonitorMode mode);
+	void StandByAllDevicesCEC();
+	void StartCecPowerThread(void* stmPtr);
 	int getActiveMonitorCount();
 	HANDLE hCECThread;
 	HANDLE hCECPowerOffEvent;
 	HANDLE hCECPowerOnEvent;
+	HANDLE hCECPowerOffFinishedEvent;
 	HANDLE hShutdownEvent;
-	HANDLE hMonitorThread;
 	bool icueInstalled;
 private:
 	MonitorMode currentMode;
