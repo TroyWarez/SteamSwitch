@@ -14,6 +14,9 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 SteamHandler* steamHandler = nullptr;
+HDEVNOTIFY hDeviceSerial = NULL;
+HPOWERNOTIFY hPowerNotify = NULL;
+
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
 static UINT s_uTaskbarRestart = 0;
@@ -135,6 +138,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
 
+   if (hDeviceSerial == NULL)
+   {
+	   DEV_BROADCAST_DEVICEINTERFACE serialFilter = { };
+	   serialFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
+	   serialFilter.dbcc_classguid = GUID_DEVINTERFACE_COMPORT;
+	   serialFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+	   hDeviceSerial = RegisterDeviceNotification(hWnd, &serialFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
+   }
+   if (hPowerNotify == NULL)
+   {
+	   hPowerNotify = RegisterSuspendResumeNotification(hWnd, DEVICE_NOTIFY_WINDOW_HANDLE);
+   }
+
    return TRUE;
 }
 
@@ -246,8 +262,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+    {
+		if (hDeviceSerial)
+		{
+			UnregisterDeviceNotification(hDeviceSerial);
+			hDeviceSerial = NULL;
+		}
+		if (hPowerNotify)
+		{
+			UnregisterSuspendResumeNotification(hPowerNotify);
+			hPowerNotify = NULL;
+		}
         PostQuitMessage(0);
         break;
+    }
     default:
     {
         if (message == s_uTaskbarRestart)
