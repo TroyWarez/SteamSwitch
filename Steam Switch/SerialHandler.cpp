@@ -1,5 +1,9 @@
 #include "framework.h"
 #include "SerialHandler.h"
+#include "SteamHandler.h"
+
+extern SteamHandler* steamHandler;
+
 #define PI_VID L"0525"
 #define PI_PID L"a4a7"
 
@@ -284,7 +288,10 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		hSerial = NULL;
 	}
 
-	if (pwrStatus == PWR_STATUS_PI &&
+	if (steamHandler &&
+		steamHandler->monHandler &&
+		!steamHandler->monHandler->isDSCEnabled() &&
+		pwrStatus == PWR_STATUS_PI &&
 		hCECPowerOnEventSerial &&
 		WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 	{
@@ -372,7 +379,10 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 						hSerial = NULL;
 						break;
 					}
-					if (pwrStatus == PWR_STATUS_PI &&
+					if (steamHandler &&
+						steamHandler->monHandler &&
+						!steamHandler->monHandler->isDSCEnabled() &&
+						pwrStatus == PWR_STATUS_PI &&
 						hCECPowerOnEventSerial &&
 						WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 					{

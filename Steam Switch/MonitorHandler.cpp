@@ -602,7 +602,7 @@ bool MonitorHandler::isDSCEnabled()
 	{
 		for (UINT32 i = 0; i < NumPathArrayElements; i++)
 		{
-			if (PathInfoArray2[i].targetInfo.refreshRate.Numerator > 360113)
+			if (PathInfoArray2[i].targetInfo.refreshRate.Numerator > MAX_REFRESH_RATE_DSC)
 			{
 				return true;
 			}

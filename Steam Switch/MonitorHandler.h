@@ -1,5 +1,6 @@
 #pragma once
 #include "framework.h"
+#define MAX_REFRESH_RATE_DSC 360113
 class MonitorHandler
 {
 public:
@@ -16,6 +17,7 @@ public:
 	void StartCecPowerThread(void* stmPtr);
 	int getActiveMonitorCount();
 	bool isSingleDisplayHDMI();
+	bool isDSCEnabled();
 	HANDLE hCECThread;
 	HANDLE hCECPowerOffEvent;
 	HANDLE hCECPowerOnEvent;
@@ -25,5 +27,4 @@ public:
 private:
 	MonitorMode currentMode;
 	bool ToggleActiveMonitors(MonitorMode mode);
-	bool isDSCEnabled();
 };
