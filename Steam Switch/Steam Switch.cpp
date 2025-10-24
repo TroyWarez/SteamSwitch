@@ -9,6 +9,14 @@
 #include <GenericInput.h>
 #define MAX_LOADSTRING 100 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
+#define MB_WAIT_TIMEOUT 30000 // 30 seconds
+#define IDM_EXIT 105
+#define IDM_SYNC 106
+#define IDM_CLEAR 107
+#define IDM_CLEAR_SINGLE 108
+#define IDM_DEVICE_NOT_FOUND 109
+#define IDM_DEVICE_NOT_FOUND_EXIT 110
+#define NBOFEVENTS 6
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -19,7 +27,9 @@ HPOWERNOTIFY hPowerNotify = NULL;
 
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
-static UINT s_uTaskbarRestart = 0;
+static UINT WM_TaskBarCreated = 0;
+DWORD32 controllerCount = -1;
+std::wstring controllerCountWStr;
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -150,7 +160,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
 	   hPowerNotify = RegisterSuspendResumeNotification(hWnd, DEVICE_NOTIFY_WINDOW_HANDLE);
    }
-
+   WM_TaskBarCreated = RegisterWindowMessageW(L"TaskbarCreated");
    return TRUE;
 }
 
@@ -171,19 +181,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_POWERBROADCAST:
 	{
-		if (wParam == PBT_APMRESUMEAUTOMATIC)
+		if ( wParam == PBT_APMRESUMEAUTOMATIC ||
+			wParam == PBT_APMRESUMESUSPEND )
 		{
-			HANDLE hNewDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
-			if (hNewDeviceEvent)
-			{
-				SetEvent(hNewDeviceEvent);
-				CloseHandle(hNewDeviceEvent);
-			}
 
 			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 			{
+				HANDLE hResumedFromSleep = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ResumedFromSleep");
+				if (hResumedFromSleep && WaitForSingleObject(hResumedFromSleep, 1) == WAIT_TIMEOUT)
+				{
+					if (steamHandler)
+					{
+						steamHandler->serialHandler.ScanForSerialDevices();
+					}
+					SetEvent(hResumedFromSleep);
+					CloseHandle(hResumedFromSleep);
+				}
 				HANDLE hCECPowerOnEvent = OpenEventW( SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEvent");
-				if (hCECPowerOnEvent)
+				if (hCECPowerOnEvent && WaitForSingleObject(hCECPowerOnEvent, 1) == WAIT_TIMEOUT)
 				{
 					SetEvent(hCECPowerOnEvent);
 					CloseHandle(hCECPowerOnEvent);
@@ -199,25 +214,233 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
         }
 		break;
-		AddNotificationIcon(hWnd);
-		break;
 	}
     case WM_CREATE:
     {
         AddNotificationIcon(hWnd);
-        s_uTaskbarRestart = RegisterWindowMessageW(L"TaskbarCreated");
         break;
     }
-    case APPWM_ICONNOTIFY:
-    {
+	case APPWM_ICONNOTIFY:
+	{
 		switch (lParam)
 		{
 		case WM_LBUTTONUP:
-            PostQuitMessage(0);
+		case WM_RBUTTONUP:
+			HMENU Hmenu = CreatePopupMenu();
+			if (controllerCount != -1)
+			{
+				if (controllerCount == 1)
+				{
+					controllerCountWStr = L"Enable Pairing Mode: (1) controller paired.";
+				}
+				else
+				{
+					controllerCountWStr = L"Enable Pairing Mode: (" + std::to_wstring(controllerCount) + L") controllers paired.";
+				}
+
+				if (controllerCount > 0)
+				{
+					AppendMenuW(Hmenu, MF_STRING, IDM_CLEAR, L"Clear All Paired Controllers");
+					AppendMenuW(Hmenu, MF_STRING, IDM_CLEAR_SINGLE, L"Clear a Single Paired Controller");
+				}
+
+				AppendMenuW(Hmenu, MF_STRING, IDM_SYNC, controllerCountWStr.c_str());
+				AppendMenuW(Hmenu, MF_STRING, IDM_EXIT, L"Close Steam Switch");
+			}
+			else
+			{
+				AppendMenuW(Hmenu, MF_STRING | MF_DISABLED, IDM_DEVICE_NOT_FOUND, L"The Raspberry Pi ZeroW2 device was not found.");
+				AppendMenuW(Hmenu, MF_STRING, IDM_DEVICE_NOT_FOUND_EXIT, L"Close Steam Switch");
+			}
+			POINT p;
+			GetCursorPos(&p);
+			SetForegroundWindow(hWnd);
+			TrackPopupMenu(Hmenu, TPM_LEFTBUTTON, p.x, p.y, 0, hWnd, 0);
+			PostMessage(hWnd, WM_NULL, 0, 0);
 			break;
 		}
-        break;
-    }
+		break;
+	}
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		// Parse the menu selections:
+		switch (wmId)
+		{
+		case IDM_DEVICE_NOT_FOUND:
+		{
+			MessageBoxW(hWnd, L"Do not run Steam Switch unless you have the required Raspberry Pi ZeroW2 serial device connected to your computer.", L"Steam Switch Error", MB_OK | MB_ICONERROR);
+			break;
+		}
+		case IDM_DEVICE_NOT_FOUND_EXIT:
+		{
+			DestroyWindow(hWnd);
+			PostQuitMessage(0);
+			break;
+		}
+		case IDM_EXIT:
+		{
+			HANDLE hLockDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"LockDeviceEvent");
+			HANDLE hShutdownEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"ShutdownEvent");
+			HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+			if (hNewDeviceEvent && WaitForSingleObject(hNewDeviceEvent, 1) != WAIT_OBJECT_0)
+			{
+				SetEvent(hNewDeviceEvent);
+			}
+			if (hLockDeviceEvent)
+			{
+				SetEvent(hLockDeviceEvent);
+				if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
+				{
+					MessageBoxW(hWnd, L"The device is now locked and can be unlocked by running Steam Switch again.", L"Steam Switch Important Information", MB_OK | MB_ICONINFORMATION);
+				}
+				else
+				{
+					MessageBoxW(hWnd, L"The device may be unlocked and could power down the your computer unexpectedly when a paired controlled is used.\n\nRun Steam Switch again to attempt to fix this.\n\nDo not run Steam Switch unless you have the required Raspberry Pi ZeroW2 serial device connected to your computer at all times.", L"Steam Switch Error", MB_OK | MB_ICONERROR);
+				}
+			}
+			if (hLockDeviceEvent)
+			{
+				CloseHandle(hLockDeviceEvent);
+			}
+			if (hShutdownEvent)
+			{
+				CloseHandle(hShutdownEvent);
+			}
+			DestroyWindow(hWnd);
+			PostQuitMessage(0);
+			break;
+		}
+		case IDM_SYNC:
+		{
+			int selection = MessageBoxW(hWnd, L"Enable paring mode for the Raspberry Pi ZeroW2 device?\nAnother message box window will appear to indicate if a controller was paired successfully or not.\nClick ok to continue or click cancel to exit.", L"Steam Switch", MB_OKCANCEL | MB_ICONQUESTION);
+			switch (selection)
+			{
+			case IDCANCEL:
+				return DefWindowProc(hWnd, message, wParam, lParam);
+			case IDOK:
+			{
+				HANDLE hSyncEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"SyncEvent");
+				HANDLE hFinshedSyncEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"FinshedSyncEvent");
+				HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+
+				if (hNewDeviceEvent && WaitForSingleObject(hNewDeviceEvent, 1) != WAIT_OBJECT_0)
+				{
+					SetEvent(hNewDeviceEvent);
+				}
+				if (hSyncEvent && hFinshedSyncEvent)
+				{
+					SetEvent(hSyncEvent);
+					if (WaitForSingleObject(hFinshedSyncEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
+					{
+						MessageBoxW(hWnd, L"The controller is now paired with the Raspberry Pi ZeroW2 device. To unpair this controller select the option \"Clear All Paired Controllers\" or \"Clear a Single Paired Controller\" from the system tray menu using the icon on the task bar.", L"GIPSerial Important Information", MB_OK | MB_ICONINFORMATION);
+					}
+					else
+					{
+						MessageBoxW(hWnd, L"The Raspberry Pi ZeroW2 device did not find any new controllers to pair.", L"Steam Switch Error", MB_OK | MB_ICONWARNING);
+					}
+					ResetEvent(hFinshedSyncEvent);
+				}
+				if (hSyncEvent)
+				{
+					CloseHandle(hSyncEvent);
+				}
+				if (hFinshedSyncEvent)
+				{
+					CloseHandle(hFinshedSyncEvent);
+				}
+			}
+			}
+			break;
+		}
+		case IDM_CLEAR_SINGLE:
+		{
+			int selection = MessageBoxW(hWnd, L"Warning: This option will attempt to unpair the next controller that tries to connect to the Raspberry Pi ZeroW2 device.\nClick ok to continue or click cancel to exit.", L"GIPSerial Warning", MB_OKCANCEL | MB_ICONWARNING);
+			switch (selection)
+			{
+			case IDCANCEL:
+				return DefWindowProc(hWnd, message, wParam, lParam);
+			case IDOK:
+			{
+				HANDLE hClearSingleEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"ClearSingleEvent");
+				HANDLE hFinshedClearSingleEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"FinshedClearSingleEvent");
+				HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+
+				if (hNewDeviceEvent && WaitForSingleObject(hNewDeviceEvent, 1) != WAIT_OBJECT_0)
+				{
+					SetEvent(hNewDeviceEvent);
+				}
+				if (hClearSingleEvent && hFinshedClearSingleEvent)
+				{
+					SetEvent(hClearSingleEvent);
+					if (WaitForSingleObject(hFinshedClearSingleEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
+					{
+						MessageBoxW(hWnd, L"The controller was unpaired successfully.\nYou can now safety pair this controller to another device.\nTo pair again click the option \"Enable Pairing Mode\" from the system tray menu using the icon on the task bar.", L"GIPSerial Important Information", MB_OK | MB_ICONINFORMATION);
+					}
+					else
+					{
+						MessageBoxW(hWnd, L"The Raspberry Pi ZeroW2 device was unable to clear a single paired controller.\nTry restarting your computer before trying again.", L"GIPSerial Error", MB_OK | MB_ICONERROR);
+					}
+					ResetEvent(hFinshedClearSingleEvent);
+				}
+				if (hClearSingleEvent)
+				{
+					CloseHandle(hClearSingleEvent);
+				}
+				if (hFinshedClearSingleEvent)
+				{
+					CloseHandle(hFinshedClearSingleEvent);
+				}
+			}
+			}
+			break;
+		}
+		case IDM_CLEAR:
+		{
+			int selection = MessageBoxW(hWnd, L"Warning: This option will attempt to unpair all paired controllers.\nClick ok to continue or click cancel to exit.", L"GIPSerial Warning", MB_OKCANCEL | MB_ICONWARNING);
+			switch (selection)
+			{
+			case IDCANCEL:
+				return DefWindowProc(hWnd, message, wParam, lParam);
+			case IDOK:
+			{
+				HANDLE hClearAllEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"ClearAllEvent");
+				HANDLE hFinshedClearAllEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"FinshedClearAllEvent");
+				HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+
+				if (hNewDeviceEvent && WaitForSingleObject(hNewDeviceEvent, 1) != WAIT_OBJECT_0)
+				{
+					SetEvent(hNewDeviceEvent);
+				}
+				if (hClearAllEvent && hFinshedClearAllEvent)
+				{
+					ResetEvent(hClearAllEvent);
+					SetEvent(hClearAllEvent);
+					if (WaitForSingleObject(hFinshedClearAllEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
+					{
+						MessageBoxW(hWnd, L"All controllers were unpaired successfully.\nYou can now safety pair this controller to another device.\nTo pair again click the option \"Enable Pairing Mode\" from the system tray menu using the icon on the task bar.", L"GIPSerial Important Information", MB_OK | MB_ICONINFORMATION);
+					}
+					else
+					{
+						MessageBoxW(hWnd, L"The Raspberry Pi ZeroW2 device was unable to clear all paired controller.\nTry restarting your computer before trying again.", L"Steam Switch Error", MB_OK | MB_ICONWARNING);
+					}
+					ResetEvent(hFinshedClearAllEvent);
+				}
+				if (hClearAllEvent)
+				{
+					CloseHandle(hClearAllEvent);
+				}
+				if (hFinshedClearAllEvent)
+				{
+					CloseHandle(hFinshedClearAllEvent);
+				}
+			}
+			}
+			break;
+		}
+		}
+		break;
+	}
     case WM_DEVICECHANGE:
     {
 		DEV_BROADCAST_HDR* hdr = (DEV_BROADCAST_HDR*)lParam;
@@ -259,8 +482,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
             EndPaint(hWnd, &ps);
+			break;
         }
-        break;
     case WM_DESTROY:
     {
 		if (hDeviceSerial)
@@ -278,7 +501,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     default:
     {
-        if (message == s_uTaskbarRestart)
+        if (message == WM_TaskBarCreated)
         {
             AddNotificationIcon(hWnd);
         }
@@ -298,8 +521,7 @@ BOOL AddNotificationIcon(HWND hwnd)
 	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
 	    nid.uCallbackMessage = WM_USER + 200;
 	    nid.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_STEAMSWITCH));
-        std::copy(L"Click here to close Steam Switch", L"Click here to close Steam Switch" + 33, nid.szTip);
-        std::copy(L"Click here to close Steam Switch", L"Click here to close Steam Switch" + 13, nid.szTip);
+        lstrcpyW(nid.szTip, L"Click here to open Steam Switch options");
         nid.uCallbackMessage = APPWM_ICONNOTIFY;
 	return Shell_NotifyIconW(NIM_ADD, &nid);
 }

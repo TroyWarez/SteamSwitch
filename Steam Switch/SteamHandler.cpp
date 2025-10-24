@@ -24,7 +24,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 		if (hWndIC && IsWindowVisible(hWndIC))
 		{
 			ShowWindow(hWndIC, SW_HIDE);
-			if (hICUEEvent)
+			if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
 			{
 				SetEvent(hICUEEvent);
 			}
@@ -364,7 +364,10 @@ int SteamHandler::StartSteamHandler()
 									if (hWndBP == NULL) {
 										if (programFiles != L"")
 										{
-											SetEvent(hShutdownEvent);
+											if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+											{
+												SetEvent(hShutdownEvent);
+											}
 										}
 										inputHandler->turnOffXinputController();
 

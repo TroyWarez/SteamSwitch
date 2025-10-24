@@ -4,27 +4,236 @@
 #define PI_PID L"a4a7"
 
 // GIP Polling Command
+#define RASPBERRY_PI_GIP_POLL 0xaf
+#define RASPBERRY_PI_GIP_SYNC 0xb0
+#define RASPBERRY_PI_GIP_CLEAR 0xb1
+#define RASPBERRY_PI_GIP_LOCK 0xb2
 #define RASPBERRY_PI_GIP_GET_PWR_STATUS 0xb3
+#define RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER 0xb4
+#define NBOFEVENTS 7
 
 // Power Status Responses
 #define PWR_STATUS_PI 0xef
 #define PWR_STATUS_OTHER 0xaf
 
+
+extern DWORD32 controllerCount;
+
+BOOL ReadADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
+{
+	OVERLAPPED osRead = { 0 };
+	DWORD dwRead = 0;
+	DWORD dwRes = 0;
+	BOOL fRes = FALSE;
+	HANDLE hEvents[2] = { NULL };
+	if (hComm)
+	{
+		// Create this read operation's OVERLAPPED structure's hEvent.
+		osRead.hEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialReadEvent");
+		if (osRead.hEvent == NULL)
+		{
+			return FALSE;
+		}
+		hEvents[0] = osRead.hEvent;
+		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
+
+		if (hEvents[1] == NULL)
+			// error creating overlapped event handle
+			return FALSE;
+
+
+		// Issue read.
+		if (!ReadFile(hComm, lpDW32, sizeof(DWORD32), &dwRead, &osRead)) {
+			if (GetLastError() != ERROR_IO_PENDING) {
+				// ReadFile failed, but isn't delayed. Report error and abort.
+				fRes = FALSE;
+			}
+			else
+				// Read is pending.
+				dwRes = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+			switch (dwRes)
+			{
+				// OVERLAPPED structure's event has been signaled. 
+			case 0:
+				if (!GetOverlappedResult(hComm, &osRead, &dwRead, FALSE))
+					fRes = FALSE;
+				else
+					// Read operation completed successfully.
+					fRes = TRUE;
+				break;
+
+			default:
+				// An error has occurred in WaitForSingleObject.
+				// This usually indicates a problem with the
+			   // OVERLAPPED structure's event handle.
+				fRes = FALSE;
+				break;
+			}
+		}
+		else {
+			// ReadFile completed immediately.
+			fRes = TRUE;
+		}
+		CloseHandle(osRead.hEvent);
+		CloseHandle(hEvents[1]);
+	}
+	return fRes;
+}
+
+BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
+{
+	OVERLAPPED osWrite = { 0 };
+	DWORD dwWrite = 0;
+	DWORD dwRes = 0;
+	BOOL fRes = FALSE;
+	HANDLE hEvents[2] = { NULL };
+	if (hComm)
+	{
+		// Create this write operation's OVERLAPPED structure's hEvent.
+		osWrite.hEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialWriteEvent");
+
+		if (osWrite.hEvent == NULL)
+			// error creating overlapped event handle
+			return FALSE;
+
+		hEvents[0] = osWrite.hEvent;
+		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
+		if (hEvents[1] == NULL)
+			// error creating overlapped event handle
+			return FALSE;
+		// Issue write.
+		if (!WriteFile(hComm, lpDW32, sizeof(DWORD32), &dwWrite, &osWrite)) {
+			if (GetLastError() != ERROR_IO_PENDING) {
+				// WriteFile failed, but isn't delayed. Report error and abort.
+				fRes = FALSE;
+			}
+			else
+				// Write is pending.
+				dwRes = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+			switch (dwRes)
+			{
+				// OVERLAPPED structure's event has been signaled. 
+			case 0:
+				if (!GetOverlappedResult(hComm, &osWrite, &dwWrite, FALSE))
+					fRes = FALSE;
+				else
+					// Write operation completed successfully.
+					fRes = TRUE;
+				break;
+			default:
+				// An error has occurred in WaitForSingleObject.
+				// This usually indicates a problem with the
+			   // OVERLAPPED structure's event handle.
+				fRes = FALSE;
+				break;
+			}
+		}
+		else {
+			// WriteFile completed immediately.
+			fRes = TRUE;
+		}
+		CloseHandle(osWrite.hEvent);
+		CloseHandle(hEvents[1]);
+
+		PurgeComm(hComm, PURGE_TXCLEAR | PURGE_RXCLEAR);
+	}
+	return fRes;
+}
 DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
-	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, NULL);
+	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	if (hSerial == INVALID_HANDLE_VALUE)
 	{
 		hSerial = NULL;
-		return 1;
+	}
+	else
+	{
+		DCB dcb = { 0 };
+		dcb.DCBlength = sizeof(dcb);
+		GetCommState(hSerial, &dcb);
+		dcb.BaudRate = CBR_9600;
+		SetCommState(hSerial, &dcb);
+		PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 	}
 
-	DCB dcb = { 0 };
-	dcb.DCBlength = sizeof(dcb);
-	GetCommState(hSerial, &dcb);
-	dcb.BaudRate = CBR_9600;
-	SetCommState(hSerial, &dcb);
-	HANDLE hEvents[2] = { NULL };
+	HANDLE hEvents[NBOFEVENTS] = { NULL };
+	hEvents[0] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+	if (hEvents[0] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[0] = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	}
+
+	hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SyncEvent");
+	if (hEvents[1] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[1] = CreateEventW(NULL, FALSE, FALSE, L"SyncEvent");
+	}
+
+	HANDLE hReadEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialReadEvent");
+	if (hReadEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hReadEvent = CreateEventW(NULL, FALSE, FALSE, L"SerialReadEvent");
+	}
+	if (hReadEvent)
+	{
+		ResetEvent(hReadEvent);
+	}
+
+	HANDLE hWriteEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialWriteEvent");
+	if (hWriteEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hWriteEvent = CreateEventW(NULL, FALSE, FALSE, L"SerialWriteEvent");
+	}
+	if (hWriteEvent)
+	{
+		ResetEvent(hWriteEvent);
+	}
+
+	HANDLE hFinshedSyncEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedSyncEvent");
+	if (hFinshedSyncEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hFinshedSyncEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedSyncEvent");
+	}
+	if (hFinshedSyncEvent)
+	{
+		ResetEvent(hFinshedSyncEvent);
+	}
+
+	hEvents[2] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ClearSingleEvent");
+	if (hEvents[2] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[2] = CreateEventW(NULL, FALSE, FALSE, L"ClearSingleEvent");
+	}
+
+	HANDLE hFinshedClearSingleEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"FinshedClearSingleEvent");
+	if (hFinshedClearSingleEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hFinshedClearSingleEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedClearSingleEvent");
+	}
+
+	hEvents[3] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ClearAllEvent");
+	if (hEvents[3] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[3] = CreateEventW(NULL, FALSE, FALSE, L"ClearAllEvent");
+	}
+
+	HANDLE hFinshedClearAllEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedClearAllEvent");
+	if (hFinshedClearAllEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hFinshedClearAllEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedClearAllEvent");
+	}
+
+	hEvents[4] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"LockDeviceEvent");
+	if (hEvents[4] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[4] = CreateEventW(NULL, FALSE, FALSE, L"LockDeviceEvent");
+	}
+
+	HANDLE hFinshedLockDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedLockDeviceEvent");
+	if (hFinshedLockDeviceEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hFinshedLockDeviceEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedLockDeviceEvent");
+	}
 
 	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -35,10 +244,17 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			ResetEvent(hShutdownEvent);
 		}
 	}
-	HANDLE hNewDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
-	if (hNewDeviceEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+
+	hEvents[5] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
+	if (hEvents[5] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hNewDeviceEvent = CreateEventW(NULL, FALSE, FALSE, L"NewDeviceEvent");
+		hEvents[5] = CreateEventW(NULL, FALSE, FALSE, L"NewDeviceEvent");
+	}
+
+	hEvents[6] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ResumedFromSleep");
+	if (hEvents[6] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		hEvents[6] = CreateEventW(NULL, FALSE, FALSE, L"ResumedFromSleep");
 	}
 
 	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
@@ -51,24 +267,182 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		}
 	}
 
-	if (hShutdownEvent)
+	DWORD32 lastControllerCount = 0;
+	DWORD32 cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
+	DWORD32 pwrStatus = PWR_STATUS_OTHER;
+	DWORD dwWaitResult = 0;
+	DWORD currentTime = 0;
+	DWORD endTime = 0;
+	BOOL readPwrStatus = FALSE;
+	dwWaitResult = WAIT_TIMEOUT;
+
+	if (!WriteADoubleWord32(hSerial, &cmd) ||
+		!ReadADoubleWord32(hSerial, &pwrStatus))
 	{
-		hEvents[0] = hShutdownEvent;
-	}
-	if (hNewDeviceEvent)
-	{
-		hEvents[1] = hNewDeviceEvent;
+		CloseHandle(hSerial);
+		pwrStatus = PWR_STATUS_OTHER;
+		hSerial = NULL;
 	}
 
-	int pwrStatus = 0;
-	int cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
-	bool serialEvent = false;
-	DWORD dwWaitResult = WAIT_TIMEOUT;
-	while (dwWaitResult <= (ARRAYSIZE(hEvents)) || dwWaitResult == WAIT_TIMEOUT) {
+	if (pwrStatus == PWR_STATUS_PI &&
+		hCECPowerOnEventSerial &&
+		WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
+	{
+		SetEvent(hCECPowerOnEventSerial);
+	}
+	cmd = RASPBERRY_PI_GIP_POLL;
+	while (dwWaitResult == WAIT_TIMEOUT) {
 		dwWaitResult = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, 50);
+		currentTime = timeGetTime();
 		switch (dwWaitResult)
 		{
-		case 0:
+		case 1: // hSyncEvent
+		{
+			if (hEvents[1] && dwWaitResult == 1)
+			{
+				ResetEvent(hEvents[1]);
+				cmd = RASPBERRY_PI_GIP_SYNC;
+			}
+			break;
+		}
+		case 2: // hClearSingleEvent
+		{
+			if (hEvents[2] && dwWaitResult == 2)
+			{
+				ResetEvent(hEvents[2]);
+				cmd = RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER;
+			}
+			break;
+		}
+		case 3: // hClearAllEvent
+		{
+			if (hEvents[3] && dwWaitResult == 3)
+			{
+				ResetEvent(hEvents[3]);
+				cmd = RASPBERRY_PI_GIP_CLEAR;
+			}
+			break;
+		}
+		case 4: // hLockDeviceEvent
+		{
+			if (hEvents[4] && dwWaitResult == 4)
+			{
+				ResetEvent(hEvents[4]);
+				cmd = RASPBERRY_PI_GIP_LOCK;
+			}
+			break;
+		}
+		case WAIT_TIMEOUT:
+		{
+			if (hSerial)
+			{
+				if (dwWaitResult == 1 ||
+					dwWaitResult == 2 ||
+					dwWaitResult == 3)
+				{
+					lastControllerCount = controllerCount;
+					endTime = timeGetTime();
+					endTime = endTime + 30000;
+					dwWaitResult = WAIT_TIMEOUT;
+				}
+
+				if (endTime < currentTime && endTime != 0)
+				{
+					cmd = RASPBERRY_PI_GIP_POLL;
+					endTime = 0;
+				}
+
+				if (!WriteADoubleWord32(hSerial, &cmd) ||
+					!ReadADoubleWord32(hSerial, &controllerCount))
+				{
+					CloseHandle(hSerial);
+					controllerCount = -1;
+					hSerial = NULL;
+					break;
+				}
+
+				if (readPwrStatus == TRUE)
+				{
+					cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
+					if (!WriteADoubleWord32(hSerial, &cmd) ||
+						!ReadADoubleWord32(hSerial, &pwrStatus))
+					{
+						CloseHandle(hSerial);
+						controllerCount = -1;
+						hSerial = NULL;
+						break;
+					}
+					if (pwrStatus == PWR_STATUS_PI &&
+						hCECPowerOnEventSerial &&
+						WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
+					{
+						SetEvent(hCECPowerOnEventSerial);
+					}
+					readPwrStatus = FALSE;
+				}
+
+				if (controllerCount > lastControllerCount && cmd == RASPBERRY_PI_GIP_SYNC)
+				{
+					if (hFinshedSyncEvent)
+					{
+						SetEvent(hFinshedSyncEvent);
+					}
+					cmd = RASPBERRY_PI_GIP_POLL;
+				}
+				if (controllerCount < lastControllerCount && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER)
+				{
+					if (hFinshedClearSingleEvent)
+					{
+						SetEvent(hFinshedClearSingleEvent);
+					}
+					cmd = RASPBERRY_PI_GIP_POLL;
+				}
+				else if (controllerCount == 0 && cmd == RASPBERRY_PI_GIP_CLEAR)
+				{
+					if (hFinshedClearAllEvent)
+					{
+						SetEvent(hFinshedClearAllEvent);
+					}
+					cmd = RASPBERRY_PI_GIP_POLL;
+				}
+
+				if (cmd == RASPBERRY_PI_GIP_LOCK)
+				{
+					if (hFinshedLockDeviceEvent)
+					{
+						SetEvent(hFinshedLockDeviceEvent);
+
+					}
+					if (hEvents[0])
+					{
+						SetEvent(hEvents[0]);
+					}
+				}
+			}
+			else
+			{
+				controllerCount = -1;
+				Sleep(100);
+				if (comPath && *(comPath) != L"")
+				{
+					hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+					if (hSerial == INVALID_HANDLE_VALUE)
+					{
+						hSerial = NULL;
+					}
+					else
+					{
+						DCB dcb = { 0 };
+						dcb.DCBlength = sizeof(dcb);
+						GetCommState(hSerial, &dcb);
+						dcb.BaudRate = CBR_9600;
+						SetCommState(hSerial, &dcb);
+					}
+				}
+			}
+			break;
+		}
+		case 0: // hShutdownEvent
 		{
 			for (size_t i = 0; i < ARRAYSIZE(hEvents); i++)
 			{
@@ -82,27 +456,32 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 				CloseHandle(hSerial);
 				hSerial = NULL;
 			}
-			if (hCECPowerOnEventSerial)
+			if (hWriteEvent)
 			{
-				CloseHandle(hCECPowerOnEventSerial);
-				hCECPowerOnEventSerial = NULL;
+				CloseHandle(hWriteEvent);
+				hWriteEvent = NULL;
+			}
+			if (hReadEvent)
+			{
+				CloseHandle(hReadEvent);
+				hReadEvent = NULL;
 			}
 			return 0;
 		}
-		case 1:
+		case 5: // hNewDeviceEvent
 		{
 			if (hSerial)
 			{
 				CloseHandle(hSerial);
 			}
 			hSerial = NULL;
-			if (hEvents[1])
+			if (hEvents[5])
 			{
-				ResetEvent((hEvents[1]));
+				ResetEvent(hEvents[5]);
 			}
-			if (comPath->c_str() != L"")
+			if (comPath && *(comPath) != L"")
 			{
-				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, NULL);
+				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 				if (hSerial == INVALID_HANDLE_VALUE)
 				{
 					hSerial = NULL;
@@ -114,33 +493,33 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					GetCommState(hSerial, &dcb);
 					dcb.BaudRate = CBR_9600;
 					SetCommState(hSerial, &dcb);
+					cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
+					if (!WriteADoubleWord32(hSerial, &cmd) ||
+						!ReadADoubleWord32(hSerial, &pwrStatus))
+					{
+						CloseHandle(hSerial);
+						controllerCount = -1;
+						hSerial = NULL;
+						break;
+					}
+					cmd = RASPBERRY_PI_GIP_POLL;
 				}
-				serialEvent = false;
 			}
 			break;
 		}
-		case WAIT_TIMEOUT:
+		case 6: // hResumedFromSleep
 		{
-			if (hSerial && !WriteFile(hSerial, &cmd, sizeof(cmd), NULL, NULL))
+			if (hEvents[6])
 			{
-				CloseHandle(hSerial);
-				hSerial = NULL;
-			}
-			if (hSerial && !ReadFile(hSerial, &pwrStatus, sizeof(pwrStatus), NULL, NULL))
-			{
-				CloseHandle(hSerial);
-				hSerial = NULL;
-			}
-			if (!serialEvent && pwrStatus == PWR_STATUS_PI && hCECPowerOnEventSerial && WaitForSingleObject(hCECPowerOnEventSerial, 1) != WAIT_OBJECT_0)
-			{
-				SetEvent(hCECPowerOnEventSerial);
-				serialEvent = true;
+				ResetEvent(hEvents[6]);
+				readPwrStatus = TRUE;
 			}
 			break;
 		}
 		}
+		dwWaitResult = WAIT_TIMEOUT;
 	}
-	return 0;
+	return 1;
 }
 BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePaths, std::vector<std::wstring>* DeviceNames);
 
