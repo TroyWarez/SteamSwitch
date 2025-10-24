@@ -28,7 +28,7 @@ HPOWERNOTIFY hPowerNotify = NULL;
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
 static UINT WM_TaskBarCreated = 0;
-DWORD32 controllerCount = -1;
+GIPSerialData serialData = { (USHORT) - 1, 0x00};
 std::wstring controllerCountWStr;
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -231,18 +231,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_LBUTTONUP:
 		case WM_RBUTTONUP:
 			HMENU Hmenu = CreatePopupMenu();
-			if (controllerCount != -1)
+			if (serialData.controllerCount != -1)
 			{
-				if (controllerCount == 1)
+				if (serialData.controllerCount == 1)
 				{
 					controllerCountWStr = L"Enable Pairing Mode: (1) controller paired.";
 				}
 				else
 				{
-					controllerCountWStr = L"Enable Pairing Mode: (" + std::to_wstring(controllerCount) + L") controllers paired.";
+					controllerCountWStr = L"Enable Pairing Mode: (" + std::to_wstring(serialData.controllerCount) + L") controllers paired.";
 				}
 
-				if (controllerCount > 0)
+				if (serialData.controllerCount > 0)
 				{
 					AppendMenuW(Hmenu, MF_STRING, IDM_CLEAR, L"Clear All Paired Controllers");
 					AppendMenuW(Hmenu, MF_STRING, IDM_CLEAR_SINGLE, L"Clear a Single Paired Controller");
@@ -285,7 +285,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_EXIT:
 		{
 			HANDLE hLockDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"LockDeviceEvent");
-			HANDLE hShutdownEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"ShutdownEvent");
+			HANDLE hFinshedLockDeviceEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"FinshedLockDeviceEvent");
 			HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
 			if (hNewDeviceEvent && WaitForSingleObject(hNewDeviceEvent, 1) != WAIT_OBJECT_0)
 			{
@@ -294,7 +294,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (hLockDeviceEvent)
 			{
 				SetEvent(hLockDeviceEvent);
-				if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
+				if (hFinshedLockDeviceEvent && WaitForSingleObject(hFinshedLockDeviceEvent, MB_WAIT_TIMEOUT) == WAIT_OBJECT_0)
 				{
 					MessageBoxW(hWnd, L"The device is now locked and can be unlocked by running Steam Switch again.", L"Steam Switch Important Information", MB_OK | MB_ICONINFORMATION);
 				}
@@ -307,9 +307,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				CloseHandle(hLockDeviceEvent);
 			}
-			if (hShutdownEvent)
+			if (hFinshedLockDeviceEvent)
 			{
-				CloseHandle(hShutdownEvent);
+				CloseHandle(hFinshedLockDeviceEvent);
 			}
 			DestroyWindow(hWnd);
 			PostQuitMessage(0);

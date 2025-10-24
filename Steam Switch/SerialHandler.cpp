@@ -12,7 +12,6 @@ extern SteamHandler* steamHandler;
 #define RASPBERRY_PI_GIP_SYNC 0xb0
 #define RASPBERRY_PI_GIP_CLEAR 0xb1
 #define RASPBERRY_PI_GIP_LOCK 0xb2
-#define RASPBERRY_PI_GIP_GET_PWR_STATUS 0xb3
 #define RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER 0xb4
 #define NBOFEVENTS 7
 
@@ -21,9 +20,9 @@ extern SteamHandler* steamHandler;
 #define PWR_STATUS_OTHER 0xaf
 
 
-extern DWORD32 controllerCount;
+extern GIPSerialData serialData;
 
-BOOL ReadADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
+BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 {
 	OVERLAPPED osRead = { 0 };
 	DWORD dwRead = 0;
@@ -47,7 +46,7 @@ BOOL ReadADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 
 
 		// Issue read.
-		if (!ReadFile(hComm, lpDW32, sizeof(DWORD32), &dwRead, &osRead)) {
+		if (!ReadFile(hComm, lpDW32, sizeof(GIPSerialData), &dwRead, &osRead)) {
 			if (GetLastError() != ERROR_IO_PENDING) {
 				// ReadFile failed, but isn't delayed. Report error and abort.
 				fRes = FALSE;
@@ -139,7 +138,7 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 		CloseHandle(osWrite.hEvent);
 		CloseHandle(hEvents[1]);
 
-		PurgeComm(hComm, PURGE_RXCLEAR);
+		PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
 	}
 	return fRes;
 }
@@ -157,7 +156,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		GetCommState(hSerial, &dcb);
 		dcb.BaudRate = CBR_9600;
 		SetCommState(hSerial, &dcb);
-		PurgeComm(hSerial, PURGE_RXCLEAR);
+		PurgeComm(hSerial, PURGE_RXABORT | PURGE_RXABORT );
 	}
 
 	HANDLE hEvents[NBOFEVENTS] = { NULL };
@@ -272,8 +271,8 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	}
 
 	DWORD32 lastControllerCount = 0;
-	DWORD32 cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
-	DWORD32 pwrStatus = PWR_STATUS_OTHER;
+ 	DWORD32 cmd = RASPBERRY_PI_GIP_POLL;
+// 	DWORD32 pwrStatus = PWR_STATUS_OTHER;
 	DWORD dwWaitResult = 0;
 	DWORD currentTime = 0;
 	DWORD endTime = 0;
@@ -281,16 +280,16 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	dwWaitResult = WAIT_TIMEOUT;
 
 	if (!WriteADoubleWord32(hSerial, &cmd) ||
-		!ReadADoubleWord32(hSerial, &pwrStatus))
+		!ReadADoubleWord32(hSerial, &serialData))
 	{
 		CloseHandle(hSerial);
-		pwrStatus = PWR_STATUS_OTHER;
+		serialData.pwrStatus = PWR_STATUS_OTHER;
 		hSerial = NULL;
 	}
 
 	if (steamHandler &&
 		steamHandler->monHandler &&
-		pwrStatus == PWR_STATUS_PI &&
+		serialData.pwrStatus == PWR_STATUS_PI &&
 		hCECPowerOnEventSerial &&
 		WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 	{
@@ -358,7 +357,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					dwWaitResult == 2 ||
 					dwWaitResult == 3)
 				{
-					lastControllerCount = controllerCount;
+					lastControllerCount = serialData.controllerCount;
 					endTime = timeGetTime();
 					endTime = endTime + 30000;
 					dwWaitResult = WAIT_TIMEOUT;
@@ -371,30 +370,21 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 				}
 
 				if (!WriteADoubleWord32(hSerial, &cmd) ||
-					!ReadADoubleWord32(hSerial, &controllerCount))
+					!ReadADoubleWord32(hSerial, &serialData))
 				{
 					CloseHandle(hSerial);
-					controllerCount = -1;
+					serialData.controllerCount = -1;
+					serialData.pwrStatus = PWR_STATUS_OTHER;
 					hSerial = NULL;
 					break;
 				}
 
 				if (readPwrStatus == TRUE)
 				{
-					cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
-					if (!WriteADoubleWord32(hSerial, &cmd) ||
-						!WriteADoubleWord32(hSerial, &cmd) ||
-						!ReadADoubleWord32(hSerial, &pwrStatus))
-					{
-						CloseHandle(hSerial);
-						controllerCount = -1;
-						hSerial = NULL;
-						break;
-					}
 					if (steamHandler &&
 						steamHandler->monHandler &&
 						!steamHandler->monHandler->isDSCEnabled() &&
-						pwrStatus == PWR_STATUS_PI &&
+						serialData.pwrStatus == PWR_STATUS_PI &&
 						hCECPowerOnEventSerial &&
 						WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 					{
@@ -404,7 +394,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					readPwrStatus = FALSE;
 				}
 
-				if (controllerCount > lastControllerCount && cmd == RASPBERRY_PI_GIP_SYNC)
+				if (serialData.controllerCount > lastControllerCount && cmd == RASPBERRY_PI_GIP_SYNC)
 				{
 					if (hFinshedSyncEvent)
 					{
@@ -412,7 +402,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					}
 					cmd = RASPBERRY_PI_GIP_POLL;
 				}
-				if (controllerCount < lastControllerCount && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER)
+				if (serialData.controllerCount < lastControllerCount && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER)
 				{
 					if (hFinshedClearSingleEvent)
 					{
@@ -420,7 +410,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					}
 					cmd = RASPBERRY_PI_GIP_POLL;
 				}
-				else if (controllerCount == 0 && cmd == RASPBERRY_PI_GIP_CLEAR)
+				else if (serialData.controllerCount == 0 && cmd == RASPBERRY_PI_GIP_CLEAR)
 				{
 					if (hFinshedClearAllEvent)
 					{
@@ -444,7 +434,8 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			}
 			else
 			{
-				controllerCount = -1;
+				serialData.controllerCount = -1;
+				serialData.pwrStatus = PWR_STATUS_OTHER;
 				Sleep(100);
 				if (comPath && *(comPath) != L"")
 				{
@@ -489,6 +480,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 				CloseHandle(hReadEvent);
 				hReadEvent = NULL;
 			}
+			//SetEvent(hF);
 			return 0;
 		}
 		case 5: // hNewDeviceEvent
@@ -516,12 +508,12 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					GetCommState(hSerial, &dcb);
 					dcb.BaudRate = CBR_9600;
 					SetCommState(hSerial, &dcb);
-					cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
+					cmd = RASPBERRY_PI_GIP_POLL;
 					if (!WriteADoubleWord32(hSerial, &cmd) ||
-						!ReadADoubleWord32(hSerial, &pwrStatus))
+						!ReadADoubleWord32(hSerial, &serialData))
 					{
 						CloseHandle(hSerial);
-						controllerCount = -1;
+						serialData.controllerCount = -1;
 						hSerial = NULL;
 						break;
 					}

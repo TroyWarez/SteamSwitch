@@ -1,4 +1,8 @@
 #pragma once
+struct GIPSerialData {
+	unsigned short pwrStatus;
+	unsigned short controllerCount;
+};
 class SerialHandler
 {
 public:
