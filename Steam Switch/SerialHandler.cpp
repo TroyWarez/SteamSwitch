@@ -139,7 +139,7 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 		CloseHandle(osWrite.hEvent);
 		CloseHandle(hEvents[1]);
 
-		PurgeComm(hComm, PURGE_TXCLEAR | PURGE_RXCLEAR);
+		PurgeComm(hComm, PURGE_RXCLEAR);
 	}
 	return fRes;
 }
@@ -157,7 +157,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		GetCommState(hSerial, &dcb);
 		dcb.BaudRate = CBR_9600;
 		SetCommState(hSerial, &dcb);
-		PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
+		PurgeComm(hSerial, PURGE_RXCLEAR);
 	}
 
 	HANDLE hEvents[NBOFEVENTS] = { NULL };
@@ -290,12 +290,23 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 
 	if (steamHandler &&
 		steamHandler->monHandler &&
-		!steamHandler->monHandler->isDSCEnabled() &&
 		pwrStatus == PWR_STATUS_PI &&
 		hCECPowerOnEventSerial &&
 		WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 	{
-		SetEvent(hCECPowerOnEventSerial);
+		if (!steamHandler->monHandler->isDSCEnabled())
+		{
+			if (steamHandler->monHandler->isSingleDisplayHDMI() &&
+				WaitForSingleObject(steamHandler->monHandler->hCECPowerOnEvent, 1) == WAIT_TIMEOUT)
+			{
+				SetEvent(steamHandler->monHandler->hCECPowerOnEvent);
+			}
+			else if (!steamHandler->monHandler->isSingleDisplayHDMI())
+			{
+				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+			}
+		}
+
 	}
 	cmd = RASPBERRY_PI_GIP_POLL;
 	while (dwWaitResult == WAIT_TIMEOUT) {
@@ -372,6 +383,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 				{
 					cmd = RASPBERRY_PI_GIP_GET_PWR_STATUS;
 					if (!WriteADoubleWord32(hSerial, &cmd) ||
+						!WriteADoubleWord32(hSerial, &cmd) ||
 						!ReadADoubleWord32(hSerial, &pwrStatus))
 					{
 						CloseHandle(hSerial);
@@ -386,6 +398,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 						hCECPowerOnEventSerial &&
 						WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 					{
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
 						SetEvent(hCECPowerOnEventSerial);
 					}
 					readPwrStatus = FALSE;

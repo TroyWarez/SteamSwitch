@@ -98,6 +98,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	}
 	steamPid = getSteamPid();
 	gamePid = 0;
+	isIcueInstalled = false;
 	isSteamFocused = true;
 	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
 	inputHandler = new InputHandler();
@@ -193,6 +194,7 @@ int SteamHandler::StartSteamHandler()
 	}
 	else
 	{
+		isIcueInstalled = true;
 		CloseHandle(hiCueTestFile);
 	}
 	serialHandler.ScanForSerialDevices();
