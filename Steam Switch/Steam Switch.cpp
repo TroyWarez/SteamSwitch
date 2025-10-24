@@ -184,24 +184,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if ( wParam == PBT_APMRESUMEAUTOMATIC ||
 			wParam == PBT_APMRESUMESUSPEND )
 		{
-
-			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+			if (steamHandler)
 			{
-				HANDLE hResumedFromSleep = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ResumedFromSleep");
-				if (hResumedFromSleep && WaitForSingleObject(hResumedFromSleep, 1) == WAIT_TIMEOUT)
+				steamHandler->serialHandler.ScanForSerialDevices();
+			}
+
+			if (steamHandler && steamHandler->monHandler)
+			{
+				if (steamHandler->monHandler->isSingleDisplayHDMI())
 				{
-					if (steamHandler)
+					if (steamHandler->monHandler->hCECPowerOnEvent && WaitForSingleObject(steamHandler->monHandler->hCECPowerOnEvent, 1) == WAIT_TIMEOUT)
 					{
-						steamHandler->serialHandler.ScanForSerialDevices();
+						SetEvent(steamHandler->monHandler->hCECPowerOnEvent);
 					}
-					SetEvent(hResumedFromSleep);
-					CloseHandle(hResumedFromSleep);
 				}
-				HANDLE hCECPowerOnEvent = OpenEventW( SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEvent");
-				if (hCECPowerOnEvent && WaitForSingleObject(hCECPowerOnEvent, 1) == WAIT_TIMEOUT)
+				else if (!steamHandler->monHandler->isDSCEnabled())
 				{
-					SetEvent(hCECPowerOnEvent);
-					CloseHandle(hCECPowerOnEvent);
+					HANDLE hResumedFromSleep = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ResumedFromSleep");
+					if (hResumedFromSleep && WaitForSingleObject(hResumedFromSleep, 1) == WAIT_TIMEOUT)
+					{
+						SetEvent(hResumedFromSleep);
+						CloseHandle(hResumedFromSleep);
+					}
 				}
 			}
 		}
