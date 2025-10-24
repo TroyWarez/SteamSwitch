@@ -402,7 +402,8 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					}
 					cmd = RASPBERRY_PI_GIP_POLL;
 				}
-				if (serialData.controllerCount < lastControllerCount && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER)
+				if (serialData.controllerCount < lastControllerCount && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER ||
+					serialData.controllerCount == 0 && cmd == RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER)
 				{
 					if (hFinshedClearSingleEvent)
 					{
