@@ -51,6 +51,9 @@
     <ClInclude Include="SerialHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RegGUID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Steam Switch.cpp">

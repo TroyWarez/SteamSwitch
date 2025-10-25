@@ -1,5 +1,6 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
+#include "RegGUID.h"
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
@@ -42,12 +43,12 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 	if (hWndIC)
 	{
-		PostMessage(hWndIC, /*WM_QUIT*/ 0x12, 0, 0);
+		PostMessage(hWndIC, WM_QUIT, 0, 0);
 	}
 
 	return 0;
 }
-BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
 	DWORD lpdwProcessId = 0;
 	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
@@ -67,7 +68,6 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 	}
 	return TRUE;
 }
-
 SteamHandler::SteamHandler(HWND hWnd)
 {
 	mainHwnd = hWnd;
@@ -96,6 +96,11 @@ SteamHandler::SteamHandler(HWND hWnd)
 			ResetEvent(hShutdownEvent);
 		}
 	}
+
+	hICUEThread = NULL;
+	hCECThread = NULL;
+	hSerialThread = NULL;
+
 	steamPid = getSteamPid();
 	gamePid = 0;
 	isIcueInstalled = false;
@@ -302,7 +307,7 @@ int SteamHandler::StartSteamHandler()
 							{
 								ResetEvent(hShutdownEvent);
 							}
-							CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
+							hICUEThread = CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
@@ -828,7 +833,7 @@ bool SteamHandler::isSteamInGame()
 								if (processName != L"gameoverlayui64.exe" && processName != L"gameoverlayui.exe")
 								{
 									gamePid = processIds[i];
-									EnumWindows(EnumWindowsProcMy, gamePid);
+									EnumWindows(EnumWindowsProc, gamePid);
 								}
 
 								return true;

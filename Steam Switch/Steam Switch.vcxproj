@@ -101,6 +101,7 @@
     <ClInclude Include="InvisibleMouse.h" />
     <ClInclude Include="MonitorHandler.h" />
     <ClInclude Include="PolicyConfig.h" />
+    <ClInclude Include="RegGUID.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SerialHandler.h" />
     <ClInclude Include="Steam Switch.h" />

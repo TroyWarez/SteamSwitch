@@ -6,6 +6,7 @@
 #include "SteamHandler.h"
 #include "AudioHandler.h"
 #include "MonitorHandler.h"
+#include "RegGUID.h"
 #include <GenericInput.h>
 #define MAX_LOADSTRING 100 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
@@ -35,6 +36,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 BOOL                AddNotificationIcon(HWND hwnd);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+DWORD SetRegistryKeyString(HKEY, LPCWSTR, LPCWSTR, LPCWSTR, DWORD);
 
 AudioHandler audioHandler;
 
@@ -164,6 +166,23 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+
+DWORD SetRegistryKeyString(HKEY hKey, LPCWSTR keyPath, LPCWSTR valueName, LPCWSTR wstr, DWORD length)
+{
+	if (length)
+	{
+		HKEY hKeyResult = NULL;
+		LONG result = RegCreateKeyExW(hKey, keyPath, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
+		if (result == ERROR_SUCCESS)
+		{
+			RegSetValueExW(hKey, valueName, 0, REG_SZ, (const BYTE*)wstr, length);
+			RegCloseKey(hKey);
+		}
+		return GetLastError();
+	}
+	return ERROR_INVALID_PARAMETER;
+}
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -211,10 +230,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         if (wParam == PBT_APMSUSPEND)
         {
-			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+			if (steamHandler && steamHandler->isSteamInBigPictureMode && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 			{
+				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
 				steamHandler->monHandler->StandByAllDevicesCEC();
 				WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
+			}
+			else
+			{
+				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
 			}
         }
 		break;
@@ -472,11 +496,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case WM_QUERYENDSESSION:
     {
-		if (steamHandler && steamHandler->isSteamInBigPictureMode &&
-            steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+		if (steamHandler && steamHandler->isSteamInBigPictureMode && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 		{
+			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
 			steamHandler->monHandler->StandByAllDevicesCEC();
 			WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
+		}
+		else
+		{
+			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
+		}
+		HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
+		if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+		{
+			SetEvent(hShutdownEvent);
+			CloseHandle(hShutdownEvent);
+		}
+
+		HANDLE hCECShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+		if (hCECShutdownEvent && WaitForSingleObject(hCECShutdownEvent, 1) == WAIT_TIMEOUT)
+		{
+			SetEvent(hCECShutdownEvent);
+			CloseHandle(hCECShutdownEvent);
 		}
         break;
     }
@@ -490,6 +531,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     case WM_DESTROY:
     {
+		HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
+		if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+		{
+			SetEvent(hShutdownEvent);
+			CloseHandle(hShutdownEvent);
+		}
 		if (hDeviceSerial)
 		{
 			UnregisterDeviceNotification(hDeviceSerial);
