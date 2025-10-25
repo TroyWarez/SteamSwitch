@@ -77,6 +77,7 @@ BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 			// ReadFile completed immediately.
 			fRes = TRUE;
 		}
+		PurgeComm(hComm, PURGE_TXCLEAR);
 		CloseHandle(osRead.hEvent);
 		CloseHandle(hEvents[1]);
 	}
@@ -138,7 +139,7 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 		CloseHandle(osWrite.hEvent);
 		CloseHandle(hEvents[1]);
 
-		PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
+		PurgeComm(hComm, PURGE_RXCLEAR);
 	}
 	return fRes;
 }
