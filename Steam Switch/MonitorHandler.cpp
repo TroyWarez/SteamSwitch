@@ -265,27 +265,31 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			{
 				ResetEvent(hCECPowerOffEvent);
 			}
-			cecAdpater->Open(deviceStrPort.c_str());
-			if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
+			if (SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_CONTINUOUS))
 			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-			}
-			cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
-
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
-			{
+				cecAdpater->Open(deviceStrPort.c_str());
+				if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
+				{
+					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+				}
 				cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+
 				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
 					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
 				{
 					cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+					if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_STANDBY ||
+						cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY)
+					{
+						cecAdpater->StandbyDevices(CEC::CECDEVICE_TV);
+					}
 				}
-			}
-			cecAdpater->Close();
-			if (hCECPowerOffFinishedEvent)
-			{
-				SetEvent(hCECPowerOffFinishedEvent);
+				cecAdpater->Close();
+				if (hCECPowerOffFinishedEvent)
+				{
+					SetEvent(hCECPowerOffFinishedEvent);
+				}
+				SetThreadExecutionState(ES_CONTINUOUS);
 			}
 			break;
 		}
