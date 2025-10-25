@@ -2,8 +2,6 @@
 #include "SerialHandler.h"
 #include "SteamHandler.h"
 
-extern SteamHandler* steamHandler;
-
 #define PI_VID L"0525"
 #define PI_PID L"a4a7"
 
@@ -19,7 +17,7 @@ extern SteamHandler* steamHandler;
 #define PWR_STATUS_PI 0xef
 #define PWR_STATUS_OTHER 0xaf
 
-
+extern SteamHandler* steamHandler;
 extern GIPSerialData serialData;
 
 BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
