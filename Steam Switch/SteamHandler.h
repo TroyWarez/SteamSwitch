@@ -38,6 +38,9 @@ public:
 	bool isIcueInstalled;
 	HANDLE hShutdownEvent;
 	HANDLE hBPEvent;
+	HANDLE hFindIcueEvent;
+	HANDLE hCloseIcueEvent;
+
 	HANDLE hICUEThread;
 	HANDLE hCECThread;
 	HANDLE hSerialThread;

@@ -18,6 +18,8 @@
 #define IDM_DEVICE_NOT_FOUND 109
 #define IDM_DEVICE_NOT_FOUND_EXIT 110
 #define NBOFEVENTS 6
+#define NBOFTHREADS 3
+#define WAIT_TIMEOUT_AMOUNT 6000
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -34,7 +36,7 @@ std::wstring controllerCountWStr;
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
-BOOL                AddNotificationIcon(HWND hwnd);
+BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD SetRegistryKeyString(HKEY, LPCWSTR, LPCWSTR, LPCWSTR, DWORD);
 
@@ -200,6 +202,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_POWERBROADCAST:
 	{
+		if (wParam == PBT_APMQUERYSUSPEND)
+		{
+			if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+			{
+				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
+			}
+			else
+			{
+				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
+			}
+			return TRUE;
+		}
 		if ( wParam == PBT_APMRESUMEAUTOMATIC ||
 			wParam == PBT_APMRESUMESUSPEND )
 		{
@@ -228,31 +242,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
-        if (wParam == PBT_APMSUSPEND)
-        {
-			if (steamHandler && steamHandler->isSteamInBigPictureMode && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
-			{
-				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
-				steamHandler->monHandler->StandByAllDevicesCEC();
-				WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
-			}
-			else
-			{
-				SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
-			}
-        }
 		break;
+	}
+	case WM_QUERYENDSESSION:
+	{
+		if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
+		{
+			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
+		}
+		else
+		{
+			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
+		}
+		return TRUE;
 	}
     case WM_CREATE:
     {
-        AddNotificationIcon(hWnd);
+		AddOrRemoveNotificationIcon(hWnd, TRUE);
         break;
     }
 	case APPWM_ICONNOTIFY:
 	{
 		switch (lParam)
 		{
-		case WM_LBUTTONUP:
 		case WM_RBUTTONUP:
 			HMENU Hmenu = CreatePopupMenu();
 			if (serialData.controllerCount != -1)
@@ -308,6 +320,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case IDM_EXIT:
 		{
+			AddOrRemoveNotificationIcon(hWnd, FALSE);
 			HANDLE hLockDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"LockDeviceEvent");
 			HANDLE hFinshedLockDeviceEvent = OpenEventW(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, L"FinshedLockDeviceEvent");
 			HANDLE hNewDeviceEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
@@ -334,6 +347,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (hFinshedLockDeviceEvent)
 			{
 				CloseHandle(hFinshedLockDeviceEvent);
+			}
+			HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
+			if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+			{
+				SetEvent(hShutdownEvent);
+				CloseHandle(hShutdownEvent);
+			}
+			if (steamHandler)
+			{
+				std::vector<HANDLE> hThreads;
+				DWORD exitCode = 0;
+				if (steamHandler->serialHandler.hSerial && GetExitCodeThread(steamHandler->serialHandler.hSerial, &exitCode))
+				{
+					if (exitCode == STILL_ACTIVE)
+					{
+						hThreads.push_back(steamHandler->serialHandler.hSerial);
+					}
+				}
+				exitCode = 0;
+				if (steamHandler->hICUEThread && GetExitCodeThread(steamHandler->hICUEThread, &exitCode))
+				{
+					if (exitCode == STILL_ACTIVE)
+					{
+						hThreads.push_back(steamHandler->serialHandler.hSerial);
+					}
+				}
+				exitCode = 0;
+				if (steamHandler->hCECThread && GetExitCodeThread(steamHandler->hCECThread, &exitCode))
+				{
+					if (exitCode == STILL_ACTIVE)
+					{
+						hThreads.push_back(steamHandler->hCECThread);
+					}
+				}
+				if (hThreads.size())
+				{
+					WaitForMultipleObjects((DWORD)hThreads.size(), hThreads.data(), TRUE, WAIT_TIMEOUT_AMOUNT);
+				}
+			}
+			if (hDeviceSerial)
+			{
+				UnregisterDeviceNotification(hDeviceSerial);
+				hDeviceSerial = NULL;
+			}
+			if (hPowerNotify)
+			{
+				UnregisterSuspendResumeNotification(hPowerNotify);
+				hPowerNotify = NULL;
 			}
 			DestroyWindow(hWnd);
 			PostQuitMessage(0);
@@ -494,33 +555,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
         break;
     }
-    case WM_QUERYENDSESSION:
-    {
-		if (steamHandler && steamHandler->isSteamInBigPictureMode && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
-		{
-			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, BP_MODE_REG_GUID, sizeof(BP_MODE_REG_GUID));
-			steamHandler->monHandler->StandByAllDevicesCEC();
-			WaitForSingleObject(steamHandler->monHandler->hCECPowerOffFinishedEvent, 6000);
-		}
-		else
-		{
-			SetRegistryKeyString(HKEY_LOCAL_MACHINE, REG_PATH, USER_SID, DESK_MODE_REG_GUID, sizeof(DESK_MODE_REG_GUID));
-		}
-		HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
-		if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
-		{
-			SetEvent(hShutdownEvent);
-			CloseHandle(hShutdownEvent);
-		}
-
-		HANDLE hCECShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
-		if (hCECShutdownEvent && WaitForSingleObject(hCECShutdownEvent, 1) == WAIT_TIMEOUT)
-		{
-			SetEvent(hCECShutdownEvent);
-			CloseHandle(hCECShutdownEvent);
-		}
-        break;
-    }
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -531,11 +565,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     case WM_DESTROY:
     {
+		AddOrRemoveNotificationIcon(hWnd, FALSE);
 		HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 		if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 		{
 			SetEvent(hShutdownEvent);
 			CloseHandle(hShutdownEvent);
+		}
+		if (steamHandler)
+		{
+			std::vector<HANDLE> hThreads;
+			DWORD exitCode = 0;
+			if (steamHandler->serialHandler.hSerial && GetExitCodeThread(steamHandler->serialHandler.hSerial, &exitCode))
+			{
+				if (exitCode == STILL_ACTIVE)
+				{
+					hThreads.push_back(steamHandler->serialHandler.hSerial);
+				}
+			}
+			exitCode = 0;
+			if (steamHandler->hICUEThread && GetExitCodeThread(steamHandler->hICUEThread, &exitCode))
+			{
+				if (exitCode == STILL_ACTIVE)
+				{
+					hThreads.push_back(steamHandler->serialHandler.hSerial);
+				}
+			}
+			exitCode = 0;
+			if (steamHandler->hCECThread && GetExitCodeThread(steamHandler->hCECThread, &exitCode))
+			{
+				if (exitCode == STILL_ACTIVE)
+				{
+					hThreads.push_back(steamHandler->hCECThread);
+				}
+			}
+			if (hThreads.size())
+			{
+				WaitForMultipleObjects((DWORD)hThreads.size(), hThreads.data(), TRUE, WAIT_TIMEOUT_AMOUNT);
+			}
 		}
 		if (hDeviceSerial)
 		{
@@ -554,7 +621,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         if (message == WM_TaskBarCreated)
         {
-            AddNotificationIcon(hWnd);
+			AddOrRemoveNotificationIcon(hWnd, TRUE);
         }
 		return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -562,9 +629,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-BOOL AddNotificationIcon(HWND hwnd)
+BOOL AddOrRemoveNotificationIcon(HWND hwnd, BOOL AddIcon)
 {
-	NOTIFYICONDATAW nid;
+	NOTIFYICONDATAW nid = { 0 };
         nid.hWnd = hwnd;
 	    nid.cbSize = sizeof(NOTIFYICONDATAW_V3_SIZE);
 	    nid.uTimeout = 500;
@@ -572,7 +639,11 @@ BOOL AddNotificationIcon(HWND hwnd)
 	    nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE | NIF_INFO | 0x00000080;
 	    nid.uCallbackMessage = WM_USER + 200;
 	    nid.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_STEAMSWITCH));
-        lstrcpyW(nid.szTip, L"Click here to open Steam Switch options");
+        lstrcpyW(nid.szTip, L"Right click to open the settings menu");
         nid.uCallbackMessage = APPWM_ICONNOTIFY;
+
+	if (!AddIcon){
+	return Shell_NotifyIconW(NIM_DELETE, &nid);
+	}
 	return Shell_NotifyIconW(NIM_ADD, &nid);
 }

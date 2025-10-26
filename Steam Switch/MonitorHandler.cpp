@@ -79,10 +79,10 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
 	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+		hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 		if (hShutdownEvent)
 		{
 			ResetEvent(hShutdownEvent);
@@ -138,13 +138,11 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	hEvents.push_back(hCECPowerOffEvent);
 	hEvents.push_back(hCECPowerOnEventSerial);
 
-	if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->getActiveMonitorCount() == 1)
+	BOOL SingleDisplayHDMI = FALSE;
+	if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 	{
-		if (hCECPowerOnEvent)
-		{
-			SetEvent(hCECPowerOnEvent);
-		}
-
+		SetEvent(hCECPowerOnEvent);
+		SingleDisplayHDMI = TRUE;
 	}
 
 	if (cecAdpater && deviceStrPort != "")
@@ -209,18 +207,21 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				Sleep(1);
 			}
 			cecAdpater->Close();
+			if (!SingleDisplayHDMI)
+			{
+				if (FindWindowW(SDL_CLASS, STEAM_DESK))
+				{
+					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+				}
+				else
+				{
+					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+				}
+			}
 			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
 			{
 				audioHandler.InitDefaultAudioDevice();
 				Sleep(1);
-			}
-			if (FindWindowW(SDL_CLASS, STEAM_DESK))
-			{
-				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-			}
-			else
-			{
-				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
 			}
 			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 			{
@@ -255,6 +256,12 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					}
 					break;
 				}
+				else if (SingleDisplayHDMI && FindWindowW(SDL_CLASS, STEAM_DESK))
+				{
+					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+					Sleep(1);
+					continue;
+				}
 				Sleep(1);
 			}
 			break;
@@ -265,8 +272,6 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			{
 				ResetEvent(hCECPowerOffEvent);
 			}
-			if (SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_CONTINUOUS))
-			{
 				cecAdpater->Open(deviceStrPort.c_str());
 				if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 				{
@@ -289,13 +294,11 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				{
 					SetEvent(hCECPowerOffFinishedEvent);
 				}
-				SetThreadExecutionState(ES_CONTINUOUS);
 			}
 			break;
 		}
 		}
 		}
-	}
 	if (cecAdpater)
 	{
 		UnloadLibCec(cecAdpater);
@@ -317,7 +320,7 @@ MonitorHandler::MonitorHandler(MonitorMode mode)
 	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
 	hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
 	hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
-	hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+	hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
 	icueInstalled = false;
 }
 MonitorHandler::~MonitorHandler()
@@ -336,13 +339,6 @@ void MonitorHandler::setMonitorMode(MonitorMode mode)
 MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
-}
-void MonitorHandler::StandByAllDevicesCEC()
-{
-	if (hCECPowerOffEvent)
-	{
-		SetEvent(hCECPowerOffEvent);
-	}
 }
 bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 {

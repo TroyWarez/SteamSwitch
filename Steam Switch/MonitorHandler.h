@@ -13,7 +13,6 @@ public:
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
 	bool ToggleMode(bool isIcueInstalled);
-	void StandByAllDevicesCEC();
 	void StartCecPowerThread(void* stmPtr);
 	int getActiveMonitorCount();
 	bool isSingleDisplayHDMI();

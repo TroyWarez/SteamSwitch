@@ -4,11 +4,40 @@
 #include <GenericInput.h>
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
-	HANDLE hShutdownEvent = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
-	if (!hShutdownEvent)
+	HANDLE hEvents[3] = { NULL };
+	hEvents[0] = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
+	if (hEvents[0] == NULL)
 	{
 		return 1;
 	}
+	hEvents[1] = CreateEventW(NULL, TRUE, FALSE, L"FindIcueEvent");
+	if (!hEvents[1] && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hEvents[1] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
+		if (hEvents[1])
+		{
+			ResetEvent(hEvents[1]);
+		}
+	}
+	if (hEvents[1] == NULL)
+	{
+		return 1;
+	}
+
+	hEvents[2] = CreateEventW(NULL, TRUE, FALSE, L"CloseIcueEvent");
+	if (!hEvents[2] && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hEvents[2] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"CloseIcueEvent");
+		if (hEvents[2])
+		{
+			ResetEvent(hEvents[2]);
+		}
+	}
+	if (hEvents[2] == NULL)
+	{
+		return 1;
+	}
+
 	bool iCueRunning = true;
 	HANDLE hICUEEvent = CreateEventW(NULL, TRUE, FALSE, L"ICUEEvent");
 	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -19,33 +48,63 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			ResetEvent(hICUEEvent);
 		}
 	}
-	while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+	while (iCueRunning)
 	{
-		HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-		if (hWndIC && IsWindowVisible(hWndIC))
+		DWORD dwWait = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+		switch (dwWait)
 		{
-			ShowWindow(hWndIC, SW_HIDE);
-			if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
+			case 0: // Shutdown Event
 			{
-				SetEvent(hICUEEvent);
+				iCueRunning = false;
+				break;
+			}
+			case 1: // FindIcueEvent Event
+			{
+				if (WaitForSingleObject(hEvents[2], 1) == WAIT_OBJECT_0)
+				{
+					ResetEvent(hEvents[2]);
+				}
+				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+				if (hWndIC && IsWindowVisible(hWndIC))
+				{
+					ShowWindow(hWndIC, SW_HIDE);
+					if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
+					{
+						SetEvent(hICUEEvent);
+						ResetEvent(hEvents[1]);
+					}
+				}
+				Sleep(1);
+				break;
+			}
+			case 2: // CloseIcueEvent Event
+			{
+				if (WaitForSingleObject(hEvents[1], 1) == WAIT_OBJECT_0)
+				{
+					ResetEvent(hEvents[1]);
+				}
+				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+				if (hWndIC)
+				{
+					PostMessage(hWndIC, WM_QUIT, 0, 0);
+					ResetEvent(hEvents[2]);
+				}
+				break;
+			}
+			default:
+			{
+				break;
 			}
 		}
-		Sleep(1);
 	}
-	if (hICUEEvent)
+	for (int i = 0; i < ARRAYSIZE(hEvents); i++)
 	{
-		CloseHandle(hICUEEvent);
+		if (hEvents[i])
+		{
+			CloseHandle(hEvents[i]);
+			hEvents[i] = NULL;
+		}
 	}
-	if (hShutdownEvent)
-	{
-		CloseHandle(hShutdownEvent);
-	}
-	HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-	if (hWndIC)
-	{
-		PostMessage(hWndIC, WM_QUIT, 0, 0);
-	}
-
 	return 0;
 }
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
@@ -97,6 +156,26 @@ SteamHandler::SteamHandler(HWND hWnd)
 		}
 	}
 
+	hFindIcueEvent = CreateEventW(NULL, TRUE, FALSE, L"FindIcueEvent");
+	if (hFindIcueEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hFindIcueEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
+		if (hFindIcueEvent)
+		{
+			ResetEvent(hFindIcueEvent);
+		}
+	}
+
+	hCloseIcueEvent = CreateEventW(NULL, TRUE, FALSE, L"CloseIcueEvent");
+	if (hCloseIcueEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hCloseIcueEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"CloseIcueEvent");
+		if (hCloseIcueEvent)
+		{
+			ResetEvent(hCloseIcueEvent);
+		}
+	}
+
 	hICUEThread = NULL;
 	hCECThread = NULL;
 	hSerialThread = NULL;
@@ -121,6 +200,16 @@ SteamHandler::~SteamHandler()
 	{
 		CloseHandle(hShutdownEvent);
 		hShutdownEvent = NULL;
+	}
+	if (hBPEvent)
+	{
+		CloseHandle(hBPEvent);
+		hBPEvent = NULL;
+	}
+	if (hFindIcueEvent)
+	{
+		CloseHandle(hFindIcueEvent);
+		hFindIcueEvent = NULL;
 	}
 	if (monHandler)
 	{
@@ -201,6 +290,10 @@ int SteamHandler::StartSteamHandler()
 	{
 		isIcueInstalled = true;
 		CloseHandle(hiCueTestFile);
+		if (hICUEThread == NULL)
+		{
+			hICUEThread = CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
+		}
 	}
 	serialHandler.ScanForSerialDevices();
 	while (true)
@@ -303,11 +396,6 @@ int SteamHandler::StartSteamHandler()
 						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
 						if (programFilesPath != L"")
 						{
-							if (hShutdownEvent)
-							{
-								ResetEvent(hShutdownEvent);
-							}
-							hICUEThread = CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
@@ -320,6 +408,10 @@ int SteamHandler::StartSteamHandler()
 									hProcessiCue = sei.hProcess;
 									iCueRunning = true;
 								}
+							}
+							if (hFindIcueEvent && WaitForSingleObject(hFindIcueEvent, 1) == WAIT_TIMEOUT)
+							{
+								SetEvent(hFindIcueEvent);
 							}
 						}
 						steamBigPictureModeTitle = title;
@@ -368,12 +460,12 @@ int SteamHandler::StartSteamHandler()
 								{
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
-									if (hWndBP == NULL) {
+									if (hWndBP == NULL) { // Big picture mode closed
 										if (programFiles != L"")
 										{
-											if (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)
 											{
-												SetEvent(hShutdownEvent);
+												SetEvent(hCloseIcueEvent);
 											}
 										}
 										inputHandler->turnOffXinputController();

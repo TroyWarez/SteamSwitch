@@ -36,7 +36,7 @@ BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 			return FALSE;
 		}
 		hEvents[0] = osRead.hEvent;
-		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 
 		if (hEvents[1] == NULL)
 			// error creating overlapped event handle
@@ -99,7 +99,7 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 			return FALSE;
 
 		hEvents[0] = osWrite.hEvent;
-		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 		if (hEvents[1] == NULL)
 			// error creating overlapped event handle
 			return FALSE;
@@ -159,10 +159,10 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	}
 
 	HANDLE hEvents[NBOFEVENTS] = { NULL };
-	hEvents[0] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECShutdownEvent");
+	hEvents[0] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 	if (hEvents[0] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[0] = CreateEventW(NULL, FALSE, FALSE, L"CECShutdownEvent");
+		hEvents[0] = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
 	}
 
 	hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SyncEvent");
