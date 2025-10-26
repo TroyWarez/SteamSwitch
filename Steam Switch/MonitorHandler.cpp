@@ -256,9 +256,20 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					}
 					break;
 				}
-				else if (SingleDisplayHDMI && FindWindowW(SDL_CLASS, STEAM_DESK))
+				else if (SingleDisplayHDMI)
 				{
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
+					if (hWnd == NULL)
+					{
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+					}
+					else
+					{
+						ShowWindow(hWnd, SW_MINIMIZE);
+						ShowWindow(hWnd, SW_SHOWDEFAULT);
+						SetForegroundWindow(hWnd);
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+					}
 					Sleep(1);
 					continue;
 				}
