@@ -261,7 +261,9 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 					if (hWnd == NULL)
 					{
+						Sleep(100);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+						Sleep(100);
 					}
 					else
 					{
