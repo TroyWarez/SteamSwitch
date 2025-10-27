@@ -268,9 +268,10 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						ShowWindow(hWnd, SW_MINIMIZE);
 						ShowWindow(hWnd, SW_SHOWDEFAULT);
 						SetForegroundWindow(hWnd);
+						Sleep(100);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+						Sleep(100);
 					}
-					Sleep(1);
 					continue;
 				}
 				Sleep(1);
