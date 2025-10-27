@@ -736,6 +736,7 @@ int SteamHandler::StartSteamHandler()
 												xticksAudio.QuadPart != 0)
 											{
 												audioHandler->ToggleAudioDevice();
+												PlaySoundW(L"SystemExclamation", NULL, SND_ALIAS | SND_ASYNC);
 												xticksAudio = { 0 };
 												xticksAudio2 = { 2 };
 												AudioCordPressed = true;
