@@ -60,10 +60,6 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			}
 			case 1: // FindIcueEvent Event
 			{
-				if (WaitForSingleObject(hEvents[2], 1) == WAIT_OBJECT_0)
-				{
-					ResetEvent(hEvents[2]);
-				}
 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 				if (hWndIC && IsWindowVisible(hWndIC))
 				{
@@ -79,10 +75,6 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			}
 			case 2: // CloseIcueEvent Event
 			{
-				if (WaitForSingleObject(hEvents[1], 1) == WAIT_OBJECT_0)
-				{
-					ResetEvent(hEvents[1]);
-				}
 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 				if (hWndIC)
 				{
@@ -331,7 +323,7 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
-						if (monHandler->getActiveMonitorCount() != 1)
+						if (!monHandler->isSingleDisplayHDMI())
 						{
 							INPUT inputs[4] = {};
 							ZeroMemory(inputs, sizeof(inputs));
