@@ -50,14 +50,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Place code here.
-	HRESULT hr = CoInitialize(nullptr);
-
-	if (FAILED(hr))
-	{
-		return FALSE;
-	} 
-
 	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
     MSG msg = {};
 

@@ -9,7 +9,6 @@ extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	bool openedBPMode = false;
-	HRESULT hr = CoInitialize(nullptr);
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
 	std::string deviceStrPort = "";
