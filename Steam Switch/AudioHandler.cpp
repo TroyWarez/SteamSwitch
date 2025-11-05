@@ -1,8 +1,15 @@
 #include "AudioHandler.h"
-using namespace std;
-
 AudioHandler::AudioHandler()
 {
+    if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum)))
+    {
+        pEnum = NULL;
+    }
+    if (FAILED(CoCreateInstance(__uuidof(CPolicyConfigVistaClient),
+		NULL, CLSCTX_ALL, __uuidof(IPolicyConfigVista), (LPVOID*)&pPolicyConfig)))
+    {
+        pPolicyConfig = NULL;
+	}
 	WCHAR userProfile[MAX_PATH] = { 0 };
 	ExpandEnvironmentStringsW(L"%userProfile%", userProfile, MAX_PATH);
 	std::wstring userProfileFilePath(userProfile);
@@ -73,7 +80,16 @@ AudioHandler::AudioHandler()
 
 }
 AudioHandler::~AudioHandler()
-{}
+{
+    if (pEnum)
+    {
+       pEnum->Release();
+	}
+    if (pPolicyConfig)
+    {
+		pPolicyConfig->Release();
+    }
+}
 void AudioHandler::ToggleAudioDevice()
 {
     if (BPaudioDeviceName == L"" || lastBPaudioDeviceName == L"" || BPaudioDeviceName == lastBPaudioDeviceName)
@@ -117,32 +133,25 @@ void AudioHandler::ToggleAudioDevice()
         CloseHandle(hFile);
 	}
 }
-HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID)
+HRESULT AudioHandler::SetDefaultAudioPlaybackDevice(LPCWSTR devID)
 {
-    IPolicyConfigVista* pPolicyConfig;
+	HRESULT hr = E_FAIL;
     ERole reserved = eConsole;
-
-    HRESULT hr = CoCreateInstance(__uuidof(CPolicyConfigVistaClient),
-        NULL, CLSCTX_ALL, __uuidof(IPolicyConfigVista), (LPVOID*)&pPolicyConfig);
-    if (SUCCEEDED(hr))
+    if (pPolicyConfig)
     {
         hr = pPolicyConfig->SetDefaultEndpoint(devID, reserved);
-        pPolicyConfig->Release();
     }
     return hr;
 }
 void AudioHandler::InitDefaultAudioDevice()
 {
-        IMMDeviceEnumerator* pEnum = NULL;
-        // Create a multimedia device enumerator.
-        HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-            CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum);
-        if (SUCCEEDED(hr))
+
+        if (pEnum)
         {
             //Determine if it is the default audio device
             bool bExit = false;
             IMMDevice* pDefDevice = NULL;
-            hr = pEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &pDefDevice);
+            HRESULT hr = pEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &pDefDevice);
             if (SUCCEEDED(hr))
             {
                 IPropertyStore* pStore;
@@ -167,7 +176,6 @@ void AudioHandler::InitDefaultAudioDevice()
             }
             if (bExit)
             {
-                pEnum->Release();
                 return;
             }
 
@@ -224,7 +232,6 @@ void AudioHandler::InitDefaultAudioDevice()
                 }
                 pDevices->Release();
             }
-            pEnum->Release();
         }
 }
 void AudioHandler::setDefaultAudioDevice(LPCWSTR newDevice)

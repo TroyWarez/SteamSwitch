@@ -8,6 +8,7 @@
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
+	bool openedBPMode = false;
 	HRESULT hr = CoInitialize(nullptr);
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
@@ -170,6 +171,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			}
 		case 3: // hCECPowerOnEventSerial
 		{
+			openedBPMode = false;
 			if (hCECPowerOnEventSerial)
 			{
 				ResetEvent(hCECPowerOnEventSerial);
@@ -221,7 +223,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
 			{
 				audioHandler.InitDefaultAudioDevice();
-				Sleep(1);
+				Sleep(100);
 			}
 			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 			{
@@ -261,18 +263,16 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 					if (hWnd == NULL)
 					{
-						Sleep(100);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
-						Sleep(100);
+						Sleep(3000);
 					}
-					else
+					else if (!openedBPMode)
 					{
 						ShowWindow(hWnd, SW_MINIMIZE);
 						ShowWindow(hWnd, SW_SHOWDEFAULT);
 						SetForegroundWindow(hWnd);
-						Sleep(100);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
-						Sleep(100);
+						openedBPMode = true;
 					}
 					continue;
 				}

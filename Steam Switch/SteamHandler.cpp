@@ -2,6 +2,7 @@
 #include "InvisibleMouse.h"
 #include "RegGUID.h"
 #include <GenericInput.h>
+BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	HANDLE hEvents[3] = { NULL };
@@ -323,6 +324,8 @@ int SteamHandler::StartSteamHandler()
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
+						// Entering Big Picture Mode
+						AddOrRemoveNotificationIcon(hWnd, TRUE);
 						if (!monHandler->isSingleDisplayHDMI())
 						{
 							INPUT inputs[4] = {};
@@ -453,6 +456,7 @@ int SteamHandler::StartSteamHandler()
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) { // Big picture mode closed
+										AddOrRemoveNotificationIcon(hWnd, TRUE);
 										if (programFiles != L"")
 										{
 											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)

@@ -30,7 +30,7 @@ HPOWERNOTIFY hPowerNotify = NULL;
 
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
-static UINT WM_TaskBarCreated = 0;
+UINT WM_TaskBarCreated = 0;
 GIPSerialData serialData = { (USHORT) - 1, 0x00};
 std::wstring controllerCountWStr;
 // Forward declarations of functions included in this code module:
