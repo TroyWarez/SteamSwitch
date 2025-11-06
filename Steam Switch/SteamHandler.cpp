@@ -543,10 +543,10 @@ int SteamHandler::StartSteamHandler()
 								if (dwResult == ERROR_SUCCESS)
 								{
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B) &&
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
+										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) &&
 										!SelectButtonPressed)
 									{
 
