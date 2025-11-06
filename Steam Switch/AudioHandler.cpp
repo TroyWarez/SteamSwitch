@@ -1,10 +1,6 @@
 #include "AudioHandler.h"
 AudioHandler::AudioHandler()
 {
-    if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
-    {
-        return;
-    }
     if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum)))
     {
         pEnum = NULL;
@@ -92,7 +88,6 @@ AudioHandler::~AudioHandler()
     {
 		pPolicyConfig->Release();
     }
-    CoUninitialize();
 }
 void AudioHandler::ToggleAudioDevice()
 {

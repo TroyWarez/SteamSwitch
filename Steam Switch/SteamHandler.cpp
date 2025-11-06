@@ -221,6 +221,7 @@ SteamHandler::~SteamHandler()
 	{
 		delete audioHandler;
 	}
+	CoUninitialize();
 }
 int SteamHandler::StartSteamHandler()
 {
@@ -578,14 +579,6 @@ int SteamHandler::StartSteamHandler()
 										xticks = { 0 };
 										xticks2 = { 2 };
 										MouseCordPressed = true;
-									}
-
-									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
-									{
-										xticks = { 0 };
-										xticks2 = { 2 };
-										MouseCordPressed = false;
 									}
 
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
