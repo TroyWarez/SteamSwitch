@@ -8,6 +8,7 @@
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
+	CoInitialize(NULL);
 	bool openedBPMode = false;
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
@@ -317,6 +318,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		UnloadLibCec(cecAdpater);
 		cecAdpater = 0;
 	}
+	CoUninitialize();
 	return 0;
 }
 void MonitorHandler::StartCecPowerThread(void* stmPtr)

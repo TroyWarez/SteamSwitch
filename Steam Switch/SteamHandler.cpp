@@ -221,7 +221,6 @@ SteamHandler::~SteamHandler()
 	{
 		delete audioHandler;
 	}
-	CoUninitialize();
 }
 int SteamHandler::StartSteamHandler()
 {

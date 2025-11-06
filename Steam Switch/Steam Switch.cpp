@@ -49,13 +49,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
 	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
     MSG msg = {};
-	if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
-	{
-		return FALSE;
-	}
 	switch (GetLastError())
 	{
 	case ERROR_ALREADY_EXISTS:
