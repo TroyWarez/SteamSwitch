@@ -348,21 +348,21 @@ int SteamHandler::StartSteamHandler()
 						}
 
 						GetCursorPos(&deskCursorPos);
-						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
-						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-						DestroyCursor(h);
+// 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+// 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+// 						DestroyCursor(h);
 
 						if (!monHandler->ToggleMode((programFilesPath != L"")))
 						{
@@ -472,7 +472,7 @@ int SteamHandler::StartSteamHandler()
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
+										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
 										cursorFileName = windowsPath + L"beam_i.cur";
 										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
