@@ -154,6 +154,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
 	   hPowerNotify = RegisterSuspendResumeNotification(hWnd, DEVICE_NOTIFY_WINDOW_HANDLE);
    }
+
+   while (FindWindowW(L"Shell_TrayWnd", NULL) == NULL)
+   {
+	   Sleep(100);
+   }
    WM_TaskBarCreated = RegisterWindowMessageW(L"TaskbarCreated");
    return TRUE;
 }
