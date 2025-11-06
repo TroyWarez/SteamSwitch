@@ -543,6 +543,10 @@ int SteamHandler::StartSteamHandler()
 								if (dwResult == ERROR_SUCCESS)
 								{
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+										!xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
 										!SelectButtonPressed)
 									{
 
@@ -583,7 +587,7 @@ int SteamHandler::StartSteamHandler()
 
 									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-										xticks.QuadPart == 0 && !AudioCordPressed)
+										xticksAudio.QuadPart == 0 && !AudioCordPressed)
 									{
 										QueryPerformanceCounter(&xticksAudio);
 										xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
@@ -655,6 +659,7 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 									QueryPerformanceCounter(&xticks2);
+									QueryPerformanceCounter(&xticksAudio2);
 								}
 								else {
 									for (DWORD i = 0; i < 12; i++)
@@ -711,7 +716,7 @@ int SteamHandler::StartSteamHandler()
 
 											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
 												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-												xticks.QuadPart == 0 && !AudioCordPressed)
+												xticksAudio.QuadPart == 0 && !AudioCordPressed)
 											{
 												QueryPerformanceCounter(&xticksAudio);
 												xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
@@ -751,6 +756,7 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 									QueryPerformanceCounter(&xticks2);
+									QueryPerformanceCounter(&xticksAudio2);
 								}
 								POINT cursorPos;
 								if (GetCursorPos(&cursorPos))
