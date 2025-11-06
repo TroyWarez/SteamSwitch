@@ -159,6 +159,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
 	   Sleep(100);
    }
+   AddOrRemoveNotificationIcon(hWnd, TRUE);
    WM_TaskBarCreated = RegisterWindowMessageW(L"TaskbarCreated");
    return TRUE;
 }
