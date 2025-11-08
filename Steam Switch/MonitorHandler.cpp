@@ -328,11 +328,11 @@ void MonitorHandler::StartCecPowerThread(void* stmPtr)
 {
 	if (!isSingleDisplayHDMI())
 	{
-		currentMode = MonitorHandler::BP_MODE;
+		currentMode = MonitorHandler::DESK_MODE;
 	}
 	else
 	{
-		currentMode = MonitorHandler::DESK_MODE;
+		currentMode = MonitorHandler::BP_MODE;
 	}
 	if (hCECThread == NULL || stmPtr == nullptr)
 	{
