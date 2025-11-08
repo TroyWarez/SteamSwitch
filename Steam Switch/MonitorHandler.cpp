@@ -8,7 +8,10 @@
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
-	CoInitialize(NULL);
+	if (FAILED(CoInitialize(NULL)))
+	{
+		return 1;
+	}
 	bool openedBPMode = false;
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
@@ -323,6 +326,14 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 }
 void MonitorHandler::StartCecPowerThread(void* stmPtr)
 {
+	if (!isSingleDisplayHDMI())
+	{
+		currentMode = MonitorHandler::BP_MODE;
+	}
+	else
+	{
+		currentMode = MonitorHandler::DESK_MODE;
+	}
 	if (hCECThread == NULL || stmPtr == nullptr)
 	{
 		hCECThread = CreateThread(NULL, 0, CecPowerThread, stmPtr, 0, NULL);
@@ -331,14 +342,6 @@ void MonitorHandler::StartCecPowerThread(void* stmPtr)
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
 	currentMode = mode;
-	if (!isSingleDisplayHDMI())
-	{
-		currentMode = MonitorHandler::DESK_MODE;
-	}
-	else
-	{
-		currentMode = MonitorHandler::BP_MODE;
-	}
 	hCECThread = NULL;
 	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
 	hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
