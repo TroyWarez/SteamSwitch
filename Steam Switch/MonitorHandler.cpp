@@ -331,6 +331,14 @@ void MonitorHandler::StartCecPowerThread(void* stmPtr)
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
 	currentMode = mode;
+	if (!isSingleDisplayHDMI())
+	{
+		currentMode = MonitorHandler::DESK_MODE;
+	}
+	else
+	{
+		currentMode = MonitorHandler::BP_MODE;
+	}
 	hCECThread = NULL;
 	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
 	hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
