@@ -288,6 +288,14 @@ int SteamHandler::StartSteamHandler()
 		}
 	}
 	serialHandler.ScanForSerialDevices();
+	if (!monHandler->isSingleDisplayHDMI())
+	{
+		monHandler->setMonitorMode(MonitorHandler::BP_MODE);
+	}
+	else
+	{
+		monHandler->setMonitorMode(MonitorHandler::DESK_MODE);
+	}
 	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
