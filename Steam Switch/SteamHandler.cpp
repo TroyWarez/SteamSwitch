@@ -348,21 +348,21 @@ int SteamHandler::StartSteamHandler()
 						}
 
 						GetCursorPos(&deskCursorPos);
-// 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
-// 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-// 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-// 						DestroyCursor(h);
+						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+						DestroyCursor(h);
 
 						if (!monHandler->ToggleMode((programFilesPath != L"")))
 						{
@@ -456,7 +456,7 @@ int SteamHandler::StartSteamHandler()
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) { // Big picture mode closed
 										AddOrRemoveNotificationIcon(hWnd, TRUE);
-										if (programFiles[0] == 0)
+										if (programFilesPath != L"")
 										{
 											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)
 											{
@@ -517,7 +517,7 @@ int SteamHandler::StartSteamHandler()
 									else
 									{
 										if (iCueRunning && hWndBP &&
-											programFiles[0] == 0)
+											programFilesPath != L"")
 										{
 											iCueRunning = false;
 										}
