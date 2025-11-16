@@ -79,7 +79,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 				if (hWndIC)
 				{
-					PostMessage(hWndIC, WM_QUIT, 0, 0);
+					PostMessage(hWndIC, 0x12, 0, 0);
 					ResetEvent(hEvents[2]);
 				}
 				break;
