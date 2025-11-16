@@ -456,7 +456,7 @@ int SteamHandler::StartSteamHandler()
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == NULL) { // Big picture mode closed
 										AddOrRemoveNotificationIcon(hWnd, TRUE);
-										if (programFiles != L"")
+										if (programFiles[0] == 0)
 										{
 											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)
 											{
@@ -517,7 +517,7 @@ int SteamHandler::StartSteamHandler()
 									else
 									{
 										if (iCueRunning && hWndBP &&
-											programFiles != L"")
+											programFiles[0] == 0)
 										{
 											iCueRunning = false;
 										}
