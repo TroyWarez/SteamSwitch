@@ -271,9 +271,9 @@ int SteamHandler::StartSteamHandler()
 
 	MSG msg;
 	std::array<WCHAR, MAX_PATH> programFiles = { 0 };
-	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
+	ExpandEnvironmentStringsW(L"%PROGRAMFILES%\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe", programFiles.data(), MAX_PATH);
 	std::wstring programFilesPath(programFiles.data());
-	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
+	programFilesPath = programFilesPath;
 	HANDLE hiCueTestFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hiCueTestFile == INVALID_HANDLE_VALUE)
 	{

@@ -1,6 +1,8 @@
 #include "AudioHandler.h"
 AudioHandler::AudioHandler()
 {
+	pEnum = nullptr;
+	pPolicyConfig = nullptr;
     if (FAILED(CoInitialize(nullptr)))
     {
         return;
@@ -14,11 +16,11 @@ AudioHandler::AudioHandler()
     {
         pPolicyConfig = nullptr;
 	}
-	WCHAR userProfile[MAX_PATH] = { 0 };
-	ExpandEnvironmentStringsW(L"%userProfile%", userProfile, MAX_PATH);
-	std::wstring userProfileFilePath(userProfile);
-    std::wstring userProfileLastFilePath(userProfile);
-    std::wstring userProfileDeskPath(userProfile);
+    std::array<WCHAR, MAX_PATH>  userProfile = { L'\0' };
+	ExpandEnvironmentStringsW(L"%userProfile%", userProfile.data(), MAX_PATH);
+	std::wstring userProfileFilePath(userProfile.data());
+    std::wstring userProfileLastFilePath(userProfile.data());
+    std::wstring userProfileDeskPath(userProfile.data());
     userProfileFilePath = userProfileFilePath + L"\\SteamSwitch\\BPAudioDevice.txt";
     userProfileLastFilePath = userProfileLastFilePath + L"\\SteamSwitch\\LastBPAudioDevice.txt";
     userProfileDeskPath = userProfileDeskPath + L"\\SteamSwitch\\DESKAudioDevice.txt";
@@ -26,16 +28,16 @@ AudioHandler::AudioHandler()
 	DWORD re3 = GetLastError();
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        DWORD bytesRead;
-        CHAR buffer[MAX_PATH] = { 0 };
-        WCHAR wbuffer[MAX_PATH] = { 0 };
+        DWORD bytesRead = 0;
+        std::array<CHAR, MAX_PATH>  buffer = { '\0' };
+        std::array<WCHAR, MAX_PATH>  wbuffer = { L'\0' };
         bytesRead = GetFileSize(hFile, nullptr);
         if (bytesRead > 0 && bytesRead < MAX_PATH)
         {
-            if (ReadFile(hFile, buffer, bytesRead, &bytesRead, nullptr))
+            if (ReadFile(hFile, buffer.data(), bytesRead, &bytesRead, nullptr))
             {
-				MultiByteToWideChar(CP_UTF8, 0, buffer, bytesRead, wbuffer, MAX_PATH);
-                BPaudioDeviceName = wbuffer;
+				MultiByteToWideChar(CP_UTF8, 0, buffer.data(), static_cast<int>(bytesRead), wbuffer.data(), MAX_PATH);
+                BPaudioDeviceName = wbuffer.data();
             }
 		}
         CloseHandle(hFile);
@@ -49,16 +51,16 @@ AudioHandler::AudioHandler()
 	hFile = CreateFileW(userProfileLastFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		DWORD bytesRead;
-		CHAR buffer[MAX_PATH] = { 0 };
-		WCHAR wbuffer[MAX_PATH] = { 0 };
+		DWORD bytesRead = 0;
+		std::array<CHAR, MAX_PATH>  buffer = { '\0' };
+		std::array<WCHAR, MAX_PATH>  wbuffer = { L'\0' };
 		bytesRead = GetFileSize(hFile, nullptr);
 		if (bytesRead > 0 && bytesRead < MAX_PATH)
 		{
-			if (ReadFile(hFile, buffer, bytesRead, &bytesRead, nullptr))
+			if (ReadFile(hFile, buffer.data(), bytesRead, &bytesRead, nullptr))
 			{
-				MultiByteToWideChar(CP_UTF8, 0, buffer, bytesRead, wbuffer, MAX_PATH);
-				lastBPaudioDeviceName = wbuffer;
+				MultiByteToWideChar(CP_UTF8, 0, buffer.data(), static_cast<int>(bytesRead), wbuffer.data(), MAX_PATH);
+				lastBPaudioDeviceName = wbuffer.data();
 			}
 		}
 		CloseHandle(hFile);
@@ -67,16 +69,16 @@ AudioHandler::AudioHandler()
 	hFile = CreateFileW(userProfileDeskPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		DWORD bytesRead;
-		CHAR buffer[MAX_PATH] = { 0 };
-		WCHAR wbuffer[MAX_PATH] = { 0 };
+		DWORD bytesRead = 0;
+		std::array<CHAR, MAX_PATH>  buffer = { '\0' };
+		std::array<WCHAR, MAX_PATH>  wbuffer = { L'\0' };
 		bytesRead = GetFileSize(hFile, nullptr);
 		if (bytesRead > 0 && bytesRead < MAX_PATH)
 		{
-			if (ReadFile(hFile, buffer, bytesRead, &bytesRead, nullptr))
+			if (ReadFile(hFile, buffer.data(), bytesRead, &bytesRead, nullptr))
 			{
-				MultiByteToWideChar(CP_UTF8, 0, buffer, bytesRead, wbuffer, MAX_PATH);
-				DESKaudioDeviceName = wbuffer;
+				MultiByteToWideChar(CP_UTF8, 0, buffer.data(), static_cast<int>(bytesRead), wbuffer.data(), MAX_PATH);
+				DESKaudioDeviceName = wbuffer.data();
 			}
 		}
 		CloseHandle(hFile);
@@ -96,7 +98,9 @@ AudioHandler::~AudioHandler()
 }
 void AudioHandler::ToggleAudioDevice()
 {
-    if (BPaudioDeviceName == L"" || lastBPaudioDeviceName == L"" || BPaudioDeviceName == lastBPaudioDeviceName)
+    if (   BPaudioDeviceName.empty()
+        || lastBPaudioDeviceName.empty()
+        || BPaudioDeviceName == lastBPaudioDeviceName)
     {
         return;
 	}
@@ -106,33 +110,33 @@ void AudioHandler::ToggleAudioDevice()
     BPaudioDeviceName = lastBPaudioDeviceName;
     lastBPaudioDeviceName = temp;
     InitDefaultAudioDevice();
-    WCHAR userProfile[MAX_PATH] = { 0 };
-    ExpandEnvironmentStringsW(L"%userProfile%", userProfile, MAX_PATH);
-    std::wstring userProfileFilePath(userProfile);
-    std::wstring userProfileLastFilePath(userProfile);
+    std::array<WCHAR, MAX_PATH>  userProfile = { L'\0' };
+    ExpandEnvironmentStringsW(L"%userProfile%", userProfile.data(), MAX_PATH);
+    std::wstring userProfileFilePath(userProfile.data());
+    std::wstring userProfileLastFilePath(userProfile.data());
     userProfileFilePath = userProfileFilePath + L"\\SteamSwitch\\BPAudioDevice.txt";
     userProfileLastFilePath = userProfileLastFilePath + L"\\SteamSwitch\\LastBPAudioDevice.txt";
     HANDLE hFile = CreateFileW(userProfileFilePath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        DWORD bytesWritten;
-        CHAR buffer[MAX_PATH] = { 0 };
-        int size = WideCharToMultiByte(CP_UTF8, 0, BPaudioDeviceName.c_str(), -1, buffer, MAX_PATH, nullptr, nullptr);
+        DWORD bytesWritten = 0;
+        std::array<CHAR, MAX_PATH>  buffer = { '\0' };
+        int size = WideCharToMultiByte(CP_UTF8, 0, BPaudioDeviceName.c_str(), -1, buffer.data(), MAX_PATH, nullptr, nullptr);
         if (size > 0 && size < MAX_PATH)
         {
-            WriteFile(hFile, buffer, size - 1, &bytesWritten, nullptr);
+            WriteFile(hFile, buffer.data(), size - 1, &bytesWritten, nullptr);
         }
         CloseHandle(hFile);
     }
     hFile = CreateFileW(userProfileLastFilePath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        DWORD bytesWritten;
-        CHAR buffer[MAX_PATH] = { 0 };
-        int size = WideCharToMultiByte(CP_UTF8, 0, lastBPaudioDeviceName.c_str(), -1, buffer, MAX_PATH, nullptr, nullptr);
+        DWORD bytesWritten = 0;
+        std::array<CHAR, MAX_PATH>  buffer = { '\0' };
+        int size = WideCharToMultiByte(CP_UTF8, 0, lastBPaudioDeviceName.c_str(), -1, buffer.data(), MAX_PATH, nullptr, nullptr);
         if (size > 0 && size < MAX_PATH)
         {
-            WriteFile(hFile, buffer, size - 1, &bytesWritten, nullptr);
+            WriteFile(hFile, buffer.data(), size - 1, &bytesWritten, nullptr);
         }
         CloseHandle(hFile);
 	}
@@ -158,7 +162,7 @@ void AudioHandler::InitDefaultAudioDevice()
             HRESULT hr = pEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &pDefDevice);
             if (SUCCEEDED(hr))
             {
-                IPropertyStore* pStore;
+                IPropertyStore* pStore = nullptr;
                 hr = pDefDevice->OpenPropertyStore(STGM_READ, &pStore);
                 if (SUCCEEDED(hr))
                 {
@@ -183,7 +187,7 @@ void AudioHandler::InitDefaultAudioDevice()
                 return;
             }
 
-            IMMDeviceCollection* pDevices;
+            IMMDeviceCollection* pDevices = nullptr;
             // Enumerate the output devices.
             hr = pEnum->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pDevices);
             if (SUCCEEDED(hr))
@@ -263,7 +267,7 @@ bool AudioHandler::BPisDefaultAudioDevice()
         hr = pEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &pDefDevice);
         if (SUCCEEDED(hr))
         {
-            IPropertyStore* pStore;
+            IPropertyStore* pStore = nullptr;;
             hr = pDefDevice->OpenPropertyStore(STGM_READ, &pStore);
             if (SUCCEEDED(hr))
             {
