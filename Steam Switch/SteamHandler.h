@@ -8,7 +8,7 @@
 #define STEAM_DESK L"Steam"
 #define SDL_CLASS L"SDL_app"
 #define ICUE_CLASS L"Qt672QWindowIcon"
-#define ICUE_TITLE L"iCUE"
+constexpr LPCWSTR ICUE_TITLE = L"iCUE";
 #define MOUSE_WAKETIME 50000000
 #define CONTROLLER_WAKETIME 20000000
 DWORD WINAPI ICUEThread(LPVOID lpParam);

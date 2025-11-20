@@ -11,8 +11,8 @@ public:
 	IMMDeviceEnumerator* pEnum;
 	IPolicyConfigVista* pPolicyConfig;
 	void setDefaultAudioDevice(LPCWSTR newDevice);
-	LPCWSTR getDefaultAudioDevice();
-	bool BPisDefaultAudioDevice();
+	const LPCWSTR getDefaultAudioDevice();
+	const bool BPisDefaultAudioDevice();
 	void InitDefaultAudioDevice();
 	void ToggleAudioDevice();
 	HRESULT SetDefaultAudioPlaybackDevice(LPCWSTR devID);

@@ -5,13 +5,11 @@ extern SteamHandler* steamHandler;
 #define MOUSE_OFFSET 0.1111
 InputHandler::InputHandler()
 {
+	hXInputDLL = nullptr;
+	lastXstate = { 0x0 };
 	ZeroMemory(&lastXstate, sizeof(lastXstate));
 	hXInputDLL = LoadLibraryW(L"XInput1_3.dll");
 	xbox_init();
-	//gameInput = nullptr;
-	//gamepad = nullptr;
-	//HRESULT hr = GameInput::v1::GameInputCreate(&gameInput);
-	//int a = 1;
 }
 InputHandler::~InputHandler()
 {
@@ -19,10 +17,6 @@ InputHandler::~InputHandler()
 	{
 		FreeLibrary(hXInputDLL);
 	}
-	//if (gameInput)
-	//{
-	//	gameInput->Release();
-	//}
 }
 void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 {
@@ -31,21 +25,21 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 		if ((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
 			!lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP )
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 
 			inputs[0].type = INPUT_KEYBOARD;
 			inputs[0].ki.wVk = VK_UP;
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_UP;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 		}
 		if ((((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) && !(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)) ||
 			(((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) && !(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)) )
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 					
 
 
@@ -54,12 +48,12 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_LEFT;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 		}
 		if((((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) && !(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)))
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 
 
 
@@ -68,57 +62,49 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_RIGHT;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 		}
 		if ((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN &&
 			!(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN))
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 
 			inputs[0].type = INPUT_KEYBOARD;
 			inputs[0].ki.wVk = VK_DOWN;
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_DOWN;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 		}
 
 		if ((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_A &&
 			!(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_A) )
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 
 			inputs[0].type = INPUT_KEYBOARD;
 			inputs[0].ki.wVk = VK_RETURN;
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_RETURN;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
-			if (steamHandler)
-			{
-				//HWND bphWnd = FindWindowW(SDL_CLASS, steamHandler->getSteamBigPictureModeTitle());
-				//ShowWindow(bphWnd, SW_SHOW);
-				//SetActiveWindow(bphWnd);
-				//SetForegroundWindow(bphWnd);
-				//SwitchToThisWindow(bphWnd, TRUE);
-			}
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 
 		}
 
 		if ((*pXstate).Gamepad.wButtons & XINPUT_GAMEPAD_START &&
 			!(lastXstate.Gamepad.wButtons & XINPUT_GAMEPAD_START))
 		{
-			INPUT inputs[2] = {};
-			ZeroMemory(inputs, sizeof(inputs));
+			std::array<INPUT, 2> inputs = { 0 };
+			ZeroMemory(inputs.data(), sizeof(inputs));
 
 			inputs[0].type = INPUT_KEYBOARD;
 			inputs[0].ki.wVk = VK_RETURN;
 			inputs[1].type = INPUT_KEYBOARD;
 			inputs[1].ki.wVk = VK_RETURN;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-			UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			UINT uSent = SendInput(static_cast<int>(inputs.size()), inputs.data(), sizeof(INPUT));
 		}
 	}
 	if (pXstate)
@@ -126,7 +112,7 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 		lastXstate = (*pXstate);
 	}
 }
-void InputHandler::turnOffXinputController()
+const void InputHandler::turnOffXinputController()
 {
 	if (hXInputDLL)
 	{
