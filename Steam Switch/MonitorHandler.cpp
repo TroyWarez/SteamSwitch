@@ -8,7 +8,7 @@
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
 DWORD WINAPI CecPowerThread(LPVOID lpParam) {
-	if (FAILED(CoInitialize(NULL)))
+	if (FAILED(CoInitialize(nullptr)))
 	{
 		return 1;
 	}
@@ -29,42 +29,42 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 	//bool ret = cecAdpater->SetConfiguration(&cec_config);
-	WCHAR programFiles[MAX_PATH] = { 0 };
-	ExpandEnvironmentStringsW(L"%userProfile%", programFiles, MAX_PATH);
-	std::wstring programFilesPath(programFiles);
+	std::array<WCHAR, MAX_PATH> programFiles = { 0 };
+	ExpandEnvironmentStringsW(L"%userProfile%", programFiles.data(), MAX_PATH);
+	std::wstring programFilesPath(programFiles.data());
 	programFilesPath = programFilesPath + L"\\SteamSwitch\\cecHDMI_Port.txt";
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		DWORD bytesRead;
-		CHAR buffer[MAX_PATH] = { 0 };
-		WCHAR wbuffer[MAX_PATH] = { 0 };
-		bytesRead = GetFileSize(hFile, NULL);
+		DWORD bytesRead = 0;
+		std::array<CHAR, MAX_PATH> buffer = { 0 };
+		std::array<WCHAR, MAX_PATH>wbuffer = { 0 };
+		bytesRead = GetFileSize(hFile, nullptr);
 		if (bytesRead > 0 && bytesRead < MAX_PATH)
 		{
-			if (ReadFile(hFile, buffer, bytesRead, &bytesRead, NULL))
+			if (ReadFile(hFile, buffer.data(), bytesRead, &bytesRead, nullptr))
 			{
-				cec_config.iHDMIPort = std::stoi(buffer);
+				cec_config.iHDMIPort = std::stoi(buffer.data());
 			}
 		}
 		CloseHandle(hFile);
 	}
 	cecAdpater = LibCecInitialise(&cec_config);
 
-	if (cecAdpater == NULL)
+	if (cecAdpater == nullptr)
 	{
 		return 1;
 	}
 	cecAdpater->InitVideoStandalone();
 	CEC::cec_adapter_descriptor device[1];
-	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, NULL, true);
+	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, nullptr, true);
 	if (iDevicesFound > 0)
 	{
 		deviceStrPort = device[0].strComName;
 	}
-	HANDLE hICUEEvent = CreateEventW(NULL, FALSE, FALSE, L"ICUEEvent");
-	if (hICUEEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hICUEEvent = CreateEventW(nullptr, FALSE, FALSE, L"ICUEEvent");
+	if (hICUEEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hICUEEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ICUEEvent");
 		if (hICUEEvent)
@@ -73,8 +73,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
-	if (hCECPowerOffFinishedEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hCECPowerOffFinishedEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOffFinishedEvent");
+	if (hCECPowerOffFinishedEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCECPowerOffFinishedEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOffFinishedEvent");
 		if (hCECPowerOffFinishedEvent)
@@ -83,8 +83,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
-	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hShutdownEvent = CreateEventW(nullptr, FALSE, FALSE, L"ShutdownEvent");
+	if (hShutdownEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hShutdownEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 		if (hShutdownEvent)
@@ -92,8 +92,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			ResetEvent(hShutdownEvent);
 		}
 	}
-	HANDLE hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
-	if (hCECPowerOffEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hCECPowerOffEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOffEvent");
+	if (hCECPowerOffEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCECPowerOffEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOffEvent");
 		if (hCECPowerOffEvent)
@@ -102,8 +102,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
-	if (hCECPowerOnEventSerial == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hCECPowerOnEventSerial = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOnEventSerial");
+	if (hCECPowerOnEventSerial == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEventSerial");
 		if (hCECPowerOnEventSerial)
@@ -112,8 +112,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
-	if (hCECPowerOnEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hCECPowerOnEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOnEvent");
+	if (hCECPowerOnEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCECPowerOnEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"CECPowerOnEvent");
 		if (hCECPowerOnEvent)
@@ -122,8 +122,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		}
 	}
 
-	HANDLE hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
-	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hBPEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"BPEvent");
 		if (hBPEvent)
@@ -160,7 +160,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			{
 				for (size_t i = 0; i < hEvents.size(); i++)
 				{
-					if (hEvents[i] != NULL)
+					if (hEvents[i] != nullptr)
 					{
 						CloseHandle(hEvents[i]);
 					}
@@ -216,11 +216,11 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			{
 				if (FindWindowW(SDL_CLASS, STEAM_DESK))
 				{
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 				}
 				else
 				{
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
 				}
 			}
 			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
@@ -257,16 +257,16 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						Sleep(400);
 						SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 						CloseHandle(hICUEEvent);
-						hICUEEvent = NULL;
+						hICUEEvent = nullptr;
 					}
 					break;
 				}
 				else if (SingleDisplayHDMI)
 				{
 					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
-					if (hWnd == NULL)
+					if (hWnd == nullptr)
 					{
-						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", NULL, NULL, SW_SHOW);
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
 						Sleep(3000);
 					}
 					else if (!openedBPMode)
@@ -274,7 +274,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						ShowWindow(hWnd, SW_MINIMIZE);
 						ShowWindow(hWnd, SW_SHOWDEFAULT);
 						SetForegroundWindow(hWnd);
-						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 						openedBPMode = true;
 					}
 					continue;
@@ -334,19 +334,19 @@ void MonitorHandler::StartCecPowerThread(void* stmPtr)
 	{
 		currentMode = MonitorHandler::BP_MODE;
 	}
-	if (hCECThread == NULL || stmPtr == nullptr)
+	if (hCECThread == nullptr || stmPtr == nullptr)
 	{
-		hCECThread = CreateThread(NULL, 0, CecPowerThread, stmPtr, 0, NULL);
+		hCECThread = CreateThread(nullptr, 0, CecPowerThread, stmPtr, 0, nullptr);
 	}
 }
 MonitorHandler::MonitorHandler(MonitorMode mode)
 {
 	currentMode = mode;
-	hCECThread = NULL;
-	hCECPowerOffEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffEvent");
-	hCECPowerOffFinishedEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOffFinishedEvent");
-	hCECPowerOnEvent = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEvent");
-	hShutdownEvent = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
+	hCECThread = nullptr;
+	hCECPowerOffEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOffEvent");
+	hCECPowerOffFinishedEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOffFinishedEvent");
+	hCECPowerOnEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOnEvent");
+	hShutdownEvent = CreateEventW(nullptr, FALSE, FALSE, L"ShutdownEvent");
 	icueInstalled = false;
 }
 MonitorHandler::~MonitorHandler()
@@ -355,7 +355,7 @@ MonitorHandler::~MonitorHandler()
 	{
 		SetEvent(hShutdownEvent);
 		CloseHandle(hShutdownEvent);
-		hShutdownEvent = NULL;
+		hShutdownEvent = nullptr;
 	}
 }
 void MonitorHandler::setMonitorMode(MonitorMode mode)
@@ -402,7 +402,7 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 {
 	if (mode == DESK_MODE)
 	{
-		SetDisplayConfig(0, NULL, 0, NULL, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
+		SetDisplayConfig(0, nullptr, 0, nullptr, SDC_TOPOLOGY_EXTEND | SDC_APPLY);
 	}
 
 	if (mode == BP_MODE)
@@ -463,7 +463,7 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			while (isDSCEnabled())
 			{
 				int msgboxID = MessageBoxW(
-					NULL,
+					nullptr,
 					(LPCWSTR)L"Display stream compression (DSC) is turned on and must be turned off to use Big Picture Mode.\nDo you want to try again?",
 					(LPCWSTR)L"Steam Switch Critical Display Error",
 					MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2 | MB_TOPMOST
@@ -504,7 +504,7 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
 	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
-	hr = QueryDisplayConfig((QDC_ALL_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
+	hr = QueryDisplayConfig((QDC_ALL_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], nullptr);
 
 	int HDMIMonitorCount = 0;
 	int DPMonitorCount = 0;
@@ -576,10 +576,10 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 				PathInfoArray2[0].flags = DISPLAYCONFIG_PATH_ACTIVE;
 				PathInfoArray2[1].flags = 0;
 				PathInfoArray2[2].flags = 0;
-				hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_VALIDATE | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
+				hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, nullptr, (SDC_VALIDATE | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
 				if (hr == S_OK)
 				{
-					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_APPLY | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
+					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, nullptr, (SDC_APPLY | SDC_TOPOLOGY_SUPPLIED | SDC_ALLOW_PATH_ORDER_CHANGES));
 				}
 			}
 			else if (mode == DESK_MODE)
@@ -600,10 +600,10 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 					SDC_ALLOW_CHANGES |
 					SDC_USE_SUPPLIED_DISPLAY_CONFIG |
 					SDC_TOPOLOGY_EXTEND;
-				hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_VALIDATE | SDC_TOPOLOGY_EXTEND | SDC_ALLOW_PATH_ORDER_CHANGES));
+				hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, nullptr, (SDC_VALIDATE | SDC_TOPOLOGY_EXTEND | SDC_ALLOW_PATH_ORDER_CHANGES));
 				if (hr == S_OK)
 				{
-					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, NULL, (SDC_APPLY | SDC_TOPOLOGY_EXTEND | SDC_ALLOW_PATH_ORDER_CHANGES));
+					hr = SetDisplayConfig(NumPathArrayElements, &PathInfoArray2[0], 0, nullptr, (SDC_APPLY | SDC_TOPOLOGY_EXTEND | SDC_ALLOW_PATH_ORDER_CHANGES));
 				}
 			}
 
@@ -622,7 +622,7 @@ bool MonitorHandler::isDSCEnabled()
 	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
 	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
-	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
+	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], nullptr);
 
 	if (hr == S_OK)
 	{
@@ -647,7 +647,7 @@ bool MonitorHandler::isSingleDisplayHDMI()
 	DISPLAYCONFIG_PATH_INFO pathInfoHDMI = {};
 	pathInfoHDMI.targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_OTHER;
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
-	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], NULL);
+	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], nullptr);
 
 	if (hr == S_OK && NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
 	{

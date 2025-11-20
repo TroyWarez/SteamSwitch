@@ -26,19 +26,19 @@ BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 	DWORD dwRead = 0;
 	DWORD dwRes = 0;
 	BOOL fRes = FALSE;
-	HANDLE hEvents[2] = { NULL };
+	HANDLE hEvents[2] = { nullptr };
 	if (hComm)
 	{
 		// Create this read operation's OVERLAPPED structure's hEvent.
 		osRead.hEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialReadEvent");
-		if (osRead.hEvent == NULL)
+		if (osRead.hEvent == nullptr)
 		{
 			return FALSE;
 		}
 		hEvents[0] = osRead.hEvent;
 		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
 
-		if (hEvents[1] == NULL)
+		if (hEvents[1] == nullptr)
 			// error creating overlapped event handle
 			return FALSE;
 
@@ -88,19 +88,19 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 	DWORD dwWrite = 0;
 	DWORD dwRes = 0;
 	BOOL fRes = FALSE;
-	HANDLE hEvents[2] = { NULL };
+	HANDLE hEvents[2] = { nullptr };
 	if (hComm)
 	{
 		// Create this write operation's OVERLAPPED structure's hEvent.
 		osWrite.hEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialWriteEvent");
 
-		if (osWrite.hEvent == NULL)
+		if (osWrite.hEvent == nullptr)
 			// error creating overlapped event handle
 			return FALSE;
 
 		hEvents[0] = osWrite.hEvent;
 		hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
-		if (hEvents[1] == NULL)
+		if (hEvents[1] == nullptr)
 			// error creating overlapped event handle
 			return FALSE;
 		// Issue write.
@@ -143,10 +143,10 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 }
 DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
-	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 	if (hSerial == INVALID_HANDLE_VALUE)
 	{
-		hSerial = NULL;
+		hSerial = nullptr;
 	}
 	else
 	{
@@ -158,23 +158,23 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		PurgeComm(hSerial, PURGE_RXABORT | PURGE_RXABORT );
 	}
 
-	HANDLE hEvents[NBOFEVENTS] = { NULL };
+	HANDLE hEvents[NBOFEVENTS] = { nullptr };
 	hEvents[0] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ShutdownEvent");
-	if (hEvents[0] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[0] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[0] = CreateEventW(NULL, FALSE, FALSE, L"ShutdownEvent");
+		hEvents[0] = CreateEventW(nullptr, FALSE, FALSE, L"ShutdownEvent");
 	}
 
 	hEvents[1] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SyncEvent");
-	if (hEvents[1] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[1] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[1] = CreateEventW(NULL, FALSE, FALSE, L"SyncEvent");
+		hEvents[1] = CreateEventW(nullptr, FALSE, FALSE, L"SyncEvent");
 	}
 
 	HANDLE hReadEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialReadEvent");
-	if (hReadEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hReadEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hReadEvent = CreateEventW(NULL, FALSE, FALSE, L"SerialReadEvent");
+		hReadEvent = CreateEventW(nullptr, FALSE, FALSE, L"SerialReadEvent");
 	}
 	if (hReadEvent)
 	{
@@ -182,9 +182,9 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	}
 
 	HANDLE hWriteEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"SerialWriteEvent");
-	if (hWriteEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hWriteEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hWriteEvent = CreateEventW(NULL, FALSE, FALSE, L"SerialWriteEvent");
+		hWriteEvent = CreateEventW(nullptr, FALSE, FALSE, L"SerialWriteEvent");
 	}
 	if (hWriteEvent)
 	{
@@ -192,9 +192,9 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	}
 
 	HANDLE hFinshedSyncEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedSyncEvent");
-	if (hFinshedSyncEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hFinshedSyncEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hFinshedSyncEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedSyncEvent");
+		hFinshedSyncEvent = CreateEventW(nullptr, FALSE, FALSE, L"FinshedSyncEvent");
 	}
 	if (hFinshedSyncEvent)
 	{
@@ -202,55 +202,55 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	}
 
 	hEvents[2] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ClearSingleEvent");
-	if (hEvents[2] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[2] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[2] = CreateEventW(NULL, FALSE, FALSE, L"ClearSingleEvent");
+		hEvents[2] = CreateEventW(nullptr, FALSE, FALSE, L"ClearSingleEvent");
 	}
 
 	HANDLE hFinshedClearSingleEvent = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"FinshedClearSingleEvent");
-	if (hFinshedClearSingleEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hFinshedClearSingleEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hFinshedClearSingleEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedClearSingleEvent");
+		hFinshedClearSingleEvent = CreateEventW(nullptr, FALSE, FALSE, L"FinshedClearSingleEvent");
 	}
 
 	hEvents[3] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ClearAllEvent");
-	if (hEvents[3] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[3] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[3] = CreateEventW(NULL, FALSE, FALSE, L"ClearAllEvent");
+		hEvents[3] = CreateEventW(nullptr, FALSE, FALSE, L"ClearAllEvent");
 	}
 
 	HANDLE hFinshedClearAllEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedClearAllEvent");
-	if (hFinshedClearAllEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hFinshedClearAllEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hFinshedClearAllEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedClearAllEvent");
+		hFinshedClearAllEvent = CreateEventW(nullptr, FALSE, FALSE, L"FinshedClearAllEvent");
 	}
 
 	hEvents[4] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"LockDeviceEvent");
-	if (hEvents[4] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[4] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[4] = CreateEventW(NULL, FALSE, FALSE, L"LockDeviceEvent");
+		hEvents[4] = CreateEventW(nullptr, FALSE, FALSE, L"LockDeviceEvent");
 	}
 
 	HANDLE hFinshedLockDeviceEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"FinshedLockDeviceEvent");
-	if (hFinshedLockDeviceEvent == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hFinshedLockDeviceEvent == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hFinshedLockDeviceEvent = CreateEventW(NULL, FALSE, FALSE, L"FinshedLockDeviceEvent");
+		hFinshedLockDeviceEvent = CreateEventW(nullptr, FALSE, FALSE, L"FinshedLockDeviceEvent");
 	}
 
 	hEvents[5] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"NewDeviceEvent");
-	if (hEvents[5] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[5] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[5] = CreateEventW(NULL, FALSE, FALSE, L"NewDeviceEvent");
+		hEvents[5] = CreateEventW(nullptr, FALSE, FALSE, L"NewDeviceEvent");
 	}
 
 	hEvents[6] = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ResumedFromSleep");
-	if (hEvents[6] == NULL && GetLastError() == ERROR_FILE_NOT_FOUND)
+	if (hEvents[6] == nullptr && GetLastError() == ERROR_FILE_NOT_FOUND)
 	{
-		hEvents[6] = CreateEventW(NULL, FALSE, FALSE, L"ResumedFromSleep");
+		hEvents[6] = CreateEventW(nullptr, FALSE, FALSE, L"ResumedFromSleep");
 	}
 
-	HANDLE hCECPowerOnEventSerial = CreateEventW(NULL, FALSE, FALSE, L"CECPowerOnEventSerial");
-	if (hCECPowerOnEventSerial == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	HANDLE hCECPowerOnEventSerial = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOnEventSerial");
+	if (hCECPowerOnEventSerial == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCECPowerOnEventSerial = OpenEventW(SYNCHRONIZE, FALSE, L"CECPowerOnEventSerial");
 		if (hCECPowerOnEventSerial)
@@ -273,7 +273,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 	{
 		CloseHandle(hSerial);
 		serialData.pwrStatus = PWR_STATUS_OTHER;
-		hSerial = NULL;
+		hSerial = nullptr;
 	}
 
 	if (steamHandler &&
@@ -291,7 +291,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			}
 			else if (!steamHandler->monHandler->isSingleDisplayHDMI())
 			{
-				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+				ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 			}
 		}
 
@@ -364,7 +364,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					CloseHandle(hSerial);
 					serialData.controllerCount = -1;
 					serialData.pwrStatus = PWR_STATUS_OTHER;
-					hSerial = NULL;
+					hSerial = nullptr;
 					break;
 				}
 
@@ -377,7 +377,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 						hCECPowerOnEventSerial &&
 						WaitForSingleObject(hCECPowerOnEventSerial, 1) == WAIT_TIMEOUT)
 					{
-						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", NULL, NULL, SW_SHOW);
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 						SetEvent(hCECPowerOnEventSerial);
 					}
 					readPwrStatus = FALSE;
@@ -429,10 +429,10 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 				Sleep(100);
 				if (comPath && *(comPath) != L"")
 				{
-					hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+					hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 					if (hSerial == INVALID_HANDLE_VALUE)
 					{
-						hSerial = NULL;
+						hSerial = nullptr;
 					}
 					else
 					{
@@ -450,7 +450,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 		{
 			for (size_t i = 0; i < ARRAYSIZE(hEvents); i++)
 			{
-				if (hEvents[i] != NULL)
+				if (hEvents[i] != nullptr)
 				{
 					CloseHandle(hEvents[i]);
 				}
@@ -458,17 +458,17 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			if (hSerial)
 			{
 				CloseHandle(hSerial);
-				hSerial = NULL;
+				hSerial = nullptr;
 			}
 			if (hWriteEvent)
 			{
 				CloseHandle(hWriteEvent);
-				hWriteEvent = NULL;
+				hWriteEvent = nullptr;
 			}
 			if (hReadEvent)
 			{
 				CloseHandle(hReadEvent);
-				hReadEvent = NULL;
+				hReadEvent = nullptr;
 			}
 			//SetEvent(hF);
 			return 0;
@@ -479,17 +479,17 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 			{
 				CloseHandle(hSerial);
 			}
-			hSerial = NULL;
+			hSerial = nullptr;
 			if (hEvents[5])
 			{
 				ResetEvent(hEvents[5]);
 			}
 			if (comPath && *(comPath) != L"")
 			{
-				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+				hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 				if (hSerial == INVALID_HANDLE_VALUE)
 				{
-					hSerial = NULL;
+					hSerial = nullptr;
 				}
 				else
 				{
@@ -504,7 +504,7 @@ DWORD WINAPI SerialThread(LPVOID lpParam) {
 					{
 						CloseHandle(hSerial);
 						serialData.controllerCount = -1;
-						hSerial = NULL;
+						hSerial = nullptr;
 						break;
 					}
 					cmd = RASPBERRY_PI_GIP_POLL;
@@ -530,7 +530,7 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 
 SerialHandler::SerialHandler()
 {
-	hSerial = NULL;
+	hSerial = nullptr;
 	ScanForSerialDevices();
 }
 SerialHandler::~SerialHandler()
@@ -556,14 +556,14 @@ void SerialHandler::ScanForSerialDevices()
 				devicePort = devicePort.substr(0, 5);
 				comPath = L"\\\\.\\" + devicePort;
 				DWORD exitCode = 0;
-				if (hSerial == NULL)
+				if (hSerial == nullptr)
 				{
-					hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
+					hSerial = CreateThread(nullptr, 0, SerialThread, &comPath, 0, nullptr);
 				}
 				else if (GetExitCodeThread(hSerial, &exitCode) && exitCode != STILL_ACTIVE)
 				{
 					CloseHandle(hSerial);
-					hSerial = CreateThread(NULL, 0, SerialThread, &comPath, 0, NULL);
+					hSerial = CreateThread(nullptr, 0, SerialThread, &comPath, 0, nullptr);
 				}
 
 			}
@@ -579,7 +579,7 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 	}
 	PSP_DEVICE_INTERFACE_DETAIL_DATA_W deviceDetails = nullptr;
 	WCHAR* deviceName = nullptr;
-	HDEVINFO hdevInfo = SetupDiGetClassDevs(ClassGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+	HDEVINFO hdevInfo = SetupDiGetClassDevs(ClassGuid, nullptr, nullptr, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 	if (hdevInfo == INVALID_HANDLE_VALUE)
 	{
 		return FALSE;
@@ -592,7 +592,7 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 		ULONG DataSize = 0;
 		deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 		deviceData.cbSize = sizeof(SP_DEVINFO_DATA);
-		if (SetupDiEnumDeviceInterfaces(hdevInfo, NULL, ClassGuid, i, &deviceInterfaceData) == FALSE ||
+		if (SetupDiEnumDeviceInterfaces(hdevInfo, nullptr, ClassGuid, i, &deviceInterfaceData) == FALSE ||
 			SetupDiEnumDeviceInfo(hdevInfo, i, &deviceData) == FALSE)
 		{
 			if (GetLastError() != ERROR_NO_MORE_ITEMS) {
@@ -605,11 +605,11 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 			}
 		}
 		if (DeviceNames != nullptr) {
-			if (CM_Get_DevNode_Registry_PropertyW(deviceData.DevInst, CM_DRP_FRIENDLYNAME, NULL, NULL, &DataSize, 0) != CR_NO_SUCH_VALUE)
+			if (CM_Get_DevNode_Registry_PropertyW(deviceData.DevInst, CM_DRP_FRIENDLYNAME, nullptr, nullptr, &DataSize, 0) != CR_NO_SUCH_VALUE)
 			{
 				if (DataSize) {
 					deviceName = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, DataSize * sizeof(WCHAR) + 2);
-					if (CM_Get_DevNode_Registry_PropertyW(deviceData.DevInst, CM_DRP_FRIENDLYNAME, NULL, deviceName, &DataSize, 0) == CR_SUCCESS)
+					if (CM_Get_DevNode_Registry_PropertyW(deviceData.DevInst, CM_DRP_FRIENDLYNAME, nullptr, deviceName, &DataSize, 0) == CR_SUCCESS)
 					{
 						if (deviceName != 0) {
 							DeviceNames->push_back(deviceName);
@@ -621,13 +621,13 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 
 		}
 		deviceDetails = (PSP_DEVICE_INTERFACE_DETAIL_DATA_W)HeapAlloc(GetProcessHeap(), 0, MAX_PATH * sizeof(WCHAR) + sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W));
-		if (deviceDetails == NULL)
+		if (deviceDetails == nullptr)
 		{
 			SetupDiDestroyDeviceInfoList(hdevInfo);
 			return FALSE;
 		}
 		deviceDetails->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
-		if (SetupDiGetDeviceInterfaceDetailW(hdevInfo, &deviceInterfaceData, deviceDetails, MAX_PATH * sizeof(WCHAR) + sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W), NULL, NULL) == TRUE)
+		if (SetupDiGetDeviceInterfaceDetailW(hdevInfo, &deviceInterfaceData, deviceDetails, MAX_PATH * sizeof(WCHAR) + sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W), nullptr, nullptr) == TRUE)
 		{
 			std::wstring DevicePath = deviceDetails->DevicePath;
 			HeapFree(GetProcessHeap(), 0, deviceDetails);

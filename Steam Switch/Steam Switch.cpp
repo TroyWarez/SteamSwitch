@@ -25,8 +25,8 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 SteamHandler* steamHandler = nullptr;
-HDEVNOTIFY hDeviceSerial = NULL;
-HPOWERNOTIFY hPowerNotify = NULL;
+HDEVNOTIFY hDeviceSerial = nullptr;
+HPOWERNOTIFY hPowerNotify = nullptr;
 
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) SteamSwitchIcon;
@@ -142,7 +142,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_HIDE);
    UpdateWindow(hWnd);
 
-   if (hDeviceSerial == NULL)
+   if (hDeviceSerial == nullptr)
    {
 	   DEV_BROADCAST_DEVICEINTERFACE serialFilter = { };
 	   serialFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
@@ -150,12 +150,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   serialFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
 	   hDeviceSerial = RegisterDeviceNotification(hWnd, &serialFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
    }
-   if (hPowerNotify == NULL)
+   if (hPowerNotify == nullptr)
    {
 	   hPowerNotify = RegisterSuspendResumeNotification(hWnd, DEVICE_NOTIFY_WINDOW_HANDLE);
    }
 
-   while (FindWindowW(L"Shell_TrayWnd", NULL) == NULL)
+   while (FindWindowW(L"Shell_TrayWnd", nullptr) == nullptr)
    {
 	   Sleep(100);
    }
@@ -169,8 +169,8 @@ DWORD SetRegistryKeyString(HKEY hKey, LPCWSTR keyPath, LPCWSTR valueName, LPCWST
 {
 	if (length)
 	{
-		HKEY hKeyResult = NULL;
-		LONG result = RegCreateKeyExW(hKey, keyPath, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
+		HKEY hKeyResult = nullptr;
+		LONG result = RegCreateKeyExW(hKey, keyPath, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hKey, nullptr);
 		if (result == ERROR_SUCCESS)
 		{
 			RegSetValueExW(hKey, valueName, 0, REG_SZ, (const BYTE*)wstr, length);
@@ -291,7 +291,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			POINT p;
 			GetCursorPos(&p);
 			SetForegroundWindow(hWnd);
-			TrackPopupMenu(Hmenu, TPM_LEFTBUTTON, p.x, p.y, 0, hWnd, 0);
+			TrackPopupMenu(Hmenu, TPM_LEFTBUTTON, p.x, p.y, 0, hWnd, nullptr);
 			PostMessage(hWnd, WM_NULL, 0, 0);
 			break;
 		}
@@ -385,12 +385,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (hDeviceSerial)
 			{
 				UnregisterDeviceNotification(hDeviceSerial);
-				hDeviceSerial = NULL;
+				hDeviceSerial = nullptr;
 			}
 			if (hPowerNotify)
 			{
 				UnregisterSuspendResumeNotification(hPowerNotify);
-				hPowerNotify = NULL;
+				hPowerNotify = nullptr;
 			}
 			DestroyWindow(hWnd);
 			PostQuitMessage(0);
@@ -603,12 +603,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hDeviceSerial)
 		{
 			UnregisterDeviceNotification(hDeviceSerial);
-			hDeviceSerial = NULL;
+			hDeviceSerial = nullptr;
 		}
 		if (hPowerNotify)
 		{
 			UnregisterSuspendResumeNotification(hPowerNotify);
-			hPowerNotify = NULL;
+			hPowerNotify = nullptr;
 		}
         PostQuitMessage(0);
         break;

@@ -1,17 +1,17 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
-#include "RegGUID.h"
 #include <GenericInput.h>
 BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) {
-	HANDLE hEvents[3] = { NULL };
+	UNREFERENCED_PARAMETER(lpParam);
+	HANDLE hEvents[3] = { nullptr };
 	hEvents[0] = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
-	if (hEvents[0] == NULL)
+	if (hEvents[0] == nullptr)
 	{
 		return 1;
 	}
-	hEvents[1] = CreateEventW(NULL, TRUE, FALSE, L"FindIcueEvent");
+	hEvents[1] = CreateEventW(nullptr, TRUE, FALSE, L"FindIcueEvent");
 	if (!hEvents[1] && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hEvents[1] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
@@ -20,12 +20,12 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			ResetEvent(hEvents[1]);
 		}
 	}
-	if (hEvents[1] == NULL)
+	if (hEvents[1] == nullptr)
 	{
 		return 1;
 	}
 
-	hEvents[2] = CreateEventW(NULL, TRUE, FALSE, L"CloseIcueEvent");
+	hEvents[2] = CreateEventW(nullptr, TRUE, FALSE, L"CloseIcueEvent");
 	if (!hEvents[2] && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hEvents[2] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"CloseIcueEvent");
@@ -34,13 +34,13 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			ResetEvent(hEvents[2]);
 		}
 	}
-	if (hEvents[2] == NULL)
+	if (hEvents[2] == nullptr)
 	{
 		return 1;
 	}
 
 	bool iCueRunning = true;
-	HANDLE hICUEEvent = CreateEventW(NULL, TRUE, FALSE, L"ICUEEvent");
+	HANDLE hICUEEvent = CreateEventW(nullptr, TRUE, FALSE, L"ICUEEvent");
 	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hICUEEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ICUEEvent");
@@ -79,7 +79,8 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 				if (hWndIC)
 				{
-					PostMessage(hWndIC, 0x12, 0, 0);
+					SetForegroundWindow(hWndIC);
+					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
 					ResetEvent(hEvents[2]);
 				}
 				break;
@@ -95,12 +96,12 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 		if (hEvents[i])
 		{
 			CloseHandle(hEvents[i]);
-			hEvents[i] = NULL;
+			hEvents[i] = nullptr;
 		}
 	}
 	return 0;
 }
-BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
 	DWORD lpdwProcessId = 0;
 	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
@@ -130,8 +131,8 @@ SteamHandler::SteamHandler(HWND hWnd)
 	hidFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
 	HDEVNOTIFY hDeviceHID = RegisterDeviceNotificationW(mainHwnd, &hidFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
-	hBPEvent = CreateEventW(NULL, FALSE, FALSE, L"BPEvent");
-	if (hBPEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
 		if (hBPEvent)
@@ -139,8 +140,8 @@ SteamHandler::SteamHandler(HWND hWnd)
 			ResetEvent(hBPEvent);
 		}
 	}
-	hShutdownEvent = CreateEventW(NULL, TRUE, FALSE, L"ShutdownEvent");
-	if (hShutdownEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	hShutdownEvent = CreateEventW(nullptr, TRUE, FALSE, L"ShutdownEvent");
+	if (hShutdownEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hShutdownEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ShutdownEvent");
 		if (hShutdownEvent)
@@ -149,8 +150,8 @@ SteamHandler::SteamHandler(HWND hWnd)
 		}
 	}
 
-	hFindIcueEvent = CreateEventW(NULL, TRUE, FALSE, L"FindIcueEvent");
-	if (hFindIcueEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	hFindIcueEvent = CreateEventW(nullptr, TRUE, FALSE, L"FindIcueEvent");
+	if (hFindIcueEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hFindIcueEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
 		if (hFindIcueEvent)
@@ -159,8 +160,8 @@ SteamHandler::SteamHandler(HWND hWnd)
 		}
 	}
 
-	hCloseIcueEvent = CreateEventW(NULL, TRUE, FALSE, L"CloseIcueEvent");
-	if (hCloseIcueEvent == NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+	hCloseIcueEvent = CreateEventW(nullptr, TRUE, FALSE, L"CloseIcueEvent");
+	if (hCloseIcueEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hCloseIcueEvent = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"CloseIcueEvent");
 		if (hCloseIcueEvent)
@@ -169,9 +170,9 @@ SteamHandler::SteamHandler(HWND hWnd)
 		}
 	}
 
-	hICUEThread = NULL;
-	hCECThread = NULL;
-	hSerialThread = NULL;
+	hICUEThread = nullptr;
+	hCECThread = nullptr;
+	hSerialThread = nullptr;
 
 	steamPid = getSteamPid();
 	gamePid = 0;
@@ -192,17 +193,17 @@ SteamHandler::~SteamHandler()
 	if (hShutdownEvent)
 	{
 		CloseHandle(hShutdownEvent);
-		hShutdownEvent = NULL;
+		hShutdownEvent = nullptr;
 	}
 	if (hBPEvent)
 	{
 		CloseHandle(hBPEvent);
-		hBPEvent = NULL;
+		hBPEvent = nullptr;
 	}
 	if (hFindIcueEvent)
 	{
 		CloseHandle(hFindIcueEvent);
-		hFindIcueEvent = NULL;
+		hFindIcueEvent = nullptr;
 	}
 	if (monHandler)
 	{
@@ -269,11 +270,11 @@ int SteamHandler::StartSteamHandler()
 	POINT deskCursorPos = { 0 };
 
 	MSG msg;
-	WCHAR programFiles[MAX_PATH] = { 0 };
-	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
-	std::wstring programFilesPath(programFiles);
+	std::array<WCHAR, MAX_PATH> programFiles = { 0 };
+	ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
+	std::wstring programFilesPath(programFiles.data());
 	programFilesPath = programFilesPath + L"\\Corsair\\Corsair iCUE5 Software\\iCUE Launcher.exe";
-	HANDLE hiCueTestFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hiCueTestFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hiCueTestFile == INVALID_HANDLE_VALUE)
 	{
 		programFilesPath = L"";
@@ -282,15 +283,15 @@ int SteamHandler::StartSteamHandler()
 	{
 		isIcueInstalled = true;
 		CloseHandle(hiCueTestFile);
-		if (hICUEThread == NULL)
+		if (hICUEThread == nullptr)
 		{
-			hICUEThread = CreateThread(NULL, 0, ICUEThread, 0, 0, NULL);
+			hICUEThread = CreateThread(nullptr, 0, ICUEThread, nullptr, 0, nullptr);
 		}
 	}
 	serialHandler.ScanForSerialDevices();
 	while (true)
 	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
 			{
@@ -305,14 +306,14 @@ int SteamHandler::StartSteamHandler()
 			if (isSteamRunning())
 			{
 				HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
-				if (hWnd == NULL)// Don't place anything here.
+				if (hWnd == nullptr)// Don't place anything here.
 				{
 					HWND foreHwnd = GetForegroundWindow();
 
 					WCHAR windowTitle[256] = { 0 };
 					GetWindowTextW(foreHwnd, windowTitle, 256);
 					std::wstring title(windowTitle);
-					std::wstring subtitle = L"";
+					std::wstring subtitle;
 					if (title.size() > 5)
 					{
 						subtitle = title.substr(0, 5);
@@ -364,7 +365,7 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
 
-						if (!monHandler->ToggleMode((programFilesPath != L"")))
+						if (!monHandler->ToggleMode((!programFilesPath.empty())))
 						{
 							INPUT inputs[4] = {};
 							ZeroMemory(inputs, sizeof(inputs));
@@ -388,17 +389,17 @@ int SteamHandler::StartSteamHandler()
 						}
 
 						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
-						if (programFilesPath != L"")
+						if (!programFilesPath.empty())
 						{
 							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
 							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
 							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
 							sei.lpFile = programFilesPath.c_str();        // File to execute
 							sei.nShow = SW_MINIMIZE;       // How to show the window
-							HANDLE hProcessiCue = NULL;
+							HANDLE hProcessiCue = nullptr;
 
 							if (ShellExecuteExW(&sei)) {
-								if (sei.hProcess != NULL) {
+								if (sei.hProcess != nullptr) {
 									hProcessiCue = sei.hProcess;
 									iCueRunning = true;
 								}
@@ -410,14 +411,14 @@ int SteamHandler::StartSteamHandler()
 						}
 						steamBigPictureModeTitle = title;
 
-						//HWND eH = FindWindowW(L"Progman", NULL);
+						//HWND eH = FindWindowW(L"Progman", nullptr);
 						//GetWindowThreadProcessId(eH, &PID);
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						isSteamInBigPictureMode = true;
-						ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_HIDE);
+						ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_HIDE);
 						while (true)
 						{
-							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 							{
 								if (msg.message == WM_QUIT)
 								{
@@ -438,7 +439,7 @@ int SteamHandler::StartSteamHandler()
 						}
 						while (isSteamInBigPictureMode)
 						{
-							if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 							{
 								if (msg.message == WM_QUIT)
 								{
@@ -454,9 +455,9 @@ int SteamHandler::StartSteamHandler()
 								{
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
-									if (hWndBP == NULL) { // Big picture mode closed
+									if (hWndBP == nullptr) { // Big picture mode closed
 										AddOrRemoveNotificationIcon(hWnd, TRUE);
-										if (programFilesPath != L"")
+										if (!programFilesPath.empty())
 										{
 											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)
 											{
@@ -467,8 +468,8 @@ int SteamHandler::StartSteamHandler()
 
 										HWND hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
 										//SetWindowLongW(hWndDesk, GWL_STYLE, wndLong);
-										monHandler->ToggleMode((programFilesPath != L""));
-										ShowWindow(FindWindowW(L"Shell_TrayWnd", NULL), SW_SHOW);
+										monHandler->ToggleMode((!programFilesPath.empty()));
+										ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_SHOW);
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
@@ -514,29 +515,26 @@ int SteamHandler::StartSteamHandler()
 
 										break;
 									}
-									else
+									if (iCueRunning && hWndBP &&
+										!programFilesPath.empty())
 									{
-										if (iCueRunning && hWndBP &&
-											programFilesPath != L"")
-										{
-											iCueRunning = false;
-										}
-										if (!isSteamInGame())
-										{
+										iCueRunning = false;
+									}
+									if (!isSteamInGame())
+									{
 
-											HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", NULL);
-											if (consoleHwnd)
-											{
-												ShowWindow(consoleHwnd, SW_MINIMIZE);
-											}
-											HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", NULL);
-											if (consoleHwndAlt)
-											{
-												ShowWindow(consoleHwndAlt, SW_MINIMIZE);
-											}
+										HWND consoleHwnd = FindWindowW(L"ConsoleWindowClass", nullptr);
+										if (consoleHwnd)
+										{
+											ShowWindow(consoleHwnd, SW_MINIMIZE);
 										}
+										HWND consoleHwndAlt = FindWindowW(L"CASCADIA_HOSTING_WINDOW_CLASS", nullptr);
+										if (consoleHwndAlt)
+										{
+											ShowWindow(consoleHwndAlt, SW_MINIMIZE);
 										}
 									}
+								}
 								}
 								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
 								if (dwResult == ERROR_SUCCESS)
@@ -627,13 +625,13 @@ int SteamHandler::StartSteamHandler()
 											}
 											else if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 											{
-												WCHAR programFiles[MAX_PATH] = { 0 };
-												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles, MAX_PATH);
-												std::wstring programFilesPath(programFiles);
-												std::wstring programCommonFilesPath(programFiles);
+												std::array<WCHAR, MAX_PATH> programFiles = { 0 };
+												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
+												std::wstring programFilesPath(programFiles.data());
+												std::wstring programCommonFilesPath(programFiles.data());
 												programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
 												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
-												ShellExecuteW(NULL, L"open", programFilesPath.c_str(), NULL, programCommonFilesPath.c_str(), SW_HIDE);
+												ShellExecuteW(nullptr, L"open", programFilesPath.c_str(), nullptr, programCommonFilesPath.c_str(), SW_HIDE);
 												Sleep(10);
 												if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 												{
@@ -728,7 +726,7 @@ int SteamHandler::StartSteamHandler()
 												xticksAudio.QuadPart != 0)
 											{
 												audioHandler->ToggleAudioDevice();
-												PlaySoundW(L"SystemExclamation", NULL, SND_ALIAS | SND_ASYNC);
+												PlaySoundW(L"SystemExclamation", nullptr, SND_ALIAS | SND_ASYNC);
 												xticksAudio = { 0 };
 												xticksAudio2 = { 2 };
 												AudioCordPressed = true;
@@ -873,13 +871,13 @@ int SteamHandler::StartSteamHandler()
 }
 int SteamHandler::getSteamPid()
 {
-	HKEY hKey = NULL;
+	HKEY hKey = nullptr;
 	if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam\\ActiveProcess", 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)
 	{
 		DWORD type = REG_DWORD;
 		DWORD pid = 0;
 		DWORD pidSize = sizeof(pid);
-		if (RegQueryValueExW(hKey, L"pid", NULL, &type, (BYTE*)&pid, &pidSize) == ERROR_SUCCESS)
+		if (RegQueryValueExW(hKey, L"pid", nullptr, &type, (BYTE*)&pid, &pidSize) == ERROR_SUCCESS)
 		{
 			CloseHandle(hKey);
 			return pid;
@@ -892,7 +890,7 @@ bool SteamHandler::isSteamInGame()
 {
 	steamPid = getSteamPid();
 	std::vector <std::wstring> processNames;
-	ULONG_PTR pbi[6];
+	ULONG_PTR pbi[6] = { 0 };
 	ULONG ulSize = 0;
 	HMODULE hMods[1024] = { 0 };
 	DWORD cbNeeded = 0;
@@ -958,7 +956,7 @@ bool SteamHandler::isSteamRunning()
 	}
 	return false;
 }
-bool SteamHandler::getSteamFocus()
+const bool SteamHandler::getSteamFocus()
 {
 	return isSteamFocused;
 }

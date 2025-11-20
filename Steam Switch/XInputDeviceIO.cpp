@@ -9,20 +9,20 @@ void xbox_init()
 	HANDLE new_handles[XBOX_MAX_CONTROLLERS];
 	ZeroMemory(new_handles, sizeof(new_handles));
 
-	HDEVINFO dev = SetupDiGetClassDevsW(&xbox_guid, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+	HDEVINFO dev = SetupDiGetClassDevsW(&xbox_guid, nullptr, nullptr, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
 	if (dev != INVALID_HANDLE_VALUE)
 	{
 		SP_DEVICE_INTERFACE_DATA idata;
 		idata.cbSize = sizeof(idata);
 
 		DWORD index = 0;
-		while (SetupDiEnumDeviceInterfaces(dev, NULL, &xbox_guid, index, &idata))
+		while (SetupDiEnumDeviceInterfaces(dev, nullptr, &xbox_guid, index, &idata))
 		{
 			DWORD size;
-			SetupDiGetDeviceInterfaceDetailW(dev, &idata, NULL, 0, &size, NULL);
+			SetupDiGetDeviceInterfaceDetailW(dev, &idata, nullptr, 0, &size, nullptr);
 
 			PSP_DEVICE_INTERFACE_DETAIL_DATA_W detail = (PSP_DEVICE_INTERFACE_DETAIL_DATA_W)LocalAlloc(LMEM_FIXED, size);
-			if (detail != NULL)
+			if (detail != nullptr)
 			{
 				detail->cbSize = sizeof(*detail); // yes, sizeof of structure, not allocated memory
 
@@ -47,13 +47,13 @@ int xbox_connect(LPWSTR path)
 	for (DWORD i = 0; i < XBOX_MAX_CONTROLLERS; i++)
 	{
 		// yes, _wcsicmp, because SetupDi* functions and WM_DEVICECHANGE message provides different case paths...
-		if (xbox_devices[i].handle != NULL && _wcsicmp(xbox_devices[i].path, path) == 0)
+		if (xbox_devices[i].handle != nullptr && _wcsicmp(xbox_devices[i].path, path) == 0)
 		{
 			return i;
 		}
 	}
 
-	HANDLE handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (handle == INVALID_HANDLE_VALUE)
 	{
 		return -1;
@@ -61,7 +61,7 @@ int xbox_connect(LPWSTR path)
 
 	for (DWORD i = 0; i < XBOX_MAX_CONTROLLERS; i++)
 	{
-		if (xbox_devices[i].handle == NULL)
+		if (xbox_devices[i].handle == nullptr)
 		{
 			xbox_devices[i].handle = handle;
 			//wcsncpy(xbox_devices[i].path, path, MAX_PATH);
@@ -77,10 +77,10 @@ int xbox_disconnect(LPWSTR path)
 {
 	for (DWORD i = 0; i < XBOX_MAX_CONTROLLERS; i++)
 	{
-		if (xbox_devices[i].handle != NULL && _wcsicmp(xbox_devices[i].path, path) == 0)
+		if (xbox_devices[i].handle != nullptr && _wcsicmp(xbox_devices[i].path, path) == 0)
 		{
 			CloseHandle(xbox_devices[i].handle);
-			xbox_devices[i].handle = NULL;
+			xbox_devices[i].handle = nullptr;
 			return i;
 		}
 	}
@@ -90,7 +90,7 @@ int xbox_disconnect(LPWSTR path)
 
 int xbox_get_caps(DWORD index, xbox_caps* caps)
 {
-	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == NULL)
+	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
@@ -98,7 +98,7 @@ int xbox_get_caps(DWORD index, xbox_caps* caps)
 	BYTE in[3] = { 0x01, 0x01, 0x00 };
 	BYTE out[24];
 	DWORD size;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e004, in, sizeof(in), out, sizeof(out), &size, NULL) || size != sizeof(out))
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e004, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;
@@ -121,7 +121,7 @@ int xbox_get_caps(DWORD index, xbox_caps* caps)
 
 int xbox_get_battery(DWORD index, xbox_battery* bat)
 {
-	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == NULL)
+	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
@@ -129,7 +129,7 @@ int xbox_get_battery(DWORD index, xbox_battery* bat)
 	BYTE in[4] = { 0x02, 0x01, 0x00, 0x00 };
 	BYTE out[4];
 	DWORD size;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e018, in, sizeof(in), out, sizeof(out), &size, NULL) || size != sizeof(out))
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e018, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;
@@ -143,7 +143,7 @@ int xbox_get_battery(DWORD index, xbox_battery* bat)
 
 int xbox_get(DWORD index, XINPUT_STATE* state)
 {
-	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == NULL)
+	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
@@ -153,7 +153,7 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 
 	DWORD size;
 	DWORD dwResult = ERROR_SUCCESS;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in, sizeof(in), out, sizeof(out), &size, NULL) || size != sizeof(out))
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return XInputGetState(index, state);
@@ -169,13 +169,13 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 
 int xbox_set(DWORD index, BYTE low_freq, BYTE high_freq)
 {
-	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == NULL)
+	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
 
 	BYTE in[5] = { 0, 0, low_freq, high_freq, 2 };
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000a010, in, sizeof(in), NULL, 0, NULL, NULL))
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000a010, in, sizeof(in), nullptr, 0, nullptr, nullptr))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;
