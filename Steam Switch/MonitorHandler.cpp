@@ -1,13 +1,11 @@
 #include "MonitorHandler.h"
 #include "SteamHandler.h"
 #include "AudioHandler.h"
-#include <iostream>
 #include <cecloader.h>
 #include <vector>
-#include <debugapi.h>
 extern AudioHandler audioHandler;
 // It may be be possible to have two cec usb devices on the same cable
-DWORD WINAPI CecPowerThread(LPVOID lpParam) {
+static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (FAILED(CoInitialize(nullptr)))
 	{
 		return 1;

@@ -1,8 +1,6 @@
 // cl.exe xbox_test.c /link setupapi.lib user32.lib
 #include "XInputDeviceIO.h"
 #include "framework.h"
-
-#include <cstdio>
 void xbox_init()
 {
 	DWORD count = 0;
@@ -11,7 +9,7 @@ void xbox_init()
 	HDEVINFO dev = SetupDiGetClassDevsW(&xbox_guid, nullptr, nullptr, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
 	if (dev != INVALID_HANDLE_VALUE)
 	{
-		SP_DEVICE_INTERFACE_DATA idata;
+		SP_DEVICE_INTERFACE_DATA idata = { 0x0 };
 		idata.cbSize = sizeof(idata);
 
 		DWORD index = 0;
@@ -25,7 +23,7 @@ void xbox_init()
 			{
 				detail->cbSize = sizeof(*detail); // yes, sizeof of structure, not allocated memory
 
-				SP_DEVINFO_DATA data;
+				SP_DEVINFO_DATA data = { 0x0 };;
 				data.cbSize = sizeof(data);
 
 				if (SetupDiGetDeviceInterfaceDetailW(dev, &idata, detail, size, &size, &data))
@@ -177,47 +175,4 @@ DWORD xbox_set(DWORD index, BYTE low_freq, BYTE high_freq)
 		return -1;
 	}
 	return 0;
-}
-
-
-/// example code
-
-LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
-{
-	switch (message)
-	{
-	case WM_DEVICECHANGE:
-	{
-		DEV_BROADCAST_HDR* hdr = (DEV_BROADCAST_HDR*)lparam;
-		if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
-		{
-			DEV_BROADCAST_DEVICEINTERFACE_W* dif = (DEV_BROADCAST_DEVICEINTERFACE_W*)hdr;
-			if (wparam == DBT_DEVICEARRIVAL)
-			{
-				DWORD index = xbox_connect(dif->dbcc_name);
-
-				xbox_caps caps;
-				xbox_battery bat;
-				if (xbox_get_caps(index, &caps) == 0 && xbox_get_battery(index, &bat) == 0)
-				{
-					printf("[%u] Type=%u SubType=%u ButtonsMask=%04x BatteryType=%u BatteryLevel=%u\n", index, caps.type, caps.subtype, caps.buttons, bat.type, bat.level);
-				}
-			}
-			else if (wparam == DBT_DEVICEREMOVECOMPLETE)
-			{
-				DWORD index = xbox_disconnect(dif->dbcc_name);
-				printf("[%u] Disconnected\n", index);
-			}
-		}
-		return 0;
-	}
-
-	case WM_DESTROY:
-	{
-		PostQuitMessage(0);
-		return 0;
-	}
-	}
-
-	return DefWindowProcW(window, message, wparam, lparam);
 }
