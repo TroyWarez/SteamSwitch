@@ -2,25 +2,25 @@
 #include "SerialHandler.h"
 #include "SteamHandler.h"
 
-#define PI_VID L"0525"
-#define PI_PID L"a4a7"
+constexpr LPCWSTR PI_VID = L"0525";
+constexpr LPCWSTR PI_PID = L"a4a7";
 
 // GIP Polling Command
-#define RASPBERRY_PI_GIP_POLL 0xaf
-#define RASPBERRY_PI_GIP_SYNC 0xb0
-#define RASPBERRY_PI_GIP_CLEAR 0xb1
-#define RASPBERRY_PI_GIP_LOCK 0xb2
-#define RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER 0xb4
-#define NBOFEVENTS 7
+constexpr int RASPBERRY_PI_GIP_POLL = 0xaf;
+constexpr int RASPBERRY_PI_GIP_SYNC = 0xb0;
+constexpr int RASPBERRY_PI_GIP_CLEAR = 0xb1;
+constexpr int RASPBERRY_PI_GIP_LOCK = 0xb2;
+constexpr int RASPBERRY_PI_CLEAR_NEXT_SYNCED_CONTROLLER = 0xb4;
+constexpr int NBOFEVENTS = 7;
 
 // Power Status Responses
-#define PWR_STATUS_PI 0xef
-#define PWR_STATUS_OTHER 0xaf
+constexpr int PWR_STATUS_PI = 0xef;
+constexpr int PWR_STATUS_OTHER = 0xaf;
 
 extern SteamHandler* steamHandler;
 extern GIPSerialData serialData;
 
-BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
+static BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 {
 	OVERLAPPED osRead = { 0 };
 	DWORD dwRead = 0;
@@ -82,7 +82,7 @@ BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 	return fRes;
 }
 
-BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
+static BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 {
 	OVERLAPPED osWrite = { 0 };
 	DWORD dwWrite = 0;
@@ -141,7 +141,7 @@ BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 	}
 	return fRes;
 }
-DWORD WINAPI SerialThread(LPVOID lpParam) {
+static DWORD WINAPI SerialThread(LPVOID lpParam) {
 	std::wstring* comPath = (std::wstring*)lpParam;
 	HANDLE hSerial = CreateFileW(comPath->c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 	if (hSerial == INVALID_HANDLE_VALUE)

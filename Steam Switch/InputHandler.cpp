@@ -2,7 +2,7 @@
 #include "SteamHandler.h"
 #include "XInputDeviceIO.h"
 extern SteamHandler* steamHandler;
-#define MOUSE_OFFSET 0.1111
+constexpr double MOUSE_OFFSET = 0.1111;
 InputHandler::InputHandler()
 {
 	hXInputDLL = nullptr;
@@ -134,5 +134,5 @@ const void InputHandler::turnOffXinputController()
 }
 DWORD InputHandler::GetXInputStateDeviceIO(DWORD index, PXINPUT_STATE pXstate)
 {
-	return xbox_get(0, pXstate);
+	return xbox_get(index, pXstate);
 }

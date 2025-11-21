@@ -2,19 +2,24 @@
 // Microsoft Visual C++ generated include file.
 // Used by Steam Switch.rc
 
-#define IDS_APP_TITLE			103
+#define IDS_APP_TITLE			  103
 
-#define IDR_MAINFRAME			128
-#define IDD_STEAMSWITCH_DIALOG	102
-#define IDD_ABOUTBOX			103
-#define IDM_ABOUT				104
-#define IDM_EXIT				105
-#define IDI_STEAMSWITCH			107
-#define IDI_SMALL				108
-#define IDC_STEAMSWITCH			109
-#define IDC_MYICON				2
+#define IDR_MAINFRAME			  128
+#define IDD_STEAMSWITCH_DIALOG	  102
+#define IDD_ABOUTBOX			  103
+#define IDM_ABOUT				  104
+#define IDM_EXIT				  105
+#define IDM_SYNC				  106
+#define IDM_CLEAR				  107
+#define IDM_CLEAR_SINGLE		  108
+#define IDM_DEVICE_NOT_FOUND	  109
+#define IDM_DEVICE_NOT_FOUND_EXIT 110
+#define IDI_STEAMSWITCH			  107
+#define IDI_SMALL				  108
+#define IDC_STEAMSWITCH			  109
+#define IDC_MYICON				  2
 #ifndef IDC_STATIC
-#define IDC_STATIC				-1
+#define IDC_STATIC				 -1
 #endif
 // Next default values for new objects
 //

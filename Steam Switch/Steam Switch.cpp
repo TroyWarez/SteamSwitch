@@ -8,18 +8,14 @@
 #include "MonitorHandler.h"
 #include "RegGUID.h"
 #include <GenericInput.h>
-#define MAX_LOADSTRING 100 
-#define APPWM_ICONNOTIFY (WM_APP + 1)
-#define MB_WAIT_TIMEOUT 30000 // 30 seconds
-#define IDM_EXIT 105
-#define IDM_SYNC 106
-#define IDM_CLEAR 107
-#define IDM_CLEAR_SINGLE 108
-#define IDM_DEVICE_NOT_FOUND 109
-#define IDM_DEVICE_NOT_FOUND_EXIT 110
-#define NBOFEVENTS 6
-#define NBOFTHREADS 3
-#define WAIT_TIMEOUT_AMOUNT 6000
+constexpr int MAX_LOADSTRING = 100;
+constexpr int APPWM_ICONNOTIFY = (WM_APP + 1);
+constexpr int MB_WAIT_TIMEOUT = 30000; // 30 seconds
+
+constexpr int NBOFEVENTS = 6;
+constexpr int NBOFTHREADS = 3;
+constexpr int WAIT_TIMEOUT_AMOUNT = 6000; // 6 seconds
+
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text

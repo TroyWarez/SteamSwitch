@@ -5,12 +5,12 @@
 #include "SerialHandler.h"
 #include "AudioHandler.h"
 
-#define STEAM_DESK L"Steam"
-#define SDL_CLASS L"SDL_app"
-#define ICUE_CLASS L"Qt672QWindowIcon"
+constexpr LPCWSTR STEAM_DESK = L"Steam";
+constexpr LPCWSTR SDL_CLASS = L"SDL_app";
+constexpr LPCWSTR ICUE_CLASS = L"Qt672QWindowIcon";
 constexpr LPCWSTR ICUE_TITLE = L"iCUE";
-#define MOUSE_WAKETIME 50000000
-#define CONTROLLER_WAKETIME 20000000
+constexpr int MOUSE_WAKETIME = 50000000;
+constexpr int CONTROLLER_WAKETIME = 20000000;
 DWORD WINAPI ICUEThread(LPVOID lpParam);
 class SteamHandler
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include "framework.h"
-#define MAX_REFRESH_RATE_DSC 360113
+constexpr int MAX_REFRESH_RATE_DSC = 360113;
 class MonitorHandler
 {
 public:

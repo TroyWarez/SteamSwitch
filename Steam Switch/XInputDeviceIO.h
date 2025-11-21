@@ -1,23 +1,23 @@
 #pragma once
 /// interface
 #include "framework.h"
-#define XBOX_MAX_CONTROLLERS 16
+constexpr int XBOX_MAX_CONTROLLERS = 16;
 
-#define XBOX_DPAD_UP          0x0001
-#define XBOX_DPAD_DOWN        0x0002
-#define XBOX_DPAD_LEFT        0x0004
-#define XBOX_DPAD_RIGHT       0x0008
-#define XBOX_START            0x0010 // or "view"
-#define XBOX_BACK             0x0020 // or "menu"
-#define XBOX_LEFT_THUMB       0x0040
-#define XBOX_RIGHT_THUMB      0x0080
-#define XBOX_LEFT_SHOULDER    0x0100
-#define XBOX_RIGHT_SHOULDER   0x0200
-#define XBOX_GUIDE            0x0400 // or "xbox" button
-#define XBOX_A                0x1000
-#define XBOX_B                0x2000
-#define XBOX_X                0x4000
-#define XBOX_Y                0x8000
+constexpr int XBOX_DPAD_UP = 0x0001;
+constexpr int XBOX_DPAD_DOWN = 0x0002;
+constexpr int XBOX_DPAD_LEFT = 0x0004;
+constexpr int XBOX_DPAD_RIGHT = 0x0008;
+constexpr int XBOX_START = 0x0010; // or "view"
+constexpr int XBOX_BACK = 0x0020; // or "menu"
+constexpr int XBOX_LEFT_THUMB = 0x0040;
+constexpr int XBOX_RIGHT_THUMB = 0x0080;
+constexpr int XBOX_LEFT_SHOULDER = 0x0100;
+constexpr int XBOX_RIGHT_SHOULDER = 0x0200;
+constexpr int XBOX_GUIDE = 0x0400; // or "xbox" button
+constexpr int XBOX_A = 0x1000;
+constexpr int XBOX_B = 0x2000;
+constexpr int XBOX_X = 0x4000;
+constexpr int XBOX_Y = 0x8000;
 
 typedef struct
 {
