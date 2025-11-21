@@ -2,12 +2,11 @@
 #include "XInputDeviceIO.h"
 #include "framework.h"
 
-#include <stdio.h>
+#include <cstdio>
 void xbox_init()
 {
 	DWORD count = 0;
-	HANDLE new_handles[XBOX_MAX_CONTROLLERS];
-	ZeroMemory(new_handles, sizeof(new_handles));
+	std::array<HANDLE, XBOX_MAX_CONTROLLERS> windowsDir = { nullptr };
 
 	HDEVINFO dev = SetupDiGetClassDevsW(&xbox_guid, nullptr, nullptr, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
 	if (dev != INVALID_HANDLE_VALUE)
@@ -18,7 +17,7 @@ void xbox_init()
 		DWORD index = 0;
 		while (SetupDiEnumDeviceInterfaces(dev, nullptr, &xbox_guid, index, &idata))
 		{
-			DWORD size;
+			DWORD size = 0;
 			SetupDiGetDeviceInterfaceDetailW(dev, &idata, nullptr, 0, &size, nullptr);
 
 			PSP_DEVICE_INTERFACE_DETAIL_DATA_W detail = (PSP_DEVICE_INTERFACE_DETAIL_DATA_W)LocalAlloc(LMEM_FIXED, size);
@@ -42,7 +41,7 @@ void xbox_init()
 	}
 }
 
-int xbox_connect(LPWSTR path)
+DWORD xbox_connect(LPWSTR path)
 {
 	for (DWORD i = 0; i < XBOX_MAX_CONTROLLERS; i++)
 	{
@@ -73,7 +72,7 @@ int xbox_connect(LPWSTR path)
 	return -1;
 }
 
-int xbox_disconnect(LPWSTR path)
+DWORD xbox_disconnect(LPWSTR path)
 {
 	for (DWORD i = 0; i < XBOX_MAX_CONTROLLERS; i++)
 	{
@@ -88,17 +87,16 @@ int xbox_disconnect(LPWSTR path)
 	return -1;
 }
 
-int xbox_get_caps(DWORD index, xbox_caps* caps)
+DWORD xbox_get_caps(DWORD index, xbox_caps* caps)
 {
 	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
-
-	BYTE in[3] = { 0x01, 0x01, 0x00 };
-	BYTE out[24];
-	DWORD size;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e004, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
+	std::array<BYTE, 3> in = { 0x01, 0x01, 0x00 };
+	std::array<BYTE, 24> out = { 0x00 };
+	DWORD size = 0;
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e004, in.data(), static_cast<DWORD>(in.size()), out.data(), static_cast<DWORD>(out.size()), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;
@@ -107,29 +105,28 @@ int xbox_get_caps(DWORD index, xbox_caps* caps)
 	caps->type = out[2];
 	caps->subtype = out[3];
 	caps->flags = 4; // yes, always 4
-	caps->buttons = *(WORD*)(out + 4);
+	caps->buttons = *(WORD*)(out.data() + 4);
 	caps->left_trigger = out[6];
 	caps->right_trigger = out[7];
-	caps->left_thumb_x = *(SHORT*)(out + 8);
-	caps->left_thumb_y = *(SHORT*)(out + 10);
-	caps->right_thumb_x = *(SHORT*)(out + 12);
-	caps->right_thumb_y = *(SHORT*)(out + 14);
+	caps->left_thumb_x = *(SHORT*)(out.data() + 8);
+	caps->left_thumb_y = *(SHORT*)(out.data() + 10);
+	caps->right_thumb_x = *(SHORT*)(out.data() + 12);
+	caps->right_thumb_y = *(SHORT*)(out.data() + 14);
 	caps->low_freq = out[22];
 	caps->high_freq = out[23];
 	return 0;
 }
 
-int xbox_get_battery(DWORD index, xbox_battery* bat)
+DWORD xbox_get_battery(DWORD index, xbox_battery* bat)
 {
 	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
-
-	BYTE in[4] = { 0x02, 0x01, 0x00, 0x00 };
-	BYTE out[4];
-	DWORD size;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e018, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
+	std::array<BYTE, 4> in = { 0x02, 0x01, 0x00, 0x00 };
+	std::array<BYTE, 4> out = { 0x00 };
+	DWORD size = 0;
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e018, in.data(), static_cast<DWORD>(in.size()), out.data(), static_cast<DWORD>(out.size()), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;
@@ -141,25 +138,24 @@ int xbox_get_battery(DWORD index, xbox_battery* bat)
 }
 
 
-int xbox_get(DWORD index, XINPUT_STATE* state)
+DWORD xbox_get(DWORD index, XINPUT_STATE* state)
 {
 	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
+	std::array<BYTE, 3> in = { 0x01, 0x01, 0x00 };
+	std::array<BYTE, 29> out = { 0x00 };
 
-	BYTE in[3] = { 0x01, 0x01, 0x00 };
-	BYTE out[29];
-
-	DWORD size;
+	DWORD size = 0;
 	DWORD dwResult = ERROR_SUCCESS;
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in, sizeof(in), out, sizeof(out), &size, nullptr) || size != sizeof(out))
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000e00c, in.data(), static_cast<DWORD>(in.size()), out.data(), static_cast<DWORD>(out.size()), &size, nullptr) || size != sizeof(out))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return XInputGetState(index, state);
 	}
 	dwResult = XInputGetState(index, state);
-	WORD Buttons = *(WORD*)(out + 11);
+	WORD Buttons = *(WORD*)(out.data() + 11);
 	if (Buttons & XBOX_GUIDE && state)
 	{
 		state->Gamepad.wButtons = state->Gamepad.wButtons | XBOX_GUIDE;
@@ -167,15 +163,15 @@ int xbox_get(DWORD index, XINPUT_STATE* state)
 	return ERROR_SUCCESS;
 }
 
-int xbox_set(DWORD index, BYTE low_freq, BYTE high_freq)
+DWORD xbox_set(DWORD index, BYTE low_freq, BYTE high_freq)
 {
 	if (index >= XBOX_MAX_CONTROLLERS || xbox_devices[index].handle == nullptr)
 	{
 		return -1;
 	}
 
-	BYTE in[5] = { 0, 0, low_freq, high_freq, 2 };
-	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000a010, in, sizeof(in), nullptr, 0, nullptr, nullptr))
+	std::array<BYTE, 5> in = { 0, 0, low_freq, high_freq, 2 };
+	if (!DeviceIoControl(xbox_devices[index].handle, 0x8000a010, in.data(), static_cast<DWORD>(in.size()), nullptr, 0, nullptr, nullptr))
 	{
 		// NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
 		return -1;

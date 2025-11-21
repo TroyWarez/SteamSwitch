@@ -10,11 +10,11 @@ public:
 	};
 	MonitorHandler(MonitorMode mode);
 	~MonitorHandler();
-	void setMonitorMode(MonitorMode mode);
+	const void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
-	bool ToggleMode(bool isIcueInstalled);
+	const bool ToggleMode();
 	void StartCecPowerThread(void* stmPtr);
-	int getActiveMonitorCount();
+	UINT32 getActiveMonitorCount();
 	bool isSingleDisplayHDMI();
 	bool isDSCEnabled();
 	HANDLE hCECThread;
@@ -25,5 +25,5 @@ public:
 	bool icueInstalled;
 private:
 	MonitorMode currentMode;
-	bool ToggleActiveMonitors(MonitorMode mode);
+	const bool ToggleActiveMonitors(MonitorMode mode);
 };

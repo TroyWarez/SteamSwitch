@@ -60,17 +60,17 @@ void xbox_init();
 
 // add new device, call this from WM_DEVICECHANGE message when wparam is DBT_DEVICEARRIVAL
 // returns index on success, or negative number on failure
-int xbox_connect(LPWSTR path);
+DWORD xbox_connect(LPWSTR path);
 
 // removes existing device, call this from WM_DEVICECHANGE message when wparam is DBT_DEVICEREMOVECOMPLETE
 // returns index on success, or negative number on failure (wrong path)
-int xbox_disconnect(LPWSTR path);
+DWORD xbox_disconnect(LPWSTR path);
 
 // functions return 0 on success, negative value most likely means disconnect
-int xbox_get_caps(DWORD index, xbox_caps* caps);
-int xbox_get_battery(DWORD index, xbox_battery* bat);
-int xbox_get(DWORD index, XINPUT_STATE* state);
-int xbox_set(DWORD index, BYTE low_freq, BYTE high_freq);
+DWORD xbox_get_caps(DWORD index, xbox_caps* caps);
+DWORD xbox_get_battery(DWORD index, xbox_battery* bat);
+DWORD xbox_get(DWORD index, XINPUT_STATE* state);
+DWORD xbox_set(DWORD index, BYTE low_freq, BYTE high_freq);
 
 
 /// implementation

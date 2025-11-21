@@ -31,7 +31,7 @@ GIPSerialData serialData = { (USHORT) - 1, 0x00};
 std::wstring controllerCountWStr;
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
+BOOL                InitInstance(HINSTANCE);
 BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD SetRegistryKeyString(HKEY, LPCWSTR, LPCWSTR, LPCWSTR, DWORD);
@@ -45,7 +45,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-	HANDLE mutex = CreateMutex(0, 0, "SteamSwitchMutex");
+	HANDLE mutex = CreateMutex(nullptr, 0, "SteamSwitchMutex");
     MSG msg = {};
 	switch (GetLastError())
 	{
@@ -61,7 +61,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         MyRegisterClass(hInstance);
 
         // Perform application initialization:
-        if (!InitInstance(hInstance, nCmdShow))
+        if (!InitInstance(hInstance))
         {
             return FALSE;
         }
@@ -113,7 +113,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInstance)
 {
    hInst = hInstance; // Store instance handle in our global variable
 

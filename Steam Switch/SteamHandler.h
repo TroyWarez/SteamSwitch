@@ -21,7 +21,7 @@ public:
 	HWND mainHwnd;
 	HMODULE hKernel32;
 	int StartSteamHandler();
-	int getSteamPid();
+	DWORD getSteamPid();
 	const LPCWSTR getSteamBigPictureModeTitle() { return steamBigPictureModeTitle.c_str(); }
 	bool isSteamRunning();
 	bool isSteamInGame();

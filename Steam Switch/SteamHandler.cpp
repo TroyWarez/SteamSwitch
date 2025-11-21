@@ -242,12 +242,12 @@ int SteamHandler::StartSteamHandler()
 	bool iCueRunning = false;
 
 	XINPUT_STATE xstate2 = { 0 };
-	WCHAR windowsDir[MAX_PATH] = { 0 };
-	std::wstring windowsPath(windowsDir);
-	std::wstring windowsExplorerPath(windowsDir);
-	if (GetWindowsDirectoryW(windowsDir, MAX_PATH))
+	std::array<WCHAR, MAX_PATH> windowsDir = { L'\0' };
+	std::wstring windowsPath(windowsDir.data());
+	std::wstring windowsExplorerPath(windowsDir.data());
+	if (GetWindowsDirectoryW(windowsDir.data(), MAX_PATH))
 	{
-		windowsPath = windowsDir;
+		windowsPath = windowsDir.data();
 		windowsExplorerPath = windowsPath + L"\\explorer.exe";
 		windowsPath = windowsPath + L"\\Cursors\\";
 	}
@@ -310,17 +310,17 @@ int SteamHandler::StartSteamHandler()
 				{
 					HWND foreHwnd = GetForegroundWindow();
 
-					WCHAR windowTitle[256] = { 0 };
-					GetWindowTextW(foreHwnd, windowTitle, 256);
-					std::wstring title(windowTitle);
+					std::array<WCHAR, MAX_PATH> windowTitle = { L'\0' };
+					GetWindowTextW(foreHwnd, windowTitle.data(), MAX_PATH);
+					std::wstring title(windowTitle.data());
 					std::wstring subtitle;
 					if (title.size() > 5)
 					{
 						subtitle = title.substr(0, 5);
 					}
-					WCHAR windowClassName[256] = { 0 };
-					GetClassNameW(foreHwnd, windowClassName, 256);
-					std::wstring classname(windowClassName);
+					std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
+					GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
+					std::wstring classname(windowClassName.data());
 
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
@@ -328,8 +328,8 @@ int SteamHandler::StartSteamHandler()
 						AddOrRemoveNotificationIcon(hWnd, TRUE);
 						if (!monHandler->isSingleDisplayHDMI())
 						{
-							INPUT inputs[4] = {};
-							ZeroMemory(inputs, sizeof(inputs));
+							std::array<INPUT, 4> inputs = { 0x0 };
+							ZeroMemory(inputs.data(), inputs.size());
 
 							inputs[0].type = INPUT_KEYBOARD;
 							inputs[0].ki.wVk = VK_MENU;
@@ -345,7 +345,7 @@ int SteamHandler::StartSteamHandler()
 							inputs[3].ki.wVk = VK_RETURN;
 							inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
 
-							UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+							UINT uSent = SendInput(static_cast<UINT>(inputs.size()), inputs.data(), sizeof(INPUT));
 						}
 
 						GetCursorPos(&deskCursorPos);
@@ -365,10 +365,10 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
 
-						if (!monHandler->ToggleMode((!programFilesPath.empty())))
+						if (!monHandler->ToggleMode())
 						{
-							INPUT inputs[4] = {};
-							ZeroMemory(inputs, sizeof(inputs));
+							std::array<INPUT, 4> inputs = { 0x0 };
+							ZeroMemory(inputs.data(), inputs.size());
 
 							inputs[0].type = INPUT_KEYBOARD;
 							inputs[0].ki.wVk = VK_MENU;
@@ -384,7 +384,7 @@ int SteamHandler::StartSteamHandler()
 							inputs[3].ki.wVk = VK_RETURN;
 							inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
 
-							UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+							UINT uSent = SendInput(static_cast<UINT>(inputs.size()), inputs.data(), sizeof(INPUT));
 							continue;
 						}
 
@@ -468,7 +468,7 @@ int SteamHandler::StartSteamHandler()
 
 										HWND hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
 										//SetWindowLongW(hWndDesk, GWL_STYLE, wndLong);
-										monHandler->ToggleMode((!programFilesPath.empty()));
+										monHandler->ToggleMode();
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_SHOW);
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
 
@@ -869,7 +869,7 @@ int SteamHandler::StartSteamHandler()
 	}
 	return (int)msg.wParam;
 }
-int SteamHandler::getSteamPid()
+DWORD SteamHandler::getSteamPid()
 {
 	HKEY hKey = nullptr;
 	if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam\\ActiveProcess", 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)
@@ -890,9 +890,10 @@ bool SteamHandler::isSteamInGame()
 {
 	steamPid = getSteamPid();
 	std::vector <std::wstring> processNames;
-	ULONG_PTR pbi[6] = { 0 };
+
+	std::array<ULONG_PTR, 6> pbi = { 0 };
 	ULONG ulSize = 0;
-	HMODULE hMods[1024] = { 0 };
+	std::array<HMODULE, 1024> hMods = { nullptr };
 	DWORD cbNeeded = 0;
 	std::vector<DWORD> processIds(1024);
 	if (EnumProcesses(processIds.data(), ((DWORD)processIds.size() * sizeof(DWORD)), &cbNeeded))
@@ -905,7 +906,7 @@ bool SteamHandler::isSteamInGame()
 				WCHAR szProcessName[MAX_PATH] = { 0 };
 				if (GetModuleBaseNameW(hProcess, hMods[i], szProcessName, sizeof(szProcessName) / sizeof(WCHAR)))
 				{
-					processNames.push_back(szProcessName);
+					processNames.emplace_back(szProcessName);
 
 					if (NtQueryInformationProcess) {
 						if (NtQueryInformationProcess(hProcess, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))

@@ -15,8 +15,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	bool openedBPMode = false;
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
-	std::string deviceStrPort = "";
-	CEC::ICECAdapter* cecAdpater;
+	std::string deviceStrPort;
+	CEC::ICECAdapter* cecAdpater = nullptr;
 	cec_config.Clear();
 	cec_config.iHDMIPort = 1; // Default HDMI port
 
@@ -57,8 +57,8 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		return 1;
 	}
 	cecAdpater->InitVideoStandalone();
-	CEC::cec_adapter_descriptor device[1];
-	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device, 1, nullptr, true);
+		std::array<CEC::cec_adapter_descriptor, 1> device = { 0 };
+	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device.data(), 1, nullptr, true);
 	if (iDevicesFound > 0)
 	{
 		deviceStrPort = device[0].strComName;
@@ -149,7 +149,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		SingleDisplayHDMI = TRUE;
 	}
 
-	if (cecAdpater && deviceStrPort != "")
+	if (cecAdpater && !deviceStrPort.empty())
 	{
 		DWORD dwWaitResult = 0;
 		while (dwWaitResult <= ((DWORD)hEvents.size() - 1)){
@@ -168,7 +168,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				if (cecAdpater)
 				{
 					UnloadLibCec(cecAdpater);
-					cecAdpater = 0;
+					cecAdpater = nullptr;
 				}
 				return 0;
 			}
@@ -232,17 +232,17 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			{
 				HWND foreHwnd = GetForegroundWindow();
 
-				WCHAR windowTitle[256] = { 0 };
-				GetWindowTextW(foreHwnd, windowTitle, 256);
-				std::wstring title(windowTitle);
-				std::wstring subtitle = L"";
+				std::array<WCHAR, MAX_PATH> windowTitle = { L'\0' };
+				GetWindowTextW(foreHwnd, windowTitle.data(), MAX_PATH);
+				std::wstring title(windowTitle.data());
+				std::wstring subtitle ;
 				if (title.size() > 5)
 				{
 					subtitle = title.substr(0, 5);
 				}
-				WCHAR windowClassName[256] = { 0 };
-				GetClassNameW(foreHwnd, windowClassName, 256);
-				std::wstring classname(windowClassName);
+				std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
+				GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
+				std::wstring classname(windowClassName.data());
 
 				if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 				{
@@ -261,7 +261,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					}
 					break;
 				}
-				else if (SingleDisplayHDMI)
+				if (SingleDisplayHDMI)
 				{
 					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 					if (hWnd == nullptr)
@@ -319,7 +319,7 @@ DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (cecAdpater)
 	{
 		UnloadLibCec(cecAdpater);
-		cecAdpater = 0;
+		cecAdpater = nullptr;
 	}
 	CoUninitialize();
 	return 0;
@@ -358,7 +358,7 @@ MonitorHandler::~MonitorHandler()
 		hShutdownEvent = nullptr;
 	}
 }
-void MonitorHandler::setMonitorMode(MonitorMode mode)
+const void MonitorHandler::setMonitorMode(MonitorMode mode)
 {
 	currentMode = mode;
 }
@@ -366,7 +366,7 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
-bool MonitorHandler::ToggleMode(bool isIcueInstalled)
+const bool MonitorHandler::ToggleMode()
 {
 	switch (currentMode)
 	{
@@ -398,7 +398,7 @@ bool MonitorHandler::ToggleMode(bool isIcueInstalled)
 	}
 	return true;
 }
-bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
+const bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 {
 	if (mode == DESK_MODE)
 	{
@@ -409,11 +409,11 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 	{
 		if (isDSCEnabled())
 		{
-			WCHAR windowsDir[MAX_PATH] = { 0 };
-			std::wstring windowsPath(windowsDir);
-			if (GetWindowsDirectoryW(windowsDir, MAX_PATH))
+			std::array<WCHAR, MAX_PATH> windowsDir = { L'\0' };
+			std::wstring windowsPath;
+			if (GetWindowsDirectoryW(windowsDir.data(), MAX_PATH))
 			{
-				windowsPath = windowsDir;
+				windowsPath = windowsDir.data();
 				windowsPath = windowsPath + L"\\Cursors\\";
 			}
 			std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
@@ -565,7 +565,7 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			}
 			if (mode == BP_MODE)
 			{
-				DISPLAYCONFIG_PATH_INFO pathInfo[2] = {};
+				std::array<DISPLAYCONFIG_PATH_INFO, 2> pathInfo = { 0x0 };
 				pathInfo[0] = PathInfoArray2[1];
 				pathInfo[1] = pathInfoHDMI;
 
@@ -584,7 +584,7 @@ bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 			}
 			else if (mode == DESK_MODE)
 			{
-				DISPLAYCONFIG_PATH_INFO pathInfo[2] = {};
+				std::array<DISPLAYCONFIG_PATH_INFO, 2> pathInfo = { 0x0 };
 				pathInfo[0] = PathInfoArray2[0];
 				pathInfo[1] = PathInfoArray2[1];
 
@@ -656,7 +656,7 @@ bool MonitorHandler::isSingleDisplayHDMI()
 	return false;
 }
 
-int MonitorHandler::getActiveMonitorCount()
+UINT32 MonitorHandler::getActiveMonitorCount()
 {
 	UINT32 NumPathArrayElements = 0;
 	UINT32 NumModeInfoArrayElements = 0;

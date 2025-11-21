@@ -611,8 +611,8 @@ BOOL FindAllDevices(const GUID* ClassGuid, std::vector<std::wstring>& DevicePath
 					deviceName = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, DataSize * sizeof(WCHAR) + 2);
 					if (CM_Get_DevNode_Registry_PropertyW(deviceData.DevInst, CM_DRP_FRIENDLYNAME, nullptr, deviceName, &DataSize, 0) == CR_SUCCESS)
 					{
-						if (deviceName != 0) {
-							DeviceNames->push_back(deviceName);
+						if (deviceName != nullptr) {
+							DeviceNames->emplace_back(deviceName);
 						}
 					}
 					HeapFree(GetProcessHeap(), 0, deviceName);
