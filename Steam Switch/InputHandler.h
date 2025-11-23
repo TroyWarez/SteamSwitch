@@ -6,7 +6,7 @@ public:
 	InputHandler();
 	~InputHandler();
 	void SendControllerInput(PXINPUT_STATE pXstate);
-	const void turnOffXinputController();
+	void turnOffXinputController();
 	DWORD GetXInputStateDeviceIO(DWORD index, PXINPUT_STATE pXstate);
 	XINPUT_STATE lastXstate;
 	HINSTANCE hXInputDLL;

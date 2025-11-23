@@ -112,7 +112,7 @@ void InputHandler::SendControllerInput(PXINPUT_STATE pXstate)
 		lastXstate = (*pXstate);
 	}
 }
-const void InputHandler::turnOffXinputController()
+void InputHandler::turnOffXinputController()
 {
 	if (hXInputDLL)
 	{

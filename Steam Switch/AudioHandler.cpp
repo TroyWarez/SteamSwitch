@@ -249,11 +249,11 @@ void AudioHandler::setDefaultAudioDevice(LPCWSTR newDevice)
         BPaudioDeviceName = newDevice;
     }
 }
-const LPCWSTR AudioHandler::getDefaultAudioDevice()
+LPCWSTR AudioHandler::getDefaultAudioDevice()
 {
 	return BPaudioDeviceName.c_str();
 }
-const bool AudioHandler::BPisDefaultAudioDevice()
+bool AudioHandler::BPisDefaultAudioDevice()
 {
 	IMMDeviceEnumerator* pEnum = nullptr;
 	// Create a multimedia device enumerator.

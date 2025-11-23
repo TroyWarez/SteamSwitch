@@ -22,10 +22,10 @@ public:
 	HMODULE hKernel32;
 	int StartSteamHandler();
 	DWORD getSteamPid();
-	const LPCWSTR getSteamBigPictureModeTitle() { return steamBigPictureModeTitle.c_str(); }
+	LPCWSTR getSteamBigPictureModeTitle() { return steamBigPictureModeTitle.c_str(); }
 	bool isSteamRunning();
 	bool isSteamInGame();
-	const bool getSteamFocus();
+	bool getSteamFocus();
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
 	AudioHandler* audioHandler;

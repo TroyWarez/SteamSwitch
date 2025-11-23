@@ -356,7 +356,7 @@ MonitorHandler::~MonitorHandler()
 		hShutdownEvent = nullptr;
 	}
 }
-const void MonitorHandler::setMonitorMode(MonitorMode mode)
+void MonitorHandler::setMonitorMode(MonitorMode mode)
 {
 	currentMode = mode;
 }
@@ -364,7 +364,7 @@ MonitorHandler::MonitorMode MonitorHandler::getMonitorMode()
 {
 	return currentMode;
 }
-const bool MonitorHandler::ToggleMode()
+bool MonitorHandler::ToggleMode()
 {
 	switch (currentMode)
 	{
@@ -396,7 +396,7 @@ const bool MonitorHandler::ToggleMode()
 	}
 	return true;
 }
-const bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
+bool MonitorHandler::ToggleActiveMonitors(MonitorMode mode)
 {
 	if (mode == DESK_MODE)
 	{

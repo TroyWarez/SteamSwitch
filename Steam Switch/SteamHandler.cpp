@@ -957,7 +957,7 @@ bool SteamHandler::isSteamRunning()
 	}
 	return false;
 }
-const bool SteamHandler::getSteamFocus()
+bool SteamHandler::getSteamFocus()
 {
 	return isSteamFocused;
 }

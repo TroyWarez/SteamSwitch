@@ -26,7 +26,7 @@ static BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 	DWORD dwRead = 0;
 	DWORD dwRes = 0;
 	BOOL fRes = FALSE;
-	HANDLE hEvents[2] = { nullptr };
+	std::array<HANDLE, 2> hEvents = { nullptr };
 	if (hComm)
 	{
 		// Create this read operation's OVERLAPPED structure's hEvent.
@@ -51,7 +51,7 @@ static BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 			}
 			else
 				// Read is pending.
-				dwRes = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+				dwRes = WaitForMultipleObjects(static_cast<int>(hEvents.size()), hEvents.data(), FALSE, INFINITE);
 			switch (dwRes)
 			{
 				// OVERLAPPED structure's event has been signaled. 
@@ -75,7 +75,6 @@ static BOOL ReadADoubleWord32(HANDLE hComm, GIPSerialData* lpDW32)
 			// ReadFile completed immediately.
 			fRes = TRUE;
 		}
-		PurgeComm(hComm, PURGE_TXCLEAR);
 		CloseHandle(osRead.hEvent);
 		CloseHandle(hEvents[1]);
 	}
@@ -88,7 +87,7 @@ static BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 	DWORD dwWrite = 0;
 	DWORD dwRes = 0;
 	BOOL fRes = FALSE;
-	HANDLE hEvents[2] = { nullptr };
+	std::array<HANDLE, 2> hEvents = { nullptr };
 	if (hComm)
 	{
 		// Create this write operation's OVERLAPPED structure's hEvent.
@@ -111,7 +110,7 @@ static BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 			}
 			else
 				// Write is pending.
-				dwRes = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+				dwRes = WaitForMultipleObjects(static_cast<int>(hEvents.size()), hEvents.data(), FALSE, INFINITE);
 			switch (dwRes)
 			{
 				// OVERLAPPED structure's event has been signaled. 
@@ -136,8 +135,6 @@ static BOOL WriteADoubleWord32(HANDLE hComm, DWORD32* lpDW32)
 		}
 		CloseHandle(osWrite.hEvent);
 		CloseHandle(hEvents[1]);
-
-		PurgeComm(hComm, PURGE_RXCLEAR);
 	}
 	return fRes;
 }
