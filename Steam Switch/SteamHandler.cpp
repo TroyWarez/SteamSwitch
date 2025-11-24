@@ -79,8 +79,9 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
 				if (hWndIC)
 				{
-					SetForegroundWindow(hWndIC);
+					SwitchToThisWindow(hWndIC, TRUE);
 					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
+					PostMessage(hWndIC, WM_QUIT, 0, 0);
 					ResetEvent(hEvents[2]);
 				}
 				break;

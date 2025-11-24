@@ -647,7 +647,7 @@ bool MonitorHandler::isSingleDisplayHDMI()
 	std::vector<DISPLAYCONFIG_MODE_INFO> ModeInfoArray2(NumModeInfoArrayElements);
 	hr = QueryDisplayConfig((QDC_ONLY_ACTIVE_PATHS), &NumPathArrayElements, &PathInfoArray2[0], &NumModeInfoArrayElements, &ModeInfoArray2[0], nullptr);
 
-	if (hr == S_OK && NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
+	if (hr == S_OK && NumPathArrayElements <= 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
 	{
 		return true;
 	}
