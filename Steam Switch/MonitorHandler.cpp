@@ -144,7 +144,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 	{
 		SingleDisplayHDMI = TRUE;
-		steamHandler->monHandler->setMonitorMode(steamHandler->monHandler->MonitorMode::BP_MODE);
+		steamHandler->monHandler->setMonitorMode(steamHandler->monHandler->MonitorMode::DESK_MODE);
 		SetEvent(hCECPowerOnEvent);
 	}
 
