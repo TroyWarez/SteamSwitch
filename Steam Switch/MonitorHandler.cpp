@@ -143,8 +143,9 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	BOOL SingleDisplayHDMI = FALSE;
 	if (steamHandler && steamHandler->monHandler && steamHandler->monHandler->isSingleDisplayHDMI())
 	{
-		SetEvent(hCECPowerOnEvent);
 		SingleDisplayHDMI = TRUE;
+		steamHandler->monHandler->setMonitorMode(steamHandler->monHandler->MonitorMode::BP_MODE);
+		SetEvent(hCECPowerOnEvent);
 	}
 
 	if (cecAdpater && !deviceStrPort.empty())
@@ -649,8 +650,7 @@ bool MonitorHandler::isSingleDisplayHDMI()
 
 	if (hr == S_OK)
 	{
-		if (NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI ||
-			NumPathArrayElements == 0)
+		if (NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
 		{
 			return true;
 		}
