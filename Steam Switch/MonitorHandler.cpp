@@ -278,6 +278,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					}
 					continue;
 				}
+				SingleDisplayHDMI = FALSE;
 				Sleep(1);
 			}
 			break;
