@@ -179,7 +179,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	gamePid = 0;
 	isIcueInstalled = false;
 	isSteamFocused = true;
-	monHandler = new MonitorHandler(MonitorHandler::DESK_MODE);
+	monHandler = new MonitorHandler();
 	inputHandler = new InputHandler();
 	audioHandler = new AudioHandler();
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");

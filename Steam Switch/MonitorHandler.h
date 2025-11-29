@@ -8,7 +8,7 @@ public:
 		BP_MODE,
 		DESK_MODE
 	};
-	MonitorHandler(MonitorMode mode);
+	MonitorHandler();
 	~MonitorHandler();
 	void setMonitorMode(MonitorMode mode);
 	MonitorMode getMonitorMode();
