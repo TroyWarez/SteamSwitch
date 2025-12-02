@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AudioHandler.h" />
+    <ClInclude Include="AutoSettingsHandler.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="InvisibleMouse.h" />
@@ -114,6 +115,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AudioHandler.cpp" />
+    <ClCompile Include="AutoSettingsHandler.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="MonitorHandler.cpp" />
     <ClCompile Include="SerialHandler.cpp" />

@@ -227,6 +227,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				audioHandler.InitDefaultAudioDevice();
 				Sleep(100);
 			}
+			Sleep(3000);
 			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 			{
 				HWND foreHwnd = GetForegroundWindow();
@@ -266,7 +267,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					if (hWnd == nullptr)
 					{
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
-						Sleep(3000);
 					}
 					else if (!openedBPMode)
 					{
