@@ -194,6 +194,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
 			{
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+				Sleep(3000);
 			}
 			else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
 				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
@@ -205,12 +206,14 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 				}
 			}
-		while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+
+			while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 			{
 				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 				Sleep(1);
 			}
 			cecAdpater->Close();
+
 			if (!SingleDisplayHDMI)
 			{
 				if (FindWindowW(SDL_CLASS, STEAM_DESK))
@@ -225,9 +228,9 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
 			{
 				audioHandler.InitDefaultAudioDevice();
-				Sleep(100);
+				Sleep(1);
 			}
-			Sleep(3000);
+
 			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
 			{
 				HWND foreHwnd = GetForegroundWindow();

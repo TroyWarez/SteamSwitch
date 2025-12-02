@@ -365,7 +365,7 @@ int SteamHandler::StartSteamHandler()
 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
 						DestroyCursor(h);
-
+						monHandler->setMonitorMode(monHandler->MonitorHandler::DESK_MODE);
 						if (!monHandler->ToggleMode())
 						{
 							std::array<INPUT, 4> inputs = { 0x0 };
@@ -457,7 +457,6 @@ int SteamHandler::StartSteamHandler()
 
 									HWND hWndBP = FindWindowW(SDL_CLASS, title.c_str());
 									if (hWndBP == nullptr) { // Big picture mode closed
-										AddOrRemoveNotificationIcon(hWnd, TRUE);
 										if (!programFilesPath.empty())
 										{
 											if (hCloseIcueEvent && WaitForSingleObject(hCloseIcueEvent, 1) == WAIT_TIMEOUT)
@@ -469,6 +468,7 @@ int SteamHandler::StartSteamHandler()
 
 										HWND hWndDesk = FindWindowW(SDL_CLASS, STEAM_DESK);
 										//SetWindowLongW(hWndDesk, GWL_STYLE, wndLong);
+										monHandler->setMonitorMode(monHandler->MonitorHandler::BP_MODE);
 										monHandler->ToggleMode();
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_SHOW);
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
