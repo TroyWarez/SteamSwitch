@@ -65,7 +65,7 @@ void AutoSettingsHandler::SetAllBPModeSettings()
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
 		{
 			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
-			BOOL ret = MoveFileExW(autoSettingsPaths[i].c_str(), L"BP.txt", MOVEFILE_REPLACE_EXISTING);
+			BOOL ret = MoveFileExW(L"BP.txt", autoSettingsPaths[i].c_str(), MOVEFILE_REPLACE_EXISTING);
 			CloseHandle(hAutoSettingsFile);
 		}
 	}
