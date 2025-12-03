@@ -65,7 +65,7 @@ void AutoSettingsHandler::SetAllBPModeSettings()
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
 		{
 			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
-			BOOL ret = MoveFileExW(L"BP.txt", autoSettingsPaths[i].c_str(), MOVEFILE_REPLACE_EXISTING);
+			BOOL ret = CopyFileW(L"BP.txt", autoSettingsPaths[i].c_str(), FALSE);
 			CloseHandle(hAutoSettingsFile);
 		}
 	}
@@ -79,7 +79,7 @@ void AutoSettingsHandler::SetAllDESKModeSettings()
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
 		{
 			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
-			BOOL ret = MoveFileExW(autoSettingsPaths[i].c_str(), L"DESK.txt", MOVEFILE_REPLACE_EXISTING);
+			BOOL ret = CopyFileW(L"DESK.txt", autoSettingsPaths[i].c_str(), FALSE);
 			CloseHandle(hAutoSettingsFile);
 		}
 	}
