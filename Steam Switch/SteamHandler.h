@@ -4,6 +4,7 @@
 #include "InputHandler.h"
 #include "SerialHandler.h"
 #include "AudioHandler.h"
+#include "AutoSettingsHandler.h"
 
 constexpr LPCWSTR STEAM_DESK = L"Steam";
 constexpr LPCWSTR SDL_CLASS = L"SDL_app";
@@ -29,6 +30,7 @@ public:
 	MonitorHandler* monHandler;
 	InputHandler* inputHandler;
 	AudioHandler* audioHandler;
+	AutoSettingsHandler* autoSettingsHandler;
 	LONG(WINAPI* NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 	DWORD steamPid;
 	DWORD gamePid;

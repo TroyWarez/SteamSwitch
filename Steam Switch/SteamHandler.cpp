@@ -182,6 +182,7 @@ SteamHandler::SteamHandler(HWND hWnd)
 	monHandler = new MonitorHandler();
 	inputHandler = new InputHandler();
 	audioHandler = new AudioHandler();
+	autoSettingsHandler = new AutoSettingsHandler();
 	hKernel32 = LoadLibraryW(L"NTDLL.DLL");
 	if (hKernel32)
 	{
@@ -222,6 +223,10 @@ SteamHandler::~SteamHandler()
 	if (audioHandler)
 	{
 		delete audioHandler;
+	}
+	if (autoSettingsHandler)
+	{
+		delete autoSettingsHandler;
 	}
 }
 int SteamHandler::StartSteamHandler()
