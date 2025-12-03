@@ -1,4 +1,5 @@
 #include "AutoSettingsHandler.h"
+
 AutoSettingsHandler::AutoSettingsHandler()
 {
 	//HANDLE gameSettingsEvent = CreateEventW(nullptr, FALSE, FALSE, L"GameSettingsEvent");
@@ -55,6 +56,7 @@ AutoSettingsHandler::AutoSettingsHandler()
 AutoSettingsHandler::~AutoSettingsHandler()
 {
 	settingsSearchPath = L"";
+	autoSettingsPaths = std::vector<std::wstring>();
 }
 void AutoSettingsHandler::SetAllBPModeSettings()
 {

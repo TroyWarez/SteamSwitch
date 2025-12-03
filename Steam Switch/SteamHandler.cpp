@@ -1,11 +1,16 @@
 #include "SteamHandler.h"
 #include "InvisibleMouse.h"
 #include <GenericInput.h>
+#include <iCUESDK/iCUESDK.h>
 BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 static bool MessageBoxFound = false;
-DWORD WINAPI ICUEThread(LPVOID lpParam) {
+DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 	UNREFERENCED_PARAMETER(lpParam);
-	HANDLE hEvents[3] = { nullptr };
+
+	CorsairError er = CorsairConnect(nullptr, nullptr);
+	er = CorsairRequestControl(nullptr, CAL_Shared);
+
+	std::array<HANDLE, 3> hEvents = { L'\0' };
 	hEvents[0] = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
 	if (hEvents[0] == nullptr)
 	{
@@ -40,6 +45,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	}
 
 	bool iCueRunning = true;
+	DWORD dwWait = NULL;
 	HANDLE hICUEEvent = CreateEventW(nullptr, TRUE, FALSE, L"ICUEEvent");
 	if (!hICUEEvent && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
@@ -51,7 +57,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 	}
 	while (iCueRunning)
 	{
-		DWORD dwWait = WaitForMultipleObjects(ARRAYSIZE(hEvents), hEvents, FALSE, INFINITE);
+		dwWait = WaitForMultipleObjects(static_cast<DWORD>(hEvents.size()), hEvents.data(), FALSE, INFINITE);
 		switch (dwWait)
 		{
 			case 0: // Shutdown Event
@@ -61,29 +67,30 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			}
 			case 1: // FindIcueEvent Event
 			{
-				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-				if (hWndIC && IsWindowVisible(hWndIC))
-				{
-					ShowWindow(hWndIC, SW_HIDE);
-					if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
-					{
-						SetEvent(hICUEEvent);
-						ResetEvent(hEvents[1]);
-					}
-				}
-				Sleep(1);
+// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+// 				if (hWndIC && IsWindowVisible(hWndIC))
+// 				{
+// 					ShowWindow(hWndIC, SW_HIDE);
+// 					if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
+// 					{
+// 						SetEvent(hICUEEvent);
+// 						ResetEvent(hEvents[1]);
+// 					}
+// 				}
+// 				Sleep(1);
 				break;
 			}
 			case 2: // CloseIcueEvent Event
 			{
-				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-				if (hWndIC)
-				{
-					SwitchToThisWindow(hWndIC, TRUE);
-					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
-					PostMessage(hWndIC, WM_QUIT, 0, 0);
-					ResetEvent(hEvents[2]);
-				}
+// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+// 				if (hWndIC)
+// 				{
+// 					SwitchToThisWindow(hWndIC, TRUE);
+// 					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
+// 					PostMessage(hWndIC, WM_QUIT, 0, 0);
+// 					ResetEvent(hEvents[2]);
+// 				}
+
 				break;
 			}
 			default:
@@ -92,7 +99,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) {
 			}
 		}
 	}
-	for (int i = 0; i < ARRAYSIZE(hEvents); i++)
+	for (size_t i = 0; i < hEvents.size(); i++)
 	{
 		if (hEvents[i])
 		{

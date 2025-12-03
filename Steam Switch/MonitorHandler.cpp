@@ -10,7 +10,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	{
 		return 1;
 	}
-	bool openedBPMode = false;
+
 	SteamHandler* steamHandler = (SteamHandler*)lpParam;
 	CEC::libcec_configuration cec_config;
 	std::string deviceStrPort;
@@ -60,15 +60,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (iDevicesFound > 0)
 	{
 		deviceStrPort = device[0].strComName;
-	}
-	HANDLE hICUEEvent = CreateEventW(nullptr, FALSE, FALSE, L"ICUEEvent");
-	if (hICUEEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		hICUEEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"ICUEEvent");
-		if (hICUEEvent)
-		{
-			ResetEvent(hICUEEvent);
-		}
 	}
 
 	HANDLE hCECPowerOffFinishedEvent = CreateEventW(nullptr, FALSE, FALSE, L"CECPowerOffFinishedEvent");
@@ -173,7 +164,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			}
 		case 3: // hCECPowerOnEventSerial
 		{
-			openedBPMode = false;
 			if (hCECPowerOnEventSerial)
 			{
 				ResetEvent(hCECPowerOnEventSerial);
@@ -247,23 +237,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
 				std::wstring classname(windowClassName.data());
 
-				if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
-				{
-					if (hBPEvent)
-					{
-						SetEvent(hBPEvent);
-					}
-					if (hICUEEvent)
-					{
-						SetWindowPos(foreHwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						WaitForSingleObject(hICUEEvent, 60000);
-						Sleep(400);
-						SetWindowPos(foreHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-						CloseHandle(hICUEEvent);
-						hICUEEvent = nullptr;
-					}
-					break;
-				}
 				if (SingleDisplayHDMI)
 				{
 					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
@@ -271,13 +244,12 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					{
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
 					}
-					else if (!openedBPMode)
+					else
 					{
 						ShowWindow(hWnd, SW_MINIMIZE);
 						ShowWindow(hWnd, SW_SHOWDEFAULT);
 						SetForegroundWindow(hWnd);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-						openedBPMode = true;
 					}
 					continue;
 				}

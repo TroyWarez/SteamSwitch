@@ -63,7 +63,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>shlwapi.lib;dGenericInput.lib;setupapi.lib;xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>iCUESDK.x64_2019.lib;shlwapi.lib;dGenericInput.lib;setupapi.lib;xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
       <UACUIAccess>false</UACUIAccess>
     </Link>
@@ -85,7 +85,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>shlwapi.lib;rGenericInput.lib;setupapi.lib;xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>iCUESDK.x64_2019.lib;shlwapi.lib;rGenericInput.lib;setupapi.lib;xinput.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
       <UACUIAccess>false</UACUIAccess>
     </Link>
