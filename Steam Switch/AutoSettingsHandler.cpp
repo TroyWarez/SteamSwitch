@@ -61,7 +61,7 @@ void AutoSettingsHandler::SetAllBPModeSettings()
 
 	for (size_t i = 0; i < autoSettingsPaths.size(); i++)
 	{
-		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
 		{
 			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
@@ -75,7 +75,7 @@ void AutoSettingsHandler::SetAllDESKModeSettings()
 
 	for (size_t i = 0; i < autoSettingsPaths.size(); i++)
 	{
-		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
 		{
 			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
