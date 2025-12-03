@@ -6,6 +6,9 @@ class AutoSettingsHandler
 	public:
 	AutoSettingsHandler();
 	~AutoSettingsHandler();
+
 	std::wstring settingsSearchPath;
+
+	std::vector<std::wstring> autoSettingsPaths;
 };
 
