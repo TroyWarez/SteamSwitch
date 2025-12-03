@@ -8,6 +8,7 @@ AutoSettingsHandler::AutoSettingsHandler()
 	WIN32_FIND_DATAW ffd = { 0 };
 	HANDLE hFind = FindFirstFileW(settingsSearchPath.c_str(), &ffd);
 	std::wstring foundDirectoryName;
+	std::wstring foundFilePath;
 	std::vector<CHAR> testPathBuffer(MAX_PATH, '\0');
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
@@ -16,9 +17,9 @@ AutoSettingsHandler::AutoSettingsHandler()
 			foundDirectoryName = ffd.cFileName;
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && foundDirectoryName != L"." && foundDirectoryName != L"..")
 			{
-				settingsSearchPath = settingsSearchPath.substr(0, settingsSearchPath.size() - 1); // Remove the '*' at the end
-				settingsSearchPath = settingsSearchPath + ffd.cFileName + L"\\path.txt";
-				HANDLE hTestDir = CreateFileW(settingsSearchPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+				foundFilePath = settingsSearchPath.substr(0, settingsSearchPath.size() - 1); // Remove the '*' at the end
+				foundFilePath = foundFilePath + foundDirectoryName + L"\\path.txt";
+				HANDLE hTestDir = CreateFileW(foundFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 				if (hTestDir != INVALID_HANDLE_VALUE)
 				{
 					DWORD fileSize = GetFileSize(hTestDir, nullptr);
@@ -32,15 +33,20 @@ AutoSettingsHandler::AutoSettingsHandler()
 						std::wstring tempPathBuffer(MAX_PATH, L'\0');
 						if (MultiByteToWideChar(CP_UTF8, 0, testPathBuffer.data(), static_cast<int>(bytesRead), tempPathBuffer.data(), MAX_PATH))
 						{
-							std::array<WCHAR, MAX_PATH> programFileAutoSettingsFilPath = { L'\0' };
-							ExpandEnvironmentStringsW(tempPathBuffer.c_str(), programFileAutoSettingsFilPath.data(), MAX_PATH);
-							autoSettingsPaths.emplace_back(programFileAutoSettingsFilPath.data());
+							std::array<WCHAR, MAX_PATH> programFileAutoSettingsFilePath = { L'\0' };
+							ExpandEnvironmentStringsW(tempPathBuffer.c_str(), programFileAutoSettingsFilePath.data(), MAX_PATH);
+							std::wstring programFileAutoSettingsFilePathStr(programFileAutoSettingsFilePath.data());
+							HANDLE hTestAutoSettingsFile = CreateFileW(programFileAutoSettingsFilePathStr.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+							if (hTestAutoSettingsFile != INVALID_HANDLE_VALUE)
+							{
+								CloseHandle(hTestAutoSettingsFile);
+								autoSettingsPaths.emplace_back(std::wstring(programFileAutoSettingsFilePath.data()));
+							}
 						}
 					}
 					CloseHandle(hTestDir);
-					settingsSearchPath = settingsSearchPath.substr(0, settingsSearchPath.size() - 9); // Remove the '\path.txt' at the end
 				}
-				autoSettingsPaths.emplace_back(settingsSearchPath);
+				foundFilePath = L"";
 			}
 		} while (FindNextFileW(hFind, &ffd) != 0);
 		FindClose(hFind);
@@ -49,4 +55,32 @@ AutoSettingsHandler::AutoSettingsHandler()
 AutoSettingsHandler::~AutoSettingsHandler()
 {
 	settingsSearchPath = L"";
+}
+void AutoSettingsHandler::SetAllBPModeSettings()
+{
+
+	for (size_t i = 0; i < autoSettingsPaths.size(); i++)
+	{
+		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
+		{
+			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
+			BOOL ret = MoveFileExW(autoSettingsPaths[i].c_str(), L"BP.txt", MOVEFILE_REPLACE_EXISTING);
+			CloseHandle(hAutoSettingsFile);
+		}
+	}
+}
+void AutoSettingsHandler::SetAllDESKModeSettings()
+{
+
+	for (size_t i = 0; i < autoSettingsPaths.size(); i++)
+	{
+		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
+		{
+			DWORD fileSize = GetFileSize(hAutoSettingsFile, nullptr);
+			BOOL ret = MoveFileExW(autoSettingsPaths[i].c_str(), L"DESK.txt", MOVEFILE_REPLACE_EXISTING);
+			CloseHandle(hAutoSettingsFile);
+		}
+	}
 }

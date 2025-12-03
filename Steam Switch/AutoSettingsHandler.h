@@ -10,5 +10,7 @@ class AutoSettingsHandler
 	std::wstring settingsSearchPath;
 
 	std::vector<std::wstring> autoSettingsPaths;
+	void SetAllBPModeSettings();
+	void SetAllDESKModeSettings();
 };
 

@@ -393,7 +393,7 @@ int SteamHandler::StartSteamHandler()
 							UINT uSent = SendInput(static_cast<UINT>(inputs.size()), inputs.data(), sizeof(INPUT));
 							continue;
 						}
-
+						autoSettingsHandler->SetAllBPModeSettings();
 						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
 						if (!programFilesPath.empty())
 						{
@@ -477,7 +477,7 @@ int SteamHandler::StartSteamHandler()
 										monHandler->ToggleMode();
 										ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_SHOW);
 										SetCursorPos(deskCursorPos.x, deskCursorPos.y);
-
+										autoSettingsHandler->SetAllDESKModeSettings();
 										std::wstring cursorFileName = windowsPath + L"aero_arrow.cur";
 										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
 
