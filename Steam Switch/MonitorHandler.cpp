@@ -32,7 +32,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	std::wstring programFilesPath(programFiles.data());
 	programFilesPath = programFilesPath + L"\\SteamSwitch\\cecHDMI_Port.txt";
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE , nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	hFile = CreateFileW(programFilesPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		DWORD bytesRead = 0;
@@ -55,7 +55,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 		return 1;
 	}
 	cecAdpater->InitVideoStandalone();
-		std::array<CEC::cec_adapter_descriptor, 1> device = { 0 };
+	std::array<CEC::cec_adapter_descriptor, 1> device = { 0 };
 	uint8_t iDevicesFound = cecAdpater->DetectAdapters(device.data(), 1, nullptr, true);
 	if (iDevicesFound > 0)
 	{
@@ -110,6 +110,16 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			ResetEvent(hCECPowerOnEvent);
 		}
 	}
+
+	HANDLE hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hBPEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"BPEvent");
+		if (hBPEvent)
+		{
+			ResetEvent(hBPEvent);
+		}
+	}
 	std::vector<HANDLE> hEvents;
 
 	if (!hShutdownEvent)
@@ -132,11 +142,11 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	if (cecAdpater && !deviceStrPort.empty())
 	{
 		DWORD dwWaitResult = 0;
-		while (dwWaitResult <= ((DWORD)hEvents.size() - 1)){
-		dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
-		switch (dwWaitResult)
-		{
-		case 0: // hShutdownEvent
+		while (dwWaitResult <= ((DWORD)hEvents.size() - 1)) {
+			dwWaitResult = WaitForMultipleObjects((DWORD)hEvents.size(), hEvents.data(), FALSE, INFINITE);
+			switch (dwWaitResult)
+			{
+			case 0: // hShutdownEvent
 			{
 				for (size_t i = 0; i < hEvents.size(); i++)
 				{
@@ -152,107 +162,108 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				}
 				return 0;
 			}
-		case 3: // hCECPowerOnEventSerial
-		{
-			if (hCECPowerOnEventSerial)
+			case 3: // hCECPowerOnEventSerial
 			{
-				ResetEvent(hCECPowerOnEventSerial);
+				if (hCECPowerOnEventSerial)
+				{
+					ResetEvent(hCECPowerOnEventSerial);
+					if (hCECPowerOnEvent)
+					{
+						SetEvent(hCECPowerOnEvent);
+					}
+				}
+				break;
+			}
+			case 1: // hCECPowerOnEvent
+			{
 				if (hCECPowerOnEvent)
 				{
-					SetEvent(hCECPowerOnEvent);
+					ResetEvent(hCECPowerOnEvent);
 				}
-			}
-			break;
-		}
-		case 1: // hCECPowerOnEvent
-		{
-			if (hCECPowerOnEvent)
-			{
-				ResetEvent(hCECPowerOnEvent);
-			}
-			cecAdpater->Open(deviceStrPort.c_str());
-			if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				Sleep(3000);
-			}
-			else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
-				cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+				cecAdpater->Open(deviceStrPort.c_str());
+				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
+				{
+					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+					Sleep(3000);
+				}
+				else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
 					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
 				{
 					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				}
-			}
-
-			while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
-			{
-				cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-				Sleep(1);
-			}
-			cecAdpater->Close();
-
-			if (!SingleDisplayHDMI)
-			{
-				if (FindWindowW(SDL_CLASS, STEAM_DESK))
-				{
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-				}
-				else
-				{
-					ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
-				}
-			}
-			while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
-			{
-				audioHandler.InitDefaultAudioDevice();
-				Sleep(1);
-			}
-
-			while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
-			{
-				HWND foreHwnd = GetForegroundWindow();
-
-				std::array<WCHAR, MAX_PATH> windowTitle = { L'\0' };
-				GetWindowTextW(foreHwnd, windowTitle.data(), MAX_PATH);
-				std::wstring title(windowTitle.data());
-				std::wstring subtitle ;
-				if (title.size() > 5)
-				{
-					subtitle = title.substr(0, 5);
-				}
-				std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
-				GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
-				std::wstring classname(windowClassName.data());
-
-				if (SingleDisplayHDMI)
-				{
-					HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
-					if (hWnd == nullptr)
+					if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
+						cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
 					{
-						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
+						cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+					}
+				}
+
+				while ((cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON) && (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_UNKNOWN) && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+				{
+					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
+					Sleep(1);
+				}
+				cecAdpater->Close();
+
+				if (!SingleDisplayHDMI)
+				{
+					if (FindWindowW(SDL_CLASS, STEAM_DESK))
+					{
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 					}
 					else
 					{
-						ShowWindow(hWnd, SW_MINIMIZE);
-						ShowWindow(hWnd, SW_SHOWDEFAULT);
-						SetForegroundWindow(hWnd);
-						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-						break;
+						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
 					}
 				}
-				Sleep(1);
+				while (WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT && !audioHandler.BPisDefaultAudioDevice())
+				{
+					audioHandler.InitDefaultAudioDevice();
+					Sleep(1);
+				}
+
+				while (hShutdownEvent && WaitForSingleObject(hShutdownEvent, 1) == WAIT_TIMEOUT)
+				{
+					HWND foreHwnd = GetForegroundWindow();
+
+					std::array<WCHAR, MAX_PATH> windowTitle = { L'\0' };
+					GetWindowTextW(foreHwnd, windowTitle.data(), MAX_PATH);
+					std::wstring title(windowTitle.data());
+					std::wstring subtitle;
+					if (title.size() > 5)
+					{
+						subtitle = title.substr(0, 5);
+					}
+					std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
+					GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
+					std::wstring classname(windowClassName.data());
+
+						HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
+						if (hWnd == nullptr)
+						{
+							if (SingleDisplayHDMI)
+							{
+								ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
+							}
+							if (hBPEvent)
+							{
+								SetEvent(hBPEvent);
+								break;
+							}
+						}
+						else
+						{
+							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
+						}
+					Sleep(1);
+				}
+				break;
 			}
-			break;
-		}
-		case 2: // hCECPowerOffEvent
-		{
-			if (hCECPowerOffEvent)
+			case 2: // hCECPowerOffEvent
 			{
-				ResetEvent(hCECPowerOffEvent);
-			}
+				if (hCECPowerOffEvent)
+				{
+					ResetEvent(hCECPowerOffEvent);
+				}
 				cecAdpater->Open(deviceStrPort.c_str());
 				if (cecAdpater->GetActiveSource() != CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE)
 				{
@@ -278,9 +289,9 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			}
 			SingleDisplayHDMI = FALSE;
 			break;
+			}
 		}
-		}
-		}
+	}
 	if (cecAdpater)
 	{
 		UnloadLibCec(cecAdpater);
@@ -343,31 +354,31 @@ bool MonitorHandler::ToggleMode()
 {
 	switch (currentMode)
 	{
-		case MonitorHandler::BP_MODE:
+	case MonitorHandler::BP_MODE:
+	{
+		ToggleActiveMonitors(MonitorHandler::DESK_MODE);
+		currentMode = MonitorHandler::DESK_MODE;
+		if (hCECPowerOffEvent && hCECPowerOnEvent)
 		{
-			ToggleActiveMonitors(MonitorHandler::DESK_MODE);
-			currentMode = MonitorHandler::DESK_MODE;
-			if (hCECPowerOffEvent && hCECPowerOnEvent)
-			{
-				SetEvent(hCECPowerOffEvent);
-				ResetEvent(hCECPowerOnEvent);
-			}
-			break;
+			SetEvent(hCECPowerOffEvent);
+			ResetEvent(hCECPowerOnEvent);
 		}
-		case MonitorHandler::DESK_MODE:
+		break;
+	}
+	case MonitorHandler::DESK_MODE:
+	{
+		if (!ToggleActiveMonitors(MonitorHandler::BP_MODE))
 		{
-			if (!ToggleActiveMonitors(MonitorHandler::BP_MODE))
-			{
-				return false;
-			}
-			if (hCECPowerOffEvent && hCECPowerOnEvent)
-			{
-				SetEvent(hCECPowerOnEvent);
-				ResetEvent(hCECPowerOffEvent);
-			}
-			currentMode = MonitorHandler::BP_MODE;
-			break;
+			return false;
 		}
+		if (hCECPowerOffEvent && hCECPowerOnEvent)
+		{
+			SetEvent(hCECPowerOnEvent);
+			ResetEvent(hCECPowerOffEvent);
+		}
+		currentMode = MonitorHandler::BP_MODE;
+		break;
+	}
 	}
 	return true;
 }
@@ -624,7 +635,8 @@ bool MonitorHandler::isSingleDisplayHDMI()
 
 	if (hr == S_OK)
 	{
-		if (NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI)
+		if (NumPathArrayElements == 1 && PathInfoArray2[0].targetInfo.outputTechnology == DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI ||
+			NumPathArrayElements == 0)
 		{
 			return true;
 		}

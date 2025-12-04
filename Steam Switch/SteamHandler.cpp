@@ -2,7 +2,7 @@
 #include "InvisibleMouse.h"
 #include <GenericInput.h>
 #include <iCUESDK/iCUESDK.h>
-BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
+
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 	UNREFERENCED_PARAMETER(lpParam);
@@ -19,7 +19,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 	if (!hEvents[1] && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hEvents[1] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
-		if (hEvents[1]) 
+		if (hEvents[1])
 		{
 			ResetEvent(hEvents[1]);
 		}
@@ -59,43 +59,43 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 		dwWait = WaitForMultipleObjects(static_cast<DWORD>(hEvents.size()), hEvents.data(), FALSE, INFINITE);
 		switch (dwWait)
 		{
-			case 0: // Shutdown Event
-			{
-				iCueRunning = false;
-				break;
-			}
-			case 1: // FindIcueEvent Event
-			{
-// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-// 				if (hWndIC && IsWindowVisible(hWndIC))
-// 				{
-// 					ShowWindow(hWndIC, SW_HIDE);
-// 					if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
-// 					{
-// 						SetEvent(hICUEEvent);
-// 						ResetEvent(hEvents[1]);
-// 					}
-// 				}
-// 				Sleep(1);
-				break;
-			}
-			case 2: // CloseIcueEvent Event
-			{
-// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
-// 				if (hWndIC)
-// 				{
-// 					SwitchToThisWindow(hWndIC, TRUE);
-// 					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
-// 					PostMessage(hWndIC, WM_QUIT, 0, 0);
-// 					ResetEvent(hEvents[2]);
-// 				}
+		case 0: // Shutdown Event
+		{
+			iCueRunning = false;
+			break;
+		}
+		case 1: // FindIcueEvent Event
+		{
+			// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+			// 				if (hWndIC && IsWindowVisible(hWndIC))
+			// 				{
+			// 					ShowWindow(hWndIC, SW_HIDE);
+			// 					if (hICUEEvent && WaitForSingleObject(hICUEEvent, 1) == WAIT_TIMEOUT)
+			// 					{
+			// 						SetEvent(hICUEEvent);
+			// 						ResetEvent(hEvents[1]);
+			// 					}
+			// 				}
+			// 				Sleep(1);
+			break;
+		}
+		case 2: // CloseIcueEvent Event
+		{
+			// 				HWND hWndIC = FindWindowW(ICUE_CLASS, ICUE_TITLE);
+			// 				if (hWndIC)
+			// 				{
+			// 					SwitchToThisWindow(hWndIC, TRUE);
+			// 					PostMessage(hWndIC, WM_ENDSESSION, 0, 0);
+			// 					PostMessage(hWndIC, WM_QUIT, 0, 0);
+			// 					ResetEvent(hEvents[2]);
+			// 				}
 
-				break;
-			}
-			default:
-			{
-				break;
-			}
+			break;
+		}
+		default:
+		{
+			break;
+		}
 		}
 	}
 	for (size_t i = 0; i < hEvents.size(); i++)
@@ -138,6 +138,15 @@ SteamHandler::SteamHandler(HWND hWnd)
 	hidFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
 	HDEVNOTIFY hDeviceHID = RegisterDeviceNotificationW(mainHwnd, &hidFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
+	hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
+	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
+		if (hBPEvent)
+		{
+			ResetEvent(hBPEvent);
+		}
+	}
 	hShutdownEvent = CreateEventW(nullptr, TRUE, FALSE, L"ShutdownEvent");
 	if (hShutdownEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
@@ -328,7 +337,7 @@ int SteamHandler::StartSteamHandler()
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
 						// Entering Big Picture Mode
-						AddOrRemoveNotificationIcon(hWnd, TRUE);
+
 						if (!monHandler->isSingleDisplayHDMI())
 						{
 							std::array<INPUT, 4> inputs = { 0x0 };
@@ -352,21 +361,21 @@ int SteamHandler::StartSteamHandler()
 						}
 
 						GetCursorPos(&deskCursorPos);
-						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
-						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-						DestroyCursor(h);
+// 						HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+// 						BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+// 						ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+// 						DestroyCursor(h);
 						monHandler->setMonitorMode(monHandler->MonitorHandler::DESK_MODE);
 						if (!monHandler->ToggleMode())
 						{
@@ -399,6 +408,29 @@ int SteamHandler::StartSteamHandler()
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_HIDE);
+
+						while (true)
+						{
+							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+							{
+								if (msg.message == WM_QUIT)
+								{
+									break;
+								}
+
+								TranslateMessage(&msg);
+								DispatchMessage(&msg);
+							}
+							else
+							{
+								if (hBPEvent && WaitForSingleObject(hBPEvent, 1) != WAIT_TIMEOUT)
+								{
+									ResetEvent(hBPEvent);
+									break;
+								}
+							}
+						}
+
 						while (isSteamInBigPictureMode)
 						{
 							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -497,336 +529,336 @@ int SteamHandler::StartSteamHandler()
 										}
 									}
 								}
-								}
-								DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate); 
-								if (dwResult == ERROR_SUCCESS)
+							}
+							DWORD dwResult = inputHandler->GetXInputStateDeviceIO(0, &xstate);
+							if (dwResult == ERROR_SUCCESS)
+							{
+								if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B) &&
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) &&
+									!SelectButtonPressed)
 								{
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B) &&
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) &&
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) &&
-										!SelectButtonPressed)
-									{
 
-										if (!isSteamInGame())
+									if (!isSteamInGame())
+									{
+										HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
+										ShowWindow(hWndBP2, SW_MINIMIZE);
+										ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+										SetForegroundWindow(hWndBP2);
+									}
+									SelectButtonPressed = true;
+								}
+								else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+								{
+									SelectButtonPressed = false;
+								}
+
+
+								if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+									xticks.QuadPart == 0 && !MouseCordPressed)
+								{
+									QueryPerformanceCounter(&xticks);
+									xticks.QuadPart += MOUSE_WAKETIME / 2;
+								}
+								else if (
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+									xticks.QuadPart <= xticks2.QuadPart &&
+									xticks2.QuadPart != 2 &&
+									xticks.QuadPart != 0)
+								{
+									(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
+									xticks = { 0 };
+									xticks2 = { 2 };
+									MouseCordPressed = true;
+								}
+
+								if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+									xticksAudio.QuadPart == 0 && !AudioCordPressed)
+								{
+									QueryPerformanceCounter(&xticksAudio);
+									xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
+								}
+								else if (
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+									xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
+									xticksAudio2.QuadPart != 2 &&
+									xticksAudio.QuadPart != 0)
+								{
+									audioHandler->ToggleAudioDevice();
+
+									xticksAudio = { 0 };
+									xticksAudio2 = { 2 };
+									AudioCordPressed = true;
+								}
+
+								if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
+								{
+									xticksAudio = { 0 };
+									xticksAudio2 = { 2 };
+									AudioCordPressed = false;
+								}
+
+								if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+									xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
+									!TabTipCordHeld)
+								{
+									if (isSteamInGame())
+									{
+										ITipInvocation* tip = nullptr;
+										if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 										{
-											HWND hWndBP2 = FindWindowW(SDL_CLASS, L"Steam Big Picture Mode");
-											ShowWindow(hWndBP2, SW_MINIMIZE);
-											ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-											SetForegroundWindow(hWndBP2);
+											tip->Toggle(GetDesktopWindow());
+											tip->Release();
 										}
-										SelectButtonPressed = true;
-									}
-									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
-									{
-										SelectButtonPressed = false;
-									}
-
-
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										xticks.QuadPart == 0 && !MouseCordPressed)
-									{
-										QueryPerformanceCounter(&xticks);
-										xticks.QuadPart += MOUSE_WAKETIME / 2;
-									}
-									else if (
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-										xticks.QuadPart <= xticks2.QuadPart &&
-										xticks2.QuadPart != 2 &&
-										xticks.QuadPart != 0)
-									{
-										(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
-										xticks = { 0 };
-										xticks2 = { 2 };
-										MouseCordPressed = true;
-									}
-
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-										xticksAudio.QuadPart == 0 && !AudioCordPressed)
-									{
-										QueryPerformanceCounter(&xticksAudio);
-										xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
-									}
-									else if (
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-										xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
-										xticksAudio2.QuadPart != 2 &&
-										xticksAudio.QuadPart != 0)
-									{
-										audioHandler->ToggleAudioDevice();
-
-										xticksAudio = { 0 };
-										xticksAudio2 = { 2 };
-										AudioCordPressed = true;
-									}
-
-									if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
-									{
-										xticksAudio = { 0 };
-										xticksAudio2 = { 2 };
-										AudioCordPressed = false;
-									}
-
-									if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-										xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP &&
-										!TabTipCordHeld)
-									{
-										if (isSteamInGame())
+										else if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 										{
-											ITipInvocation* tip = nullptr;
+											std::array<WCHAR, MAX_PATH> programFiles = { 0 };
+											ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
+											std::wstring programFilesPath(programFiles.data());
+											std::wstring programCommonFilesPath(programFiles.data());
+											programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
+											programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
+											ShellExecuteW(nullptr, L"open", programFilesPath.c_str(), nullptr, programCommonFilesPath.c_str(), SW_HIDE);
+											Sleep(10);
 											if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 											{
 												tip->Toggle(GetDesktopWindow());
 												tip->Release();
 											}
-											else if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
-											{
-												std::array<WCHAR, MAX_PATH> programFiles = { 0 };
-												ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
-												std::wstring programFilesPath(programFiles.data());
-												std::wstring programCommonFilesPath(programFiles.data());
-												programCommonFilesPath = programCommonFilesPath + L"\\Common Files\\microsoft shared\\ink\\";
-												programFilesPath = programFilesPath + L"\\Common Files\\microsoft shared\\ink\\TabTip.exe";
-												ShellExecuteW(nullptr, L"open", programFilesPath.c_str(), nullptr, programCommonFilesPath.c_str(), SW_HIDE);
-												Sleep(10);
-												if (SUCCEEDED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
-												{
-													tip->Toggle(GetDesktopWindow());
-													tip->Release();
-												}
-											}
-										}
-										TabTipCordHeld = true;
-									}
-									else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-										!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
-									{
-										TabTipCordHeld = false;
-									}
-
-									if (MessageBoxFound)
-									{
-										if (isSteamInGame())
-										{
-											inputHandler->SendControllerInput(&xstate);
 										}
 									}
-									QueryPerformanceCounter(&xticks2);
-									QueryPerformanceCounter(&xticksAudio2);
+									TabTipCordHeld = true;
 								}
-								else {
-									for (DWORD i = 0; i < 12; i++)
-									{
-										xstate = { 0 };
-										dwResult = GenericInputGetState(i, (GENERIC_INPUT_STATE*)&xstate);
-										if (dwResult == ERROR_SUCCESS) {
-											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-												!SelectButtonPressed)
-											{
-
-												if (!isSteamInGame())
-												{
-													HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
-													ShowWindow(hWndBP2, SW_MINIMIZE);
-													ShowWindow(hWndBP2, SW_SHOWDEFAULT);
-													SetForegroundWindow(hWndBP2);
-												}
-												SelectButtonPressed = true;
-											}
-											else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
-											{
-												SelectButtonPressed = false;
-											}
-
-
-											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-												xticks.QuadPart == 0 && !MouseCordPressed)
-											{
-												QueryPerformanceCounter(&xticks);
-												xticks.QuadPart += MOUSE_WAKETIME / 2;
-											}
-											else if (
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
-												xticks.QuadPart <= xticks2.QuadPart &&
-												xticks2.QuadPart != 2 &&
-												xticks.QuadPart != 0)
-											{
-												(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
-												xticks = { 0 };
-												xticks2 = { 2 };
-												MouseCordPressed = true;
-											}
-
-											if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-												!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
-											{
-												xticks = { 0 };
-												xticks2 = { 2 };
-												MouseCordPressed = false;
-											}
-
-											if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-												xticksAudio.QuadPart == 0 && !AudioCordPressed)
-											{
-												QueryPerformanceCounter(&xticksAudio);
-												xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
-											}
-											else if (
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
-												xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
-												xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
-												xticksAudio2.QuadPart != 2 &&
-												xticksAudio.QuadPart != 0)
-											{
-												audioHandler->ToggleAudioDevice();
-												PlaySoundW(L"SystemExclamation", nullptr, SND_ALIAS | SND_ASYNC);
-												xticksAudio = { 0 };
-												xticksAudio2 = { 2 };
-												AudioCordPressed = true;
-											}
-
-											if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
-												!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
-											{
-												xticksAudio = { 0 };
-												xticksAudio2 = { 2 };
-												AudioCordPressed = false;
-											}
-										}
-										else
-										{
-											break;
-										}
-									}
-									if (MessageBoxFound)
-									{
-										if (isSteamInGame())
-										{
-											inputHandler->SendControllerInput(&xstate);
-										}
-									}
-									QueryPerformanceCounter(&xticks2);
-									QueryPerformanceCounter(&xticksAudio2);
-								}
-								POINT cursorPos;
-								if (GetCursorPos(&cursorPos))
+								else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+									!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP))
 								{
-									if (cursorPos.x == (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y == (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
+									TabTipCordHeld = false;
+								}
+
+								if (MessageBoxFound)
+								{
+									if (isSteamInGame())
 									{
-										HCURSOR h = CreateIconFromResourceEx((PBYTE)&InvisCursorData, sizeof(InvisCursorData), TRUE, 0x00030000, 0, 0, LR_DEFAULTSIZE | LR_DEFAULTSIZE | LR_DEFAULTCOLOR | LR_SHARED);
-										BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-										ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-										ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-										ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-										ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-										ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-										ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-										ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-										DestroyCursor(h);
-										if (ShouldHideCursor)
-										{
-											SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
-										}
-									}
-									else if (cursorPos.x == firstCursorPos.x && cursorPos.y == firstCursorPos.y && ticks.QuadPart == 0 &&
-										cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
-									{
-										QueryPerformanceCounter(&ticks);
-										ticks.QuadPart += MOUSE_WAKETIME;
-
-										std::wstring cursorFileName = windowsPath + L"aero_arrow_l.cur";
-										BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
-
-										cursorFileName = windowsPath + L"beam_il.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
-
-										cursorFileName = windowsPath + L"aero_working_l.ani";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_WAIT);
-
-										cursorFileName = windowsPath + L"cross_i.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_CROSS);
-
-										cursorFileName = windowsPath + L"aero_up_l.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_UP);
-
-										cursorFileName = windowsPath + L"aero_nwse.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENWSE);
-
-										cursorFileName = windowsPath + L"aero_nesw.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENESW);
-
-										cursorFileName = windowsPath + L"aero_ew.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEWE);
-
-										cursorFileName = windowsPath + L"aero_ns.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENS);
-
-										cursorFileName = windowsPath + L"aero_move.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEALL);
-
-										cursorFileName = windowsPath + L"no_i.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NO);
-
-										cursorFileName = windowsPath + L"aero_link.cur";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_HAND);
-
-										cursorFileName = windowsPath + L"aero_working_l.ani";
-										ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
-									}
-									else if (cursorPos.x != firstCursorPos.x && cursorPos.y != firstCursorPos.y)
-									{
-										ticks = { 0 };
+										inputHandler->SendControllerInput(&xstate);
 									}
 								}
-								GetCursorPos(&firstCursorPos);
-								QueryPerformanceCounter(&ticks2);
-								if (ticks.QuadPart != 0 && ticks2.QuadPart >= ticks.QuadPart)
+								QueryPerformanceCounter(&xticks2);
+								QueryPerformanceCounter(&xticksAudio2);
+							}
+							else {
+								for (DWORD i = 0; i < 12; i++)
 								{
-									if (cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1))
-									{
-										HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
-										BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
-										ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
-										ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
-										ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
-										ret = SetSystemCursor(CopyCursor(h), OCR_UP);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
-										ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
-										ret = SetSystemCursor(CopyCursor(h), OCR_NO);
-										ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
-										ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
-										DestroyCursor(h);
+									xstate = { 0 };
+									dwResult = GenericInputGetState(i, (GENERIC_INPUT_STATE*)&xstate);
+									if (dwResult == ERROR_SUCCESS) {
+										if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											!SelectButtonPressed)
+										{
 
-										if (ShouldHideCursor) {
-											SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+											if (!isSteamInGame())
+											{
+												HWND hWndBP2 = FindWindowW(SDL_CLASS, title.c_str());
+												ShowWindow(hWndBP2, SW_MINIMIZE);
+												ShowWindow(hWndBP2, SW_SHOWDEFAULT);
+												SetForegroundWindow(hWndBP2);
+											}
+											SelectButtonPressed = true;
+										}
+										else if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK))
+										{
+											SelectButtonPressed = false;
+										}
+
+
+										if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+											xticks.QuadPart == 0 && !MouseCordPressed)
+										{
+											QueryPerformanceCounter(&xticks);
+											xticks.QuadPart += MOUSE_WAKETIME / 2;
+										}
+										else if (
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT &&
+											xticks.QuadPart <= xticks2.QuadPart &&
+											xticks2.QuadPart != 2 &&
+											xticks.QuadPart != 0)
+										{
+											(ShouldHideCursor) ? ShouldHideCursor = false : ShouldHideCursor = true;
+											xticks = { 0 };
+											xticks2 = { 2 };
+											MouseCordPressed = true;
+										}
+
+										if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+											!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT))
+										{
+											xticks = { 0 };
+											xticks2 = { 2 };
+											MouseCordPressed = false;
+										}
+
+										if (xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+											xticksAudio.QuadPart == 0 && !AudioCordPressed)
+										{
+											QueryPerformanceCounter(&xticksAudio);
+											xticksAudio.QuadPart += MOUSE_WAKETIME / 2;
+										}
+										else if (
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK &&
+											xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B &&
+											xticksAudio.QuadPart <= xticksAudio2.QuadPart &&
+											xticksAudio2.QuadPart != 2 &&
+											xticksAudio.QuadPart != 0)
+										{
+											audioHandler->ToggleAudioDevice();
+											PlaySoundW(L"SystemExclamation", nullptr, SND_ALIAS | SND_ASYNC);
+											xticksAudio = { 0 };
+											xticksAudio2 = { 2 };
+											AudioCordPressed = true;
+										}
+
+										if (!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ||
+											!(xstate.Gamepad.wButtons & XINPUT_GAMEPAD_B))
+										{
+											xticksAudio = { 0 };
+											xticksAudio2 = { 2 };
+											AudioCordPressed = false;
 										}
 									}
+									else
+									{
+										break;
+									}
+								}
+								if (MessageBoxFound)
+								{
+									if (isSteamInGame())
+									{
+										inputHandler->SendControllerInput(&xstate);
+									}
+								}
+								QueryPerformanceCounter(&xticks2);
+								QueryPerformanceCounter(&xticksAudio2);
+							}
+							POINT cursorPos;
+							if (GetCursorPos(&cursorPos))
+							{
+								if (cursorPos.x == (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y == (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
+								{
+									HCURSOR h = CreateIconFromResourceEx((PBYTE)&InvisCursorData, sizeof(InvisCursorData), TRUE, 0x00030000, 0, 0, LR_DEFAULTSIZE | LR_DEFAULTSIZE | LR_DEFAULTCOLOR | LR_SHARED);
+									BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+									ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+									ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+									ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+									ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+									DestroyCursor(h);
+									if (ShouldHideCursor)
+									{
+										SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									}
+								}
+								else if (cursorPos.x == firstCursorPos.x && cursorPos.y == firstCursorPos.y && ticks.QuadPart == 0 &&
+									cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) / 2) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2))
+								{
+									QueryPerformanceCounter(&ticks);
+									ticks.QuadPart += MOUSE_WAKETIME;
+
+									std::wstring cursorFileName = windowsPath + L"aero_arrow_l.cur";
+									BOOL ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NORMAL);
+
+									cursorFileName = windowsPath + L"beam_il.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_IBEAM);
+
+									cursorFileName = windowsPath + L"aero_working_l.ani";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_WAIT);
+
+									cursorFileName = windowsPath + L"cross_i.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_CROSS);
+
+									cursorFileName = windowsPath + L"aero_up_l.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_UP);
+
+									cursorFileName = windowsPath + L"aero_nwse.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENWSE);
+
+									cursorFileName = windowsPath + L"aero_nesw.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENESW);
+
+									cursorFileName = windowsPath + L"aero_ew.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEWE);
+
+									cursorFileName = windowsPath + L"aero_ns.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZENS);
+
+									cursorFileName = windowsPath + L"aero_move.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_SIZEALL);
+
+									cursorFileName = windowsPath + L"no_i.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_NO);
+
+									cursorFileName = windowsPath + L"aero_link.cur";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_HAND);
+
+									cursorFileName = windowsPath + L"aero_working_l.ani";
+									ret = SetSystemCursor(LoadCursorFromFileW(cursorFileName.c_str()), OCR_APPSTARTING);
+								}
+								else if (cursorPos.x != firstCursorPos.x && cursorPos.y != firstCursorPos.y)
+								{
 									ticks = { 0 };
-									ticks2 = { 2 };
 								}
+							}
+							GetCursorPos(&firstCursorPos);
+							QueryPerformanceCounter(&ticks2);
+							if (ticks.QuadPart != 0 && ticks2.QuadPart >= ticks.QuadPart)
+							{
+								if (cursorPos.x != (GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) && cursorPos.y != (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1))
+								{
+									HCURSOR h = LoadCursorFromFileW(L"invisible-cursor.cur");
+									BOOL ret = SetSystemCursor(CopyCursor(h), OCR_NORMAL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_IBEAM);
+									ret = SetSystemCursor(CopyCursor(h), OCR_WAIT);
+									ret = SetSystemCursor(CopyCursor(h), OCR_CROSS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_UP);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENWSE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENESW);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEWE);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZENS);
+									ret = SetSystemCursor(CopyCursor(h), OCR_SIZEALL);
+									ret = SetSystemCursor(CopyCursor(h), OCR_NO);
+									ret = SetSystemCursor(CopyCursor(h), OCR_HAND);
+									ret = SetSystemCursor(CopyCursor(h), OCR_APPSTARTING);
+									DestroyCursor(h);
+
+									if (ShouldHideCursor) {
+										SetCursorPos((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1), (GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1));
+									}
 								}
-							Sleep(1);
+								ticks = { 0 };
+								ticks2 = { 2 };
+							}
 						}
+						Sleep(1);
 					}
 				}
 			}
+		}
 		Sleep(1);
 	}
 	return (int)msg.wParam;
@@ -875,8 +907,8 @@ bool SteamHandler::isSteamInGame()
 						{
 							std::wstring processName(szProcessName);
 
-							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe" )
-								{
+							if (pbi[5] == steamPid && processName != L"steamwebhelper.exe")
+							{
 								if (processName != L"gameoverlayui64.exe" && processName != L"gameoverlayui.exe")
 								{
 									gamePid = processIds[i];
