@@ -5,7 +5,7 @@ constexpr LPCWSTR DESKsettingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Swit
 class AutoSettingsHandler
 {
 private:
-	void ApplySettingsFromFolder(BOOL isBigPictureMode);
+	DWORD ApplySettingsFromFolder(BOOL isBigPictureMode);
 public:
 	AutoSettingsHandler();
 	~AutoSettingsHandler();
@@ -15,7 +15,10 @@ public:
 
 	std::vector<std::wstring> BPautoSettingsPaths;
 	std::vector<std::wstring> DESKautoSettingsPaths;
-	void SetAllBPModeSettings();
-	void SetAllDESKModeSettings();
+
+	std::vector<std::wstring> BPFolderSettingsPaths;
+	std::vector<std::wstring> DESKFolderSettingsPaths;
+	DWORD SetAllBPModeSettings();
+	DWORD SetAllDESKModeSettings();
 };
 

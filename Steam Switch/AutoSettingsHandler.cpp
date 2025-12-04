@@ -13,6 +13,7 @@ AutoSettingsHandler::AutoSettingsHandler()
 	HANDLE hFind = FindFirstFileW(BPsettingsSearchPath.c_str(), &ffd);
 	std::wstring foundDirectoryName;
 	std::wstring foundFilePath;
+	std::wstring foundFilePathTextFile;
 	std::vector<CHAR> testPathBuffer(MAX_PATH, '\0');
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
@@ -22,8 +23,8 @@ AutoSettingsHandler::AutoSettingsHandler()
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && foundDirectoryName != L"." && foundDirectoryName != L"..")
 			{
 				foundFilePath = BPsettingsSearchPath.substr(0, BPsettingsSearchPath.size() - 1); // Remove the '*' at the end
-				foundFilePath = foundFilePath + foundDirectoryName + L"\\path.txt";
-				HANDLE hTestDir = CreateFileW(foundFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+				foundFilePathTextFile = foundFilePath + foundDirectoryName + L"\\path.txt";
+				HANDLE hTestDir = CreateFileW(foundFilePathTextFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 				if (hTestDir != INVALID_HANDLE_VALUE)
 				{
 					DWORD fileSize = GetFileSize(hTestDir, nullptr);
@@ -45,12 +46,13 @@ AutoSettingsHandler::AutoSettingsHandler()
 							{
 								CloseHandle(hTestAutoSettingsFile);
 								BPautoSettingsPaths.emplace_back(std::wstring(programFileAutoSettingsFilePath.data()));
+								BPFolderSettingsPaths.emplace_back(std::wstring(foundFilePath + foundDirectoryName));
 							}
 						}
 					}
 					CloseHandle(hTestDir);
 				}
-				foundFilePath = L"";
+				foundFilePathTextFile = L"";
 			}
 		} while (FindNextFileW(hFind, &ffd) != 0);
 		FindClose(hFind);
@@ -66,8 +68,8 @@ AutoSettingsHandler::AutoSettingsHandler()
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && foundDirectoryName != L"." && foundDirectoryName != L"..")
 			{
 				foundFilePath = DESKsettingsSearchPath.substr(0, DESKsettingsSearchPath.size() - 1); // Remove the '*' at the end
-				foundFilePath = foundFilePath + foundDirectoryName + L"\\path.txt";
-				HANDLE hTestDir = CreateFileW(foundFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+				foundFilePathTextFile = foundFilePath + foundDirectoryName + L"\\path.txt";
+				HANDLE hTestDir = CreateFileW(foundFilePathTextFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 				if (hTestDir != INVALID_HANDLE_VALUE)
 				{
 					DWORD fileSize = GetFileSize(hTestDir, nullptr);
@@ -89,17 +91,19 @@ AutoSettingsHandler::AutoSettingsHandler()
 							{
 								CloseHandle(hTestAutoSettingsFile);
 								DESKautoSettingsPaths.emplace_back(std::wstring(programFileAutoSettingsFilePath.data()));
+								DESKFolderSettingsPaths.emplace_back(std::wstring(foundFilePath + foundDirectoryName));
 							}
 						}
 					}
 					CloseHandle(hTestDir);
 				}
-				foundFilePath = L"";
+				foundFilePathTextFile = L"";
 			}
 		} while (FindNextFileW(hFind, &ffd) != 0);
 		FindClose(hFind);
 	}
-	SetAllBPModeSettings();
+	DWORD ret = SetAllBPModeSettings();
+	ret = 2;
 }
 AutoSettingsHandler::~AutoSettingsHandler()
 {
@@ -108,18 +112,19 @@ AutoSettingsHandler::~AutoSettingsHandler()
 	BPautoSettingsPaths = std::vector<std::wstring>();
 	DESKautoSettingsPaths = std::vector<std::wstring>();
 }
-void AutoSettingsHandler::SetAllBPModeSettings()
+DWORD AutoSettingsHandler::SetAllBPModeSettings()
 {
 	return ApplySettingsFromFolder(TRUE);
 }
-void AutoSettingsHandler::SetAllDESKModeSettings()
+DWORD AutoSettingsHandler::SetAllDESKModeSettings()
 {
 	return ApplySettingsFromFolder(FALSE);
 }
-void AutoSettingsHandler::ApplySettingsFromFolder(BOOL isBigPictureMode)
+DWORD AutoSettingsHandler::ApplySettingsFromFolder(BOOL isBigPictureMode)
 {
 	std::vector<std::wstring> autoSettingsPaths = isBigPictureMode ? BPautoSettingsPaths : DESKautoSettingsPaths;
-	for (size_t i = 0; i < BPautoSettingsPaths.size(); i++)
+	std::vector<std::wstring> autoFolderSettingsPaths = isBigPictureMode ? BPFolderSettingsPaths : DESKFolderSettingsPaths;
+	for (size_t i = 0; i < autoSettingsPaths.size(); i++)
 	{
 		HANDLE hAutoSettingsFile = CreateFileW(autoSettingsPaths[i].c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 		if (hAutoSettingsFile != INVALID_HANDLE_VALUE)
@@ -127,19 +132,27 @@ void AutoSettingsHandler::ApplySettingsFromFolder(BOOL isBigPictureMode)
 			CloseHandle(hAutoSettingsFile);
 			SHFILEOPSTRUCTW sfo = { nullptr };
 			sfo.hwnd = GetDesktopWindow();
-			sfo.wFunc = FO_MOVE;
-			sfo.pFrom = autoSettingsPaths[i].c_str();
-			sfo.fFlags = FOF_SILENT | FOF_NOERRORUI | FOF_NOCONFIRMATION;
+			sfo.wFunc = FO_COPY;
+			sfo.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR;
 
-			std::wstring settingsSearchPath(autoSettingsPaths[i]);
-			settingsSearchPath = settingsSearchPath + L"\\";
-			if (SUCCEEDED(PathCchRemoveFileSpec(settingsSearchPath.data(), settingsSearchPath.size())))
-			{
-				sfo.pTo = settingsSearchPath.c_str();
-				int ret = SHFileOperationW(&sfo);
-				ret = GetLastError();
-				ret = 2;
+			size_t last_backslash_pos = autoSettingsPaths[i].find_last_of(L'\\');
+
+			if (last_backslash_pos != std::wstring::npos) {
+				// Extract the substring after the last backslash
+				// Start position is after the last backslash, length until the end
+				std::wstring folderName = autoFolderSettingsPaths[i] + autoSettingsPaths[i].substr(last_backslash_pos) + L'\0';
+				std::wstring newFolderName = autoSettingsPaths[i] + L'\0';
+				if (SUCCEEDED(PathCchRemoveFileSpec(newFolderName.data(), newFolderName.size())))
+				{
+					sfo.pFrom = folderName.c_str();
+					sfo.pTo = newFolderName.c_str();
+					if (SHFileOperationW(&sfo))
+					{
+						return ERROR_FILE_NOT_FOUND;
+					}
+				}
 			}
 		}
 	}
+	return ERROR_SUCCESS;
 }
