@@ -202,12 +202,10 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					Sleep(1);
 				}
 				cecAdpater->Close();
-
 				if (!SingleDisplayHDMI)
 				{
 					if (FindWindowW(SDL_CLASS, STEAM_DESK))
 					{
-						Sleep(3000);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 					}
 					else
@@ -237,23 +235,22 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
 					std::wstring classname(windowClassName.data());
 
+					if (SingleDisplayHDMI)
+					{
 						HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
 						if (hWnd == nullptr)
 						{
-							if (SingleDisplayHDMI)
-							{
-								ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
-							}
-							if (hBPEvent)
-							{
-								SetEvent(hBPEvent);
-								break;
-							}
+							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
 						}
 						else
 						{
+							ShowWindow(hWnd, SW_MINIMIZE);
+							ShowWindow(hWnd, SW_SHOWDEFAULT);
+							SetForegroundWindow(hWnd);
 							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 						}
+						continue;
+					}
 					Sleep(1);
 				}
 				break;
