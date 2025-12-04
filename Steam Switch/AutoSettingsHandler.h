@@ -1,15 +1,20 @@
 #pragma once
 #include "framework.h"
-constexpr LPCWSTR settingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Switch\\AutoSettings\\*";
+constexpr LPCWSTR BPsettingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Switch\\AutoSettings\\BP\\*";
+constexpr LPCWSTR DESKsettingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Switch\\AutoSettings\\DESK\\*";
 class AutoSettingsHandler
 {
-	public:
+private:
+	void ApplySettingsFromFolder(BOOL isBigPictureMode);
+public:
 	AutoSettingsHandler();
 	~AutoSettingsHandler();
 
-	std::wstring settingsSearchPath;
+	std::wstring BPsettingsSearchPath;
+	std::wstring DESKsettingsSearchPath;
 
-	std::vector<std::wstring> autoSettingsPaths;
+	std::vector<std::wstring> BPautoSettingsPaths;
+	std::vector<std::wstring> DESKautoSettingsPaths;
 	void SetAllBPModeSettings();
 	void SetAllDESKModeSettings();
 };

@@ -20,6 +20,7 @@
 #include <GameInput.h>
 #include <psapi.h>
 #include <wctype.h>
+#include <pathcch.h>
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>

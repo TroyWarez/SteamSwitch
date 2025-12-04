@@ -6,9 +6,8 @@ BOOL                AddOrRemoveNotificationIcon(HWND, BOOL);
 static bool MessageBoxFound = false;
 DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 	UNREFERENCED_PARAMETER(lpParam);
-
-	CorsairError er = CorsairConnect(nullptr, nullptr);
-	er = CorsairRequestControl(nullptr, CAL_Shared);
+	CorsairError error = CorsairGetDevices(nullptr, 0, nullptr, nullptr);
+	error = CorsairRequestControl(nullptr, CAL_Shared);
 
 	std::array<HANDLE, 3> hEvents = { L'\0' };
 	hEvents[0] = OpenEventW(SYNCHRONIZE, FALSE, L"ShutdownEvent");
@@ -20,7 +19,7 @@ DWORD WINAPI ICUEThread(LPVOID lpParam) { // Rewrite this
 	if (!hEvents[1] && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		hEvents[1] = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"FindIcueEvent");
-		if (hEvents[1])
+		if (hEvents[1]) 
 		{
 			ResetEvent(hEvents[1]);
 		}
