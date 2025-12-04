@@ -110,16 +110,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 			ResetEvent(hCECPowerOnEvent);
 		}
 	}
-
-	HANDLE hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
-	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		hBPEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, L"BPEvent");
-		if (hBPEvent)
-		{
-			ResetEvent(hBPEvent);
-		}
-	}
 	std::vector<HANDLE> hEvents;
 
 	if (!hShutdownEvent)
@@ -250,8 +240,8 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						ShowWindow(hWnd, SW_SHOWDEFAULT);
 						SetForegroundWindow(hWnd);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
+						break;
 					}
-					continue;
 				}
 				Sleep(1);
 			}

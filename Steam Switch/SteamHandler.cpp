@@ -138,15 +138,6 @@ SteamHandler::SteamHandler(HWND hWnd)
 	hidFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
 	HDEVNOTIFY hDeviceHID = RegisterDeviceNotificationW(mainHwnd, &hidFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
-	hBPEvent = CreateEventW(nullptr, FALSE, FALSE, L"BPEvent");
-	if (hBPEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		hBPEvent = OpenEventW(SYNCHRONIZE, FALSE, L"BPEvent");
-		if (hBPEvent)
-		{
-			ResetEvent(hBPEvent);
-		}
-	}
 	hShutdownEvent = CreateEventW(nullptr, TRUE, FALSE, L"ShutdownEvent");
 	if (hShutdownEvent == nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
 	{
@@ -408,27 +399,6 @@ int SteamHandler::StartSteamHandler()
 						//PostMessage(eH, /*WM_QUIT*/ 0x12, 0, 0);
 						isSteamInBigPictureMode = true;
 						ShowWindow(FindWindowW(L"Shell_TrayWnd", nullptr), SW_HIDE);
-						while (true)
-						{
-							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-							{
-								if (msg.message == WM_QUIT)
-								{
-									break;
-								}
-
-								TranslateMessage(&msg);
-								DispatchMessage(&msg);
-							}
-							else
-							{
-								if (hBPEvent && WaitForSingleObject(hBPEvent, 1) != WAIT_TIMEOUT)
-								{
-									ResetEvent(hBPEvent);
-									break;
-								}
-							}
-						}
 						while (isSteamInBigPictureMode)
 						{
 							if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
