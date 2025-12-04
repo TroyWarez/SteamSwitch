@@ -401,26 +401,6 @@ int SteamHandler::StartSteamHandler()
 						}
 						autoSettingsHandler->SetAllBPModeSettings();
 						SetCursorPos(((GetSystemMetrics(SM_CXVIRTUALSCREEN) - 1) * 2), ((GetSystemMetrics(SM_CYVIRTUALSCREEN) - 1) * 2));
-						if (!programFilesPath.empty())
-						{
-							HWND bpHwnd = FindWindowW(SDL_CLASS, title.c_str());
-							SHELLEXECUTEINFOW sei = { sizeof(SHELLEXECUTEINFO) };
-							sei.fMask = SEE_MASK_NOCLOSEPROCESS; // Request process handle
-							sei.lpFile = programFilesPath.c_str();        // File to execute
-							sei.nShow = SW_MINIMIZE;       // How to show the window
-							HANDLE hProcessiCue = nullptr;
-
-							if (ShellExecuteExW(&sei)) {
-								if (sei.hProcess != nullptr) {
-									hProcessiCue = sei.hProcess;
-									iCueRunning = true;
-								}
-							}
-							if (hFindIcueEvent && WaitForSingleObject(hFindIcueEvent, 1) == WAIT_TIMEOUT)
-							{
-								SetEvent(hFindIcueEvent);
-							}
-						}
 						steamBigPictureModeTitle = title;
 
 						//HWND eH = FindWindowW(L"Progman", nullptr);
