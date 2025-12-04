@@ -207,10 +207,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					if (FindWindowW(SDL_CLASS, STEAM_DESK))
 					{
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-						if (hBPEvent)
-						{
-							SetEvent(hBPEvent);
-						}
 					}
 					else
 					{
@@ -252,15 +248,16 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 							ShowWindow(hWnd, SW_SHOWDEFAULT);
 							SetForegroundWindow(hWnd);
 							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-							if (hBPEvent)
-							{
-								SetEvent(hBPEvent);
-								break;
-							}
+							break;
 						}
 						continue;
 					}
 					Sleep(1);
+				}
+				if (hBPEvent)
+				{
+					SetEvent(hBPEvent);
+					break;
 				}
 				break;
 			}
