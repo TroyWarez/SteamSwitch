@@ -184,7 +184,6 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON)
 				{
 					cecAdpater->SetActiveSource(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
-					Sleep(3000);
 				}
 				else if (cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_ON ||
 					cecAdpater->GetDevicePowerStatus(CEC::CECDEVICE_TV) != CEC::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON)
@@ -208,6 +207,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 				{
 					if (FindWindowW(SDL_CLASS, STEAM_DESK))
 					{
+						Sleep(3000);
 						ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
 					}
 					else
