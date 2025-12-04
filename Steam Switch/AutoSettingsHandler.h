@@ -1,5 +1,6 @@
 #pragma once
 #include "framework.h"
+#include "MonitorHandler.h"
 constexpr LPCWSTR BPsettingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Switch\\AutoSettings\\BP\\*";
 constexpr LPCWSTR DESKsettingsSearchFolderPathEnv = L"%PROGRAMFILES%\\Steam Switch\\AutoSettings\\DESK\\*";
 class AutoSettingsHandler
@@ -18,6 +19,8 @@ public:
 
 	std::vector<std::wstring> BPFolderSettingsPaths;
 	std::vector<std::wstring> DESKFolderSettingsPaths;
+
+	MonitorHandler* monHandler;
 	DWORD SetAllBPModeSettings();
 	DWORD SetAllDESKModeSettings();
 };

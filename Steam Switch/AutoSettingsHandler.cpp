@@ -2,6 +2,7 @@
 
 AutoSettingsHandler::AutoSettingsHandler()
 {
+	monHandler = new MonitorHandler();
 	//HANDLE gameSettingsEvent = CreateEventW(nullptr, FALSE, FALSE, L"GameSettingsEvent");
 	std::array<WCHAR, MAX_PATH>  BPprogramFileAutoSettingsPath = { L'\0' };
 	std::array<WCHAR, MAX_PATH>  DESKprogramFileAutoSettingsPath = { L'\0' };
@@ -102,8 +103,18 @@ AutoSettingsHandler::AutoSettingsHandler()
 		} while (FindNextFileW(hFind, &ffd) != 0);
 		FindClose(hFind);
 	}
-	DWORD ret = SetAllBPModeSettings();
-	ret = 2;
+	if (monHandler)
+	{
+		if (monHandler->isDSCEnabled())
+		{
+			SetAllDESKModeSettings();
+
+		}
+		else if (monHandler->isSingleDisplayHDMI())
+		{
+			SetAllBPModeSettings();
+		}
+	}
 }
 AutoSettingsHandler::~AutoSettingsHandler()
 {
@@ -111,6 +122,11 @@ AutoSettingsHandler::~AutoSettingsHandler()
 	DESKsettingsSearchPath = L"";
 	BPautoSettingsPaths = std::vector<std::wstring>();
 	DESKautoSettingsPaths = std::vector<std::wstring>();
+
+	if (monHandler)
+	{
+		delete monHandler;
+	}
 }
 DWORD AutoSettingsHandler::SetAllBPModeSettings()
 {
