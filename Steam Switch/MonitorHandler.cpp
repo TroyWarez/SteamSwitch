@@ -234,7 +234,14 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
 					GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
 					std::wstring classname(windowClassName.data());
-
+					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
+					{
+						if (hBPEvent && WaitForSingleObject(hBPEvent, 1) != WAIT_TIMEOUT)
+						{
+							SetEvent(hBPEvent);
+						}
+						break;
+					}
 					if (SingleDisplayHDMI)
 					{
 						HWND hWnd = FindWindowW(SDL_CLASS, STEAM_DESK);
@@ -244,20 +251,11 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						}
 						else
 						{
-							ShowWindow(hWnd, SW_MINIMIZE);
-							ShowWindow(hWnd, SW_SHOWDEFAULT);
-							SetForegroundWindow(hWnd);
 							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
-							break;
 						}
 						continue;
 					}
 					Sleep(1);
-				}
-				if (hBPEvent)
-				{
-					SetEvent(hBPEvent);
-					break;
 				}
 				break;
 			}
