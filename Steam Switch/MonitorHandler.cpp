@@ -27,6 +27,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 	cec_config.deviceTypes.Add(CEC::CEC_DEVICE_TYPE_RECORDING_DEVICE);
 
 	//bool ret = cecAdpater->SetConfiguration(&cec_config);
+	bool openedBPMode = false;
 	std::array<WCHAR, MAX_PATH> programFiles = { 0 };
 	ExpandEnvironmentStringsW(L"%userProfile%", programFiles.data(), MAX_PATH);
 	std::wstring programFilesPath(programFiles.data());
@@ -234,9 +235,10 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					std::array<WCHAR, MAX_PATH> windowClassName = { L'\0' };
 					GetClassNameW(foreHwnd, windowClassName.data(), MAX_PATH);
 					std::wstring classname(windowClassName.data());
+
 					if (subtitle == STEAM_DESK && classname == SDL_CLASS && title != subtitle)
 					{
-						if (hBPEvent && WaitForSingleObject(hBPEvent, 1) != WAIT_TIMEOUT)
+						if (hBPEvent)
 						{
 							SetEvent(hBPEvent);
 						}
@@ -248,10 +250,15 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 						if (hWnd == nullptr)
 						{
 							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/", nullptr, nullptr, SW_SHOW);
+							Sleep(3000);
 						}
-						else
+						else if (!openedBPMode)
 						{
+							ShowWindow(hWnd, SW_MINIMIZE);
+							ShowWindow(hWnd, SW_SHOWDEFAULT);
+							SetForegroundWindow(hWnd);
 							ShellExecuteW(GetDesktopWindow(), L"open", L"steam://open/bigpicture", nullptr, nullptr, SW_SHOW);
+							openedBPMode = true;
 						}
 						continue;
 					}
