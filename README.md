@@ -2,6 +2,7 @@
   <img src="https://raw.githubusercontent.com/TroyWarez/SteamSwitch/master/SteamSwitchIcon.svg" width="200" height="200"/>
   <h1>Steam Switch</h1>
   <p><b>Seamlessly automate your couch gaming experience on Windows.</b></p>
+  <b>(Binaries will be released soon)</b>
 </div>
 
 ---
