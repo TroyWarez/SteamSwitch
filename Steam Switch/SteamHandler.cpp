@@ -748,6 +748,7 @@ int SteamHandler::StartSteamHandler()
 								}
 								QueryPerformanceCounter(&xticks2);
 								QueryPerformanceCounter(&xticksAudio2);
+								Sleep(1);
 							}
 							POINT cursorPos;
 							if (GetCursorPos(&cursorPos))
