@@ -2,6 +2,7 @@
   <img src="https://raw.githubusercontent.com/TroyWarez/SteamSwitch/master/SteamSwitchIcon.svg" width="200" height="200"/>
   <h1>Steam Switch</h1>
   <p><b>Seamlessly automate your couch gaming experience on Windows.</b></p>
+  <b>(Binaries will be released soon)</b>
 </div>
 
 ---
@@ -25,14 +26,35 @@ Steam Switch improves the user experience when using a television as your primar
     *   *Example:* Automatically load "Controller + 4K TV" settings when in Big Picture, and "Keyboard + 1440p" settings when at your desk.
 *   **Smart Cursor Positioning:** Moves the cursor to the bottom-right corner.
     *   *Why?* This fixes visibility issues in games like **Left 4 Dead 2** where the cursor can break the UI when using a controller, and hides custom game cursors.
-*   **Audio Switching:** Automatically toggles the default sound device between your TV and Desktop speakers.
+*   **Audio Switching:** Automatically toggles the default sound device between your TV and your desktop output device.
 
 ---
 
 ## ⚙️ Configuration Guide
 
-### How to set up Game Settings Automation
-To enable the automatic swapping of game config files, follow these steps:
+### 1. HDMI CEC Port Setup
+To ensure the application controls the correct display, you must define the HDMI port number:
+1.  **Navigate to:** `%USERPROFILE%\Steam Switch\`
+2.  **Create File:** Create a text file named `cecHDMI_Port.txt`.
+3.  **Edit:** Open the file in Notepad and type the number of the correct HDMI port (e.g., `1`, `2`, etc.).
+    *   *Note:* The file should contain **only** the single number, with no extra spaces or text.
+
+### 2. Audio Device Switching
+To enable automatic audio switching between your Couch (TV) and Desk setup:
+
+1.  **Navigate to:** `%USERPROFILE%\Steam Switch\`
+2.  **Create Files:** Create the following three text files:
+    *   `BPAudioDevice.txt`
+    *   `DESKAudioDevice.txt`
+    *   `LastBPAudioDevice.txt`
+3.  **Define TV Audio:** Open `BPAudioDevice.txt` and paste the exact name of your TV/Couch output device (e.g., `SAMSUNG (NVIDIA High Definition Audio)`).
+4.  **Define Desk Audio:** Open `DESKAudioDevice.txt` and paste the exact name of your preferred desktop output device (e.g., `Speakers (3-Dell AC511 USB SoundBar)`).
+5.  **Initialize Cache:** Open `LastBPAudioDevice.txt` and paste the **Desktop** output device name (same as step 4).
+
+*Tip: You can find the exact device names in the Windows Sound Settings.*
+
+### 3. Game Settings Automation
+To enable the automatic swapping of game config files (e.g., changing graphics settings automatically):
 
 1.  **Create Directories:** Create two folders inside `%PROGRAMFILES%\Steam Switch\`:
     *   `\BP\` (For Big Picture/TV settings)
@@ -56,7 +78,7 @@ Use these shortcuts to manage features while in-game or using Steam.
 | :--- | :--- | :--- |
 | **SELECT + D-PAD LEFT** | 5 Seconds | **Disable Cursor Fix:** Use this if the camera spins in circles (e.g., *Portal RTX*). |
 | **SELECT + D-PAD UP** | Instant | **Open Keyboard:** Opens the Windows 11 On-Screen Keyboard (Useful for games like *Fallout: New Vegas*). *Note: May not overlay on Exclusive Fullscreen games.* |
-| **SELECT + B** | 5 Seconds | **Toggle Audio:** Force switches the default sound device. |
+| **SELECT + B** | 5 Seconds | **Toggle Audio:** Force switches the default sound device when not in game. |
 
 > **Note:** "Select" refers to the **Back** (Xbox 360), **View** (Xbox One/Series), **Share** (PS4), or **Create** (PS5) button.
 
