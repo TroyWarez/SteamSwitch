@@ -240,7 +240,7 @@ static DWORD WINAPI CecPowerThread(LPVOID lpParam) {
 					{
 						if (hBPEvent)
 						{
-							Sleep(3000);
+							Sleep(100);
 							SetEvent(hBPEvent);
 						}
 						break;

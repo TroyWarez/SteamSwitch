@@ -293,12 +293,12 @@ int SteamHandler::StartSteamHandler()
 	}
 	else
 	{
-		isIcueInstalled = true;
-		CloseHandle(hiCueTestFile);
-		if (hICUEThread == nullptr)
-		{
-			hICUEThread = CreateThread(nullptr, 0, ICUEThread, nullptr, 0, nullptr);
-		}
+		isIcueInstalled = false;
+// 		CloseHandle(hiCueTestFile);
+// 		if (hICUEThread == nullptr)
+// 		{
+// 			hICUEThread = CreateThread(nullptr, 0, ICUEThread, nullptr, 0, nullptr);
+// 		}
 	}
 	serialHandler.ScanForSerialDevices();
 	while (true)
@@ -720,7 +720,6 @@ int SteamHandler::StartSteamHandler()
 											xticksAudio.QuadPart != 0)
 										{
 											audioHandler->ToggleAudioDevice();
-											PlaySoundW(L"SystemExclamation", nullptr, SND_ALIAS | SND_ASYNC);
 											xticksAudio = { 0 };
 											xticksAudio2 = { 2 };
 											AudioCordPressed = true;
