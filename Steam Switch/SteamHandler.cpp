@@ -619,7 +619,7 @@ int SteamHandler::StartSteamHandler()
 										}
 										else if (FAILED(CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip)))
 										{
-											std::array<WCHAR, MAX_PATH> programFiles = { 0 };
+ 											std::array<WCHAR, MAX_PATH> programFiles = { 0 };
 											ExpandEnvironmentStringsW(L"%PROGRAMFILES%", programFiles.data(), MAX_PATH);
 											std::wstring programFilesPath(programFiles.data());
 											std::wstring programCommonFilesPath(programFiles.data());
